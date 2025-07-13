@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (meta.isCompleted) {
       return NextResponse.json({ 
-        error: 'Não é possível contribuir para uma meta já concluída' 
+        error: 'Esta meta já foi concluída' 
       }, { status: 400 });
     }
 
@@ -52,15 +52,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Criar transação de contribuição
     const transacao = await prisma.transacao.create({
       data: {
+        userId: usuario.id,
+        categoriaId: null,
         tipo: 'receita',
         valor: new Decimal(valor),
         descricao: descricao || `Contribuição para meta: ${meta.nome}`,
         data: new Date(),
         tags: [],
         anexos: [],
-        userId: usuario.id,
+        isRecorrente: false,
         metaId: meta.id,
-        categoriaId: null as any
       }
     });
 
@@ -70,40 +71,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       data: {
         currentAmount: novoValorAtual,
         isCompleted: novoValorAtual.gte(meta.valorAlvo)
-      },
-      include: {
-        transacoes: {
-          select: {
-            id: true,
-            valor: true,
-            data: true,
-            descricao: true
-          },
-          orderBy: {
-            data: 'desc'
-          }
-        }
       }
     });
 
     return NextResponse.json({
-      meta: {
-        ...metaAtualizada,
-        valorAlvo: metaAtualizada.valorAlvo.toNumber(),
-        currentAmount: metaAtualizada.currentAmount.toNumber(),
-        transacoes: metaAtualizada.transacoes?.map(t => ({
-          ...t,
-          valor: t.valor.toNumber()
-        }))
-      },
+      message: 'Contribuição adicionada com sucesso',
       transacao: {
         ...transacao,
         valor: transacao.valor.toNumber()
       },
-      message: metaAtualizada.isCompleted ? 'Parabéns! Meta concluída!' : 'Contribuição adicionada com sucesso!'
+      meta: {
+        ...metaAtualizada,
+        valorAlvo: metaAtualizada.valorAlvo.toNumber(),
+        currentAmount: metaAtualizada.currentAmount.toNumber(),
+        progresso: metaAtualizada.currentAmount.div(metaAtualizada.valorAlvo).mul(100).toNumber()
+      }
     });
   } catch (error) {
-    console.error('Erro ao adicionar contribuição:', error);
+    console.error('Erro ao contribuir para meta:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

@@ -12,8 +12,9 @@ export async function POST(req: NextRequest) {
 
     const { valor, tipo, categoriaId, data, descricao, tags } = await req.json();
 
-    if (!valor || !tipo || !categoriaId || !data) {
-      return NextResponse.json({ error: "Campos obrigatórios: valor, tipo, categoriaId, data" }, { status: 400 });
+    // Validações básicas
+    if (!valor || !tipo || !data) {
+      return NextResponse.json({ error: "Dados obrigatórios não fornecidos" }, { status: 400 });
     }
 
     // Buscar o usuário
@@ -47,15 +48,16 @@ export async function POST(req: NextRequest) {
     // Criar a transação
     const transacao = await prisma.transacao.create({
       data: {
+        userId: usuario.id,
+        categoriaId: categoriaId || null,
+        tipo: tipo as 'receita' | 'despesa',
         valor: parseFloat(valor),
-        tipo,
-        categoriaId,
         data: new Date(data + 'T00:00:00'),
         descricao: descricao || null,
         tags: Array.isArray(tags) ? tags : [],
         anexos: [],
-        userId: usuario.id,
-      } as any,
+        isRecorrente: false,
+      },
       include: {
         categoria: true
       }
