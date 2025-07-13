@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const transacaoAjuste = await prisma.transacao.create({
       data: {
         userId: usuario.id,
-        categoriaId: null,
+        categoriaId: undefined,
         tipo: tipo as 'receita' | 'despesa',
         valor: Math.abs(Number(valor)),
         descricao: `[AJUSTE] ${descricao}`,

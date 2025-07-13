@@ -53,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const transacao = await prisma.transacao.create({
       data: {
         userId: usuario.id,
-        categoriaId: null,
+        categoriaId: undefined,
         tipo: 'receita',
         valor: new Decimal(valor),
         descricao: descricao || `Contribuição para meta: ${meta.nome}`,
