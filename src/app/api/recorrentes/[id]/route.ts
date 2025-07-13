@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 // GET - Buscar transação recorrente específica
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -71,26 +71,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
-    // Verificar se a transação recorrente existe e pertence ao usuário
-    const recorrenteExistente = await prisma.transacaoRecorrente.findFirst({
+    const recorrente = await prisma.transacaoRecorrente.findFirst({
       where: {
         id: params.id,
         userId: usuario.id,
       },
     });
 
-    if (!recorrenteExistente) {
+    if (!recorrente) {
       return NextResponse.json({ error: "Transação recorrente não encontrada" }, { status: 404 });
     }
 
     const { categoriaId, tipo, valor, descricao, frequencia, dataInicio, dataFim, isActive } = await req.json();
 
-    // Validar campos obrigatórios
-    if (!categoriaId || !tipo || !valor || !frequencia || !dataInicio) {
-      return NextResponse.json(
-        { error: "Campos obrigatórios: categoriaId, tipo, valor, frequencia, dataInicio" },
-        { status: 400 }
-      );
+    // Validações
+    if (!categoriaId || !tipo || !valor || !descricao || !frequencia || !dataInicio) {
+      return NextResponse.json({ error: "Dados obrigatórios não fornecidos" }, { status: 400 });
     }
 
     // Verificar se a categoria existe e pertence ao usuário
@@ -105,40 +101,33 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Categoria não encontrada" }, { status: 404 });
     }
 
-    // Verificar se o tipo da transação é compatível com a categoria
-    if (categoria.tipo !== "ambos" && categoria.tipo !== tipo) {
-      return NextResponse.json(
-        { error: "Tipo de transação incompatível com a categoria" },
-        { status: 400 }
-      );
+    // Verificar compatibilidade de tipo
+    if (categoria.tipo !== 'ambos' && categoria.tipo !== tipo) {
+      return NextResponse.json({ 
+        error: `Esta categoria só aceita transações do tipo: ${categoria.tipo}` 
+      }, { status: 400 });
     }
 
-    // Atualizar a transação recorrente
-    const recorrente = await prisma.transacaoRecorrente.update({
+    const recorrenteAtualizada = await prisma.transacaoRecorrente.update({
       where: { id: params.id },
       data: {
         categoriaId,
         tipo,
-        valor: parseFloat(valor),
+        valor: Number(valor),
         descricao,
         frequencia,
-        dataInicio: new Date(dataInicio + 'T00:00:00'),
-        dataFim: dataFim ? new Date(dataFim + 'T00:00:00') : null,
-        isActive: isActive !== undefined ? isActive : true,
+        dataInicio: new Date(dataInicio),
+        dataFim: dataFim ? new Date(dataFim) : null,
+        isActive: Boolean(isActive),
       },
       include: {
         categoria: true,
-        _count: {
-          select: {
-            transacoes: true,
-          },
-        },
       },
     });
 
     return NextResponse.json({
-      ...recorrente,
-      valor: recorrente.valor.toNumber()
+      ...recorrenteAtualizada,
+      valor: recorrenteAtualizada.valor.toNumber()
     });
   } catch (error) {
     console.error("Erro ao atualizar transação recorrente:", error);
@@ -147,7 +136,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE - Excluir transação recorrente
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -162,7 +151,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
-    // Verificar se a transação recorrente existe e pertence ao usuário
     const recorrente = await prisma.transacaoRecorrente.findFirst({
       where: {
         id: params.id,
@@ -183,15 +171,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     // Verificar se há transações associadas
     if (recorrente._count.transacoes > 0) {
-      return NextResponse.json(
-        { 
-          error: "Não é possível excluir uma transação recorrente que possui transações associadas. Desative-a em vez de excluir." 
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        error: "Não é possível excluir uma transação recorrente que possui transações associadas" 
+      }, { status: 400 });
     }
 
-    // Excluir a transação recorrente
     await prisma.transacaoRecorrente.delete({
       where: { id: params.id },
     });

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       transacoes: meta.transacoes?.map(t => ({
         ...t,
         valor: t.valor.toNumber()
-      }))
+      })) || []
     });
   } catch (error) {
     console.error('Erro ao buscar meta:', error);
@@ -87,37 +87,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const { nome, valorAlvo, dataAlvo, isCompleted } = await req.json();
 
+    if (!nome || !valorAlvo || !dataAlvo) {
+      return NextResponse.json({ error: 'Dados obrigatórios não fornecidos' }, { status: 400 });
+    }
+
     const metaAtualizada = await prisma.meta.update({
       where: { id: params.id },
       data: {
-        ...(nome && { nome }),
-        ...(valorAlvo && { valorAlvo: parseFloat(valorAlvo) }),
-        ...(dataAlvo && { dataAlvo: new Date(dataAlvo + 'T00:00:00') }),
-        ...(typeof isCompleted === 'boolean' && { isCompleted })
-      },
-      include: {
-        transacoes: {
-          select: {
-            id: true,
-            valor: true,
-            data: true,
-            descricao: true
-          },
-          orderBy: {
-            data: 'desc'
-          }
-        }
+        nome,
+        valorAlvo: Number(valorAlvo),
+        dataAlvo: new Date(dataAlvo),
+        isCompleted: Boolean(isCompleted)
       }
     });
 
     return NextResponse.json({
       ...metaAtualizada,
       valorAlvo: metaAtualizada.valorAlvo.toNumber(),
-      currentAmount: metaAtualizada.currentAmount.toNumber(),
-      transacoes: metaAtualizada.transacoes?.map(t => ({
-        ...t,
-        valor: t.valor.toNumber()
-      }))
+      currentAmount: metaAtualizada.currentAmount.toNumber()
     });
   } catch (error) {
     console.error('Erro ao atualizar meta:', error);
@@ -125,7 +112,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -147,7 +134,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         userId: usuario.id
       },
       include: {
-        transacoes: true
+        _count: {
+          select: {
+            transacoes: true
+          }
+        }
       }
     });
 
@@ -155,9 +146,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Meta não encontrada' }, { status: 404 });
     }
 
-    if (meta.transacoes.length > 0) {
+    if (meta._count.transacoes > 0) {
       return NextResponse.json({ 
-        error: 'Não é possível excluir uma meta que possui contribuições' 
+        error: 'Não é possível excluir uma meta que possui transações associadas' 
       }, { status: 400 });
     }
 
