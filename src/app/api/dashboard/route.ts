@@ -74,7 +74,7 @@ export async function GET() {
     });
 
     const receitasComCategoria = await Promise.all(
-      receitasPorCategoria.map(async (item: { categoriaId: string | null; _sum: { valor: number | null } }) => {
+      receitasPorCategoria.map(async (item) => {
         if (!item.categoriaId) {
           return {
             categoria: 'Sem categoria',
@@ -112,7 +112,7 @@ export async function GET() {
     });
 
     const gastosComCategoria = await Promise.all(
-      gastosPorCategoria.map(async (item: { categoriaId: string | null; _sum: { valor: number | null } }) => {
+      gastosPorCategoria.map(async (item) => {
         if (!item.categoriaId) {
           return {
             categoria: 'Sem categoria',
@@ -189,7 +189,7 @@ export async function GET() {
       },
       metas: metas.map(meta => ({
         ...meta,
-        progresso: meta.valorAlvo > 0 ? (Number(meta.valorAtual) / Number(meta.valorAlvo)) * 100 : 0
+        progresso: Number(meta.valorAlvo) > 0 ? (Number(meta.currentAmount) / Number(meta.valorAlvo)) * 100 : 0
       }))
     });
   } catch (error) {
