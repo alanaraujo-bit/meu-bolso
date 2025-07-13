@@ -3,11 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email) {
+    if (!session || !session.user?.email) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
@@ -19,16 +19,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    // Obter parâmetros de consulta
-    const url = new URL(req.url);
-    const mes = parseInt(url.searchParams.get('mes') || new Date().getMonth() + 1 + '');
-    const ano = parseInt(url.searchParams.get('ano') || new Date().getFullYear() + '');
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
 
-    // Calcular período
-    const inicioMes = new Date(ano, mes - 1, 1);
-    const fimMes = new Date(ano, mes, 0, 23, 59, 59, 999);
-
-    // Buscar transações do período
+    // Buscar transações do mês atual
     const transacoes = await prisma.transacao.findMany({
       where: {
         userId: usuario.id,
@@ -45,21 +40,24 @@ export async function GET(req: Request) {
     // Calcular totais
     const totalReceitas = transacoes
       .filter(t => t.tipo === 'receita')
-      .reduce((acc, t) => acc + t.valor.toNumber(), 0);
+      .reduce((acc, t) => acc + Number(t.valor), 0);
 
     const totalDespesas = transacoes
       .filter(t => t.tipo === 'despesa')
-      .reduce((acc, t) => acc + t.valor.toNumber(), 0);
+      .reduce((acc, t) => acc + Number(t.valor), 0);
 
     const saldo = totalReceitas - totalDespesas;
 
     // Contar transações e categorias
-    const transacoesCount = transacoes.length;
+    const transacoesCount = await prisma.transacao.count({
+      where: { userId: usuario.id }
+    });
+
     const categoriasCount = await prisma.categoria.count({
       where: { userId: usuario.id }
     });
 
-    // Agrupar receitas por categoria
+    // Receitas por categoria
     const receitasPorCategoria = await prisma.transacao.groupBy({
       by: ['categoriaId'],
       where: {
@@ -68,9 +66,6 @@ export async function GET(req: Request) {
         data: {
           gte: inicioMes,
           lte: fimMes
-        },
-        categoriaId: {
-          not: null as any
         }
       },
       _sum: {
@@ -78,20 +73,29 @@ export async function GET(req: Request) {
       }
     });
 
-    // Buscar dados das categorias para receitas
     const receitasComCategoria = await Promise.all(
-      receitasPorCategoria.map(async (item) => {
+      receitasPorCategoria.map(async (item: { categoriaId: string | null; _sum: { valor: number | null } }) => {
+        if (!item.categoriaId) {
+          return {
+            categoria: 'Sem categoria',
+            valor: Number(item._sum.valor || 0),
+            cor: '#6B7280'
+          };
+        }
+        
         const categoria = await prisma.categoria.findUnique({
-          where: { id: item.categoriaId! }
+          where: { id: item.categoriaId }
         });
+        
         return {
-          categoria,
-          _sum: item._sum
+          categoria: categoria?.nome || 'Categoria não encontrada',
+          valor: Number(item._sum.valor || 0),
+          cor: categoria?.cor || '#6B7280'
         };
       })
     );
 
-    // Agrupar despesas por categoria
+    // Gastos por categoria
     const gastosPorCategoria = await prisma.transacao.groupBy({
       by: ['categoriaId'],
       where: {
@@ -100,9 +104,6 @@ export async function GET(req: Request) {
         data: {
           gte: inicioMes,
           lte: fimMes
-        },
-        categoriaId: {
-          not: null as any
         }
       },
       _sum: {
@@ -110,132 +111,86 @@ export async function GET(req: Request) {
       }
     });
 
-    // Buscar dados das categorias para despesas
     const gastosComCategoria = await Promise.all(
-      gastosPorCategoria.map(async (item) => {
+      gastosPorCategoria.map(async (item: { categoriaId: string | null; _sum: { valor: number | null } }) => {
+        if (!item.categoriaId) {
+          return {
+            categoria: 'Sem categoria',
+            valor: Number(item._sum.valor || 0),
+            cor: '#6B7280'
+          };
+        }
+        
         const categoria = await prisma.categoria.findUnique({
-          where: { id: item.categoriaId! }
+          where: { id: item.categoriaId }
         });
+        
         return {
-          categoria,
-          _sum: item._sum
+          categoria: categoria?.nome || 'Categoria não encontrada',
+          valor: Number(item._sum.valor || 0),
+          cor: categoria?.cor || '#6B7280'
         };
       })
     );
 
-    // Evolução dos últimos 6 meses
+    // Evolução mensal (últimos 6 meses)
     const evolucaoMensal = [];
     for (let i = 5; i >= 0; i--) {
-      const dataRef = new Date(ano, mes - 1 - i, 1);
-      const mesRef = dataRef.getMonth() + 1;
-      const anoRef = dataRef.getFullYear();
+      const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const proximoMes = new Date(hoje.getFullYear(), hoje.getMonth() - i + 1, 0);
       
-      const inicioMesRef = new Date(anoRef, mesRef - 1, 1);
-      const fimMesRef = new Date(anoRef, mesRef, 0, 23, 59, 59, 999);
-
       const transacoesMes = await prisma.transacao.findMany({
         where: {
           userId: usuario.id,
           data: {
-            gte: inicioMesRef,
-            lte: fimMesRef
+            gte: mesAtual,
+            lte: proximoMes
           }
         }
       });
 
       const receitasMes = transacoesMes
         .filter(t => t.tipo === 'receita')
-        .reduce((acc, t) => acc + t.valor.toNumber(), 0);
+        .reduce((acc, t) => acc + Number(t.valor), 0);
 
       const despesasMes = transacoesMes
         .filter(t => t.tipo === 'despesa')
-        .reduce((acc, t) => acc + t.valor.toNumber(), 0);
+        .reduce((acc, t) => acc + Number(t.valor), 0);
 
       evolucaoMensal.push({
-        mes: mesRef,
-        ano: anoRef,
+        mes: mesAtual.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
         receitas: receitasMes,
-        despesas: despesasMes
+        despesas: despesasMes,
+        saldo: receitasMes - despesasMes
       });
     }
 
     // Buscar metas
     const metas = await prisma.meta.findMany({
       where: { userId: usuario.id },
-      select: {
-        id: true,
-        nome: true,
-        valorAlvo: true,
-        currentAmount: true,
-        dataAlvo: true,
-        isCompleted: true
-      }
+      orderBy: { criadoEm: 'desc' }
     });
 
-    const hoje = new Date();
-    const metasAtivas = metas.filter(m => !m.isCompleted && new Date(m.dataAlvo) >= hoje);
-    const metasConcluidas = metas.filter(m => m.isCompleted);
-    const metasVencidas = metas.filter(m => !m.isCompleted && new Date(m.dataAlvo) < hoje);
-    
-    const totalEconomizado = metas.reduce((acc, meta) => acc + meta.currentAmount.toNumber(), 0);
-    const totalMetas = metas.reduce((acc, meta) => acc + meta.valorAlvo.toNumber(), 0);
-
-    // Calcular contadores específicos
-    const contadorReceitas = transacoes.filter(t => t.tipo === 'receita').length;
-    const contadorDespesas = transacoes.filter(t => t.tipo === 'despesa').length;
-
-    const resumoData = {
-      totalReceitas: totalReceitas,
-      totalDespesas: totalDespesas,
-      saldo: saldo,
-      transacoesCount: transacoesCount,
-      receitasCount: contadorReceitas,
-      despesasCount: contadorDespesas,
-      categoriasCount: categoriasCount,
-      totalEconomizado: totalEconomizado,
-      metasAtivas: metasAtivas.length,
-      metasConcluidas: metasConcluidas.length
-    };
-
     return NextResponse.json({
-      periodo: { mes, ano },
-      resumo: resumoData,
-      graficos: {
-        receitasPorCategoria: receitasComCategoria.map(item => ({
-          nome: item.categoria?.nome || 'Sem categoria',
-          valor: item._sum?.valor?.toNumber() || 0,
-          cor: item.categoria?.cor || '#6B7280'
-        })),
-        gastosPorCategoria: gastosComCategoria.map(item => ({
-          nome: item.categoria?.nome || 'Sem categoria',
-          valor: item._sum?.valor?.toNumber() || 0,
-          cor: item.categoria?.cor || '#6B7280'
-        })),
-        evolucaoMensal: evolucaoMensal.map(item => ({
-          mes: `${item.mes.toString().padStart(2, '0')}/${item.ano}`,
-          receitas: item.receitas || 0,
-          despesas: item.despesas || 0,
-          saldo: (item.receitas || 0) - (item.despesas || 0)
-        }))
+      resumo: {
+        totalReceitas,
+        totalDespesas,
+        saldo,
+        economias: saldo > 0 ? saldo : 0,
+        transacoesCount,
+        categoriasCount,
+        receitasCount: transacoes.filter(t => t.tipo === 'receita').length,
+        despesasCount: transacoes.filter(t => t.tipo === 'despesa').length
       },
-      metas: {
-        ativas: metasAtivas.map(meta => ({
-          id: meta.id,
-          nome: meta.nome,
-          valorAlvo: meta.valorAlvo.toNumber(),
-          currentAmount: meta.currentAmount.toNumber(),
-          progresso: (meta.currentAmount.toNumber() / meta.valorAlvo.toNumber()) * 100,
-          dataAlvo: meta.dataAlvo
-        })),
-        resumo: {
-          total: metas.length,
-          ativas: metasAtivas.length,
-          concluidas: metasConcluidas.length,
-          vencidas: metasVencidas.length,
-          totalEconomizado,
-          totalMetas
-        }
-      }
+      graficos: {
+        receitasPorCategoria: receitasComCategoria,
+        gastosPorCategoria: gastosComCategoria,
+        evolucaoMensal
+      },
+      metas: metas.map(meta => ({
+        ...meta,
+        progresso: meta.valorAlvo > 0 ? (Number(meta.valorAtual) / Number(meta.valorAlvo)) * 100 : 0
+      }))
     });
   } catch (error) {
     console.error('Erro ao buscar dados do dashboard:', error);
