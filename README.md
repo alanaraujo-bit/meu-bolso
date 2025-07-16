@@ -88,7 +88,7 @@ Crie um arquivo `.env` na raiz do projeto:
 DATABASE_URL="postgresql://usuario:senha@localhost:5432/meubolso"
 
 # NextAuth
-NEXTAUTH_SECRET="seu-secret-aqui"
+NEXTAUTH_SECRET="409af273f8a747e3d5c642f033995d96"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 

@@ -68,16 +68,21 @@ export async function POST(req: NextRequest) {
       valor: transacao.valor.toNumber()
     });
   } catch (error) {
+    console.error('Erro ao criar transação:', error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('🔍 Iniciando busca de transações...');
+    
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
+
+    console.log('👤 Usuário autenticado:', session.user.email);
 
     // Buscar o usuário
     const usuario = await prisma.usuario.findUnique({
@@ -88,10 +93,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
+    console.log('✅ Usuário encontrado:', usuario.id);
+
     // Buscar categorias do usuário para verificar se existem
     const categorias = await prisma.categoria.findMany({
       where: { userId: usuario.id }
     });
+
+    console.log('📂 Categorias encontradas:', categorias.length);
 
     // Parâmetros de filtro
     const { searchParams } = new URL(req.url);
@@ -111,6 +120,8 @@ export async function GET(req: NextRequest) {
     // Parâmetros de ordenação
     const ordenarPor = searchParams.get("ordenarPor") || "data";
     const direcao = searchParams.get("direcao") || "desc";
+
+    console.log('🔧 Parâmetros:', { tipo, categoriaId, dataInicio, dataFim, busca, valorMin, valorMax, pagina, limite, ordenarPor, direcao });
 
     // Construir filtros
     const where: any = {
@@ -140,9 +151,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (busca) {
+      // Removido mode: 'insensitive' para compatibilidade com MySQL
       where.descricao = {
-        contains: busca,
-        mode: 'insensitive'
+        contains: busca
       };
     }
 
@@ -160,6 +171,8 @@ export async function GET(req: NextRequest) {
       };
     }
 
+    console.log('🔍 Filtros construídos:', JSON.stringify(where, null, 2));
+
     // Construir ordenação
     const orderBy: any = {};
     if (ordenarPor === "categoria") {
@@ -168,11 +181,17 @@ export async function GET(req: NextRequest) {
       orderBy[ordenarPor] = direcao;
     }
 
+    console.log('📊 Ordenação:', orderBy);
+
     // Contar total de transações (para paginação)
+    console.log('🔢 Contando transações...');
     const totalTransacoes = await prisma.transacao.count({ where });
     const totalPaginas = Math.ceil(totalTransacoes / limite);
 
+    console.log('📊 Total de transações:', totalTransacoes);
+
     // Buscar transações com paginação
+    console.log('📋 Buscando transações...');
     const transacoes = await prisma.transacao.findMany({
       where,
       include: {
@@ -183,7 +202,10 @@ export async function GET(req: NextRequest) {
       take: limite
     });
 
+    console.log('✅ Transações encontradas:', transacoes.length);
+
     // Calcular totais (baseado em todas as transações, não apenas a página atual)
+    console.log('💰 Calculando totais...');
     const todasTransacoes = await prisma.transacao.findMany({
       where,
       select: {
@@ -202,7 +224,9 @@ export async function GET(req: NextRequest) {
 
     const saldo = totalReceitas - totalDespesas;
 
-    return NextResponse.json({
+    console.log('💰 Resumo financeiro:', { totalReceitas, totalDespesas, saldo });
+
+    const resultado = {
       transacoes: transacoes.map(t => ({
         ...t,
         valor: t.valor.toNumber()
@@ -223,8 +247,16 @@ export async function GET(req: NextRequest) {
       // Para compatibilidade com o frontend
       totalPaginas,
       total: totalTransacoes
-    });
+    };
+
+    console.log('✅ Retornando resultado com', resultado.transacoes.length, 'transações');
+
+    return NextResponse.json(resultado);
   } catch (error) {
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    console.error('❌ Erro ao buscar transações:', error);
+    return NextResponse.json({ 
+      error: "Erro interno do servidor",
+      details: error instanceof Error ? error.message : 'Erro desconhecido'
+    }, { status: 500 });
   }
 }

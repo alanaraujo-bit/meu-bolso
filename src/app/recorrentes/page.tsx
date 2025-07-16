@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import MoneyLoading from "@/components/MoneyLoading";
 
 interface Categoria {
   id: string;
@@ -236,6 +237,35 @@ export default function RecorrentesPage() {
     }
   }
 
+  async function executarRecorrenteIndividual(recorrenteId: string, descricao: string) {
+    if (!confirm(`Deseja executar a transação recorrente "${descricao}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/recorrentes/executar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recorrenteId }),
+      });
+
+      if (res.ok) {
+        const resultado = await res.json();
+        setMensagem(resultado.message);
+        fetchRecorrentes();
+        fetchPendentes();
+      } else {
+        const error = await res.json();
+        setMensagem(error.error || "Erro ao executar transação recorrente");
+      }
+    } catch (error) {
+      console.error("Erro ao executar transação recorrente:", error);
+      setMensagem("Erro ao executar transação recorrente");
+    }
+  }
+
   async function executarRecorrentes() {
     if (!confirm("Deseja executar todas as transações recorrentes pendentes?")) {
       return;
@@ -243,19 +273,34 @@ export default function RecorrentesPage() {
 
     try {
       setExecutandoRecorrentes(true);
+
+      // Debug: verificar pendentes antes da execução
+      console.log("Verificando pendentes antes da execução...");
+      const pendentesAntes = await fetch("/api/recorrentes/executar");
+      const dadosPendentesAntes = await pendentesAntes.json();
+      console.log("Pendentes antes:", dadosPendentesAntes);
+
       const res = await fetch("/api/recorrentes/executar", {
         method: "POST",
       });
 
       if (res.ok) {
         const resultado = await res.json();
-        setMensagem(`Execução concluída! ${resultado.totalTransacoesCriadas} transações criadas.`);
-        fetchRecorrentes();
-        fetchPendentes();
+        console.log("Resultado da execução:", resultado);
+        setMensagem(`Execução concluída! ${resultado.transacoesCriadas} transações criadas.`);
+
+        // Aguardar um pouco antes de recarregar
+        setTimeout(() => {
+          fetchRecorrentes();
+          fetchPendentes();
+        }, 1000);
       } else {
-        setMensagem("Erro ao executar transações recorrentes");
+        const error = await res.json();
+        console.error("Erro na execução:", error);
+        setMensagem(error.error || "Erro ao executar transações recorrentes");
       }
     } catch (error) {
+      console.error("Erro ao executar transações recorrentes:", error);
       setMensagem("Erro ao executar transações recorrentes");
     } finally {
       setExecutandoRecorrentes(false);
@@ -288,6 +333,29 @@ export default function RecorrentesPage() {
     return new Date(data).toLocaleDateString("pt-BR");
   }
 
+  async function testarExecucao() {
+    try {
+      console.log("🔍 Testando execução...");
+
+      // Buscar dados de debug
+      const debugRes = await fetch("/api/debug");
+      const debugData = await debugRes.json();
+      console.log("📊 Dados de debug:", debugData);
+
+      // Executar transações
+      const execRes = await fetch("/api/recorrentes/executar", {
+        method: "POST",
+      });
+      const execData = await execRes.json();
+      console.log("🚀 Resultado da execução:", execData);
+
+      setMensagem(`Debug: ${debugData.totais.recorrentes} recorrentes, ${debugData.totais.transacoes} transações. Execução: ${execData.message}`);
+    } catch (error) {
+      console.error("Erro no teste:", error);
+      setMensagem("Erro no teste de execução");
+    }
+  }
+
   function formatarFrequencia(frequencia: string): string {
     const frequencias = {
       diario: "Diário",
@@ -301,7 +369,7 @@ export default function RecorrentesPage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <MoneyLoading />
       </div>
     );
   }
@@ -335,6 +403,13 @@ export default function RecorrentesPage() {
               className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
             >
               Nova Recorrente
+            </button>
+            <button
+              onClick={testarExecucao}
+              className="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors font-medium shadow-lg"
+              title="Testar execução (debug)"
+            >
+              Testar
             </button>
           </div>
         </div>
@@ -494,6 +569,16 @@ export default function RecorrentesPage() {
                   </div>
 
                   <div className="flex gap-2">
+                    {/* Botão Executar Individual - só aparece se estiver pendente */}
+                    {recorrente.isActive && pendentesInfo?.pendentes.some(p => p.id === recorrente.id) && (
+                      <button
+                        onClick={() => executarRecorrenteIndividual(recorrente.id, recorrente.descricao || "Transação")}
+                        className="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium"
+                        title="Executar agora"
+                      >
+                        ▶ Executar
+                      </button>
+                    )}
                     <button
                       onClick={() => handleToggleActive(recorrente.id, recorrente.isActive)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
