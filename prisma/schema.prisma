@@ -11,111 +11,64 @@ datasource db {
 }
 
 model Usuario {
-  id        String   @id @default(cuid())
-  senha     String
-  email     String   @unique
-  nome      String
-  avatar    String?
-  criadoEm  DateTime @default(now())
+  id           String   @id @default(uuid())
+  senha String
+  email        String   @unique
+  nome         String?
+  avatarUrl    String?
+  criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  // Relacionamentos
-  categorias            Categoria[]
-  transacoes            Transacao[]
-  metas                 Meta[]
-  transacoesRecorrentes TransacaoRecorrente[]
-
-  @@map("usuarios")
+  categorias   Categoria[]
+  transacoes   Transacao[]
+  metas        Meta[]
+  recorrentes  TransacaoRecorrente[]
 }
 
 model Categoria {
-  id       String        @id @default(cuid())
-  userId   String
-  nome     String
-  tipo     CategoriaTipo
-  cor      String        @default("#3B82F6")
-  icone    String        @default("💰")
-  criadoEm DateTime      @default(now())
-  atualizadoEm DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  user      Usuario  @relation(fields: [userId], references: [id])
+  userId    String
+  nome      String
+  cor       String?
+  icone     String?
+  tipo      CategoriaTipo
+  criadoEm  DateTime @default(now())
 
-  // Relacionamentos
-  usuario               Usuario               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transacoes            Transacao[]
-  transacoesRecorrentes TransacaoRecorrente[]
-
-  @@unique([userId, nome])
-  @@map("categorias")
-}
-
-model Transacao {
-  id                    String    @id @default(cuid())
-  userId                String
-  categoriaId           String?
-  tipo                  TransacaoTipo
-  valor                 Decimal   @db.Decimal(10, 2)
-  descricao             String
-  data                  DateTime
-  tags                  Json      @default("[]")
-  anexos                Json      @default("[]")
-  isRecorrente          Boolean   @default(false)
-  transacaoRecorrenteId String?
-  metaId                String?
-  criadoEm              DateTime  @default(now())
-  atualizadoEm          DateTime  @updatedAt
-
-  // Relacionamentos
-  usuario             Usuario              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoria           Categoria?           @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
-  transacaoRecorrente TransacaoRecorrente? @relation(fields: [transacaoRecorrenteId], references: [id], onDelete: SetNull)
-  meta                Meta?                @relation(fields: [metaId], references: [id], onDelete: SetNull)
-
-  @@map("transacoes")
-}
-
-model TransacaoRecorrente {
-  id          String     @id @default(cuid())
-  userId      String
-  categoriaId String
-  tipo        TransacaoTipo
-  valor       Decimal    @db.Decimal(10, 2)
-  descricao   String
-  frequencia  Frequencia
-  dataInicio  DateTime
-  dataFim     DateTime?
-  isActive    Boolean    @default(true)
-  criadoEm    DateTime   @default(now())
-  atualizadoEm DateTime  @updatedAt
-
-  // Relacionamentos
-  usuario    Usuario     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categoria  Categoria   @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
   transacoes Transacao[]
-
-  @@map("transacoes_recorrentes")
+  recorrentes TransacaoRecorrente[]
 }
 
-model Meta {
-  id            String    @id @default(cuid())
-  userId        String
-  nome          String
-  valorAlvo     Decimal   @db.Decimal(10, 2)
-  currentAmount Decimal   @default(0) @db.Decimal(10, 2)
-  dataAlvo      DateTime
-  isCompleted   Boolean   @default(false)
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @updatedAt
-
-  // Relacionamentos
-  usuario    Usuario     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transacoes Transacao[]
-
-  @@map("metas")
+enum transacoes_recorrentes_tipo {
+  receita
+  despesa
 }
 
-enum CategoriaTipo {
+enum categorias_tipo {
   receita
   despesa
   ambos
+}
+
+model Transacao {
+  id           String   @id @default(uuid())
+  user         Usuario  @relation(fields: [userId], references: [id])
+  userId       String
+  categoria    Categoria? @relation(fields: [categoriaId], references: [id])
+  categoriaId  String?
+  tipo         TransacaoTipo
+  valor        Decimal  @db.Decimal(10,2)
+  descricao    String?
+  data         DateTime
+  tags         String[] // Array de tags
+  anexos       String[] // Array de URLs/paths dos anexos
+  isRecorrente Boolean  @default(false)
+  recorrente   TransacaoRecorrente? @relation(fields: [recorrenteId], references: [id])
+  recorrenteId String?
+  meta         Meta?    @relation(fields: [metaId], references: [id])
+  metaId       String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 }
 
 enum TransacaoTipo {
@@ -123,9 +76,41 @@ enum TransacaoTipo {
   despesa
 }
 
+model TransacaoRecorrente {
+  id         String   @id @default(uuid())
+  user       Usuario  @relation(fields: [userId], references: [id])
+  userId     String
+  categoria  Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId String
+  tipo       TransacaoTipo
+  valor      Decimal  @db.Decimal(10,2)
+  descricao  String?
+  frequencia Frequencia
+  dataInicio DateTime
+  dataFim    DateTime?
+  isActive   Boolean  @default(true)
+  criadoEm   DateTime @default(now())
+
+  transacoes Transacao[]
+}
+
 enum Frequencia {
   diario
   semanal
   mensal
   anual
+}
+
+model Meta {
+  id            String   @id @default(uuid())
+  user          Usuario  @relation(fields: [userId], references: [id])
+  userId        String
+  nome          String
+  valorAlvo     Decimal  @db.Decimal(10,2)
+  currentAmount Decimal  @db.Decimal(10,2) @default(0)
+  dataAlvo      DateTime
+  isCompleted   Boolean  @default(false)
+  criadoEm      DateTime @default(now())
+
+  transacoes    Transacao[]
 }
