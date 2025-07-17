@@ -113,7 +113,6 @@ model Tag {
   transacao   Transacao  @relation(fields: [transacaoId], references: [id])
   transacaoId String
 }
-
 model Anexo {
   id          String     @id @default(uuid())
   url         String
