@@ -43,24 +43,24 @@ enum CategoriaTipo {
 }
 
 model Transacao {
-  id           String   @id @default(uuid())
-  user         Usuario  @relation(fields: [userId], references: [id])
-  userId       String
-  categoria    Categoria? @relation(fields: [categoriaId], references: [id])
-  categoriaId  String?
-  tipo         TransacaoTipo
-  valor        Decimal  @db.Decimal(10,2)
-  descricao    String?
-  data         DateTime
-  tags         String[] // Array de tags
-  anexos       String[] // Array de URLs/paths dos anexos
-  isRecorrente Boolean  @default(false)
-  recorrente   TransacaoRecorrente? @relation(fields: [recorrenteId], references: [id])
-  recorrenteId String?
-  meta         Meta?    @relation(fields: [metaId], references: [id])
-  metaId       String?
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
+  id            String   @id @default(uuid())
+  user          Usuario  @relation(fields: [userId], references: [id])
+  userId        String
+  categoria     Categoria? @relation(fields: [categoriaId], references: [id])
+  categoriaId   String?
+  tipo          TransacaoTipo
+  valor         Decimal  @db.Decimal(10,2)
+  descricao     String?
+  data          DateTime
+  tags          Tag[]            // agora é uma relação
+  anexos        Anexo[]          // agora é uma relação
+  isRecorrente  Boolean  @default(false)
+  recorrente    TransacaoRecorrente? @relation(fields: [recorrenteId], references: [id])
+  recorrenteId  String?
+  meta          Meta?    @relation(fields: [metaId], references: [id])
+  metaId        String?
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
 }
 
 enum TransacaoTipo {
@@ -105,4 +105,18 @@ model Meta {
   criadoEm      DateTime @default(now())
 
   transacoes    Transacao[]
+}
+
+model Tag {
+  id          String     @id @default(uuid())
+  nome        String
+  transacao   Transacao  @relation(fields: [transacaoId], references: [id])
+  transacaoId String
+}
+
+model Anexo {
+  id          String     @id @default(uuid())
+  url         String
+  transacao   Transacao  @relation(fields: [transacaoId], references: [id])
+  transacaoId String
 }
