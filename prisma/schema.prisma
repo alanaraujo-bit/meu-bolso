@@ -9,66 +9,10 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
-model Usuario {
-  id           String   @id @default(uuid())
-  senha String
-  email        String   @unique
-  nome         String?
-  avatarUrl    String?
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-
-  categorias   Categoria[]
-  transacoes   Transacao[]
-  metas        Meta[]
-  recorrentes  TransacaoRecorrente[]
-}
-
-model Categoria {
-  id        String   @id @default(uuid())
-  user      Usuario  @relation(fields: [userId], references: [id])
-  userId    String
-  nome      String
-  cor       String?
-  icone     String?
-  tipo      CategoriaTipo
-  criadoEm  DateTime @default(now())
-
-  transacoes Transacao[]
-  recorrentes TransacaoRecorrente[]
-}
-
-enum transacoes_recorrentes_tipo {
-  receita
-  despesa
-}
-
-enum categorias_tipo {
+enum CategoriaTipo {
   receita
   despesa
   ambos
-}
-
-model Transacao {
-  id           String   @id @default(uuid())
-  user         Usuario  @relation(fields: [userId], references: [id])
-  userId       String
-  categoria    Categoria? @relation(fields: [categoriaId], references: [id])
-  categoriaId  String?
-  tipo         TransacaoTipo
-  valor        Decimal  @db.Decimal(10,2)
-  descricao    String?
-  data         DateTime
-  tags         String[] // Array de tags
-  anexos       String[] // Array de URLs/paths dos anexos
-  isRecorrente Boolean  @default(false)
-  recorrente   TransacaoRecorrente? @relation(fields: [recorrenteId], references: [id])
-  recorrenteId String?
-  meta         Meta?    @relation(fields: [metaId], references: [id])
-  metaId       String?
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
 }
 
 enum TransacaoTipo {
@@ -76,29 +20,79 @@ enum TransacaoTipo {
   despesa
 }
 
-model TransacaoRecorrente {
-  id         String   @id @default(uuid())
-  user       Usuario  @relation(fields: [userId], references: [id])
-  userId     String
-  categoria  Categoria @relation(fields: [categoriaId], references: [id])
-  categoriaId String
-  tipo       TransacaoTipo
-  valor      Decimal  @db.Decimal(10,2)
-  descricao  String?
-  frequencia Frequencia
-  dataInicio DateTime
-  dataFim    DateTime?
-  isActive   Boolean  @default(true)
-  criadoEm   DateTime @default(now())
-
-  transacoes Transacao[]
-}
-
 enum Frequencia {
   diario
   semanal
   mensal
   anual
+}
+
+model Usuario {
+  id          String      @id @default(uuid())
+  senha       String
+  email       String      @unique
+  nome        String
+  avatarUrl   String?
+  criadoEm   DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  categorias  Categoria[]
+  transacoes  Transacao[]
+  metas       Meta[]
+  transacoesRecorrentes TransacaoRecorrente[]
+}
+
+model Categoria {
+  id          String      @id @default(uuid())
+  user        Usuario     @relation(fields: [userId], references: [id])
+  userId      String
+  nome        String
+  cor         String
+  icone       String
+  tipo        CategoriaTipo
+  criadoEm   DateTime    @default(now())
+
+  transacoes  Transacao[]
+  transacoesRecorrentes TransacaoRecorrente[]
+}
+
+model Transacao {
+  id          String      @id @default(uuid())
+  user        Usuario     @relation(fields: [userId], references: [id])
+  userId      String
+  categoria   Categoria?  @relation(fields: [categoriaId], references: [id])
+  categoriaId String?
+  tipo        TransacaoTipo
+  valor       Decimal     @db.Decimal(10,2)
+  descricao   String?
+  data        DateTime
+  tags        String[]
+  anexos      String[]
+  isRecorrente Boolean    @default(false)
+  recorrente  TransacaoRecorrente? @relation(fields: [recorrenteId], references: [id])
+  recorrenteId String?
+  meta        Meta?       @relation(fields: [metaId], references: [id])
+  metaId      String?
+  criadoEm   DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+}
+
+model TransacaoRecorrente {
+  id          String      @id @default(uuid())
+  user        Usuario     @relation(fields: [userId], references: [id])
+  userId      String
+  categoria   Categoria?  @relation(fields: [categoriaId], references: [id])
+  categoriaId String?
+  tipo        TransacaoTipo
+  valor       Decimal     @db.Decimal(10,2)
+  descricao   String?
+  frequencia  Frequencia
+  dataInicio  DateTime
+  dataFim     DateTime?
+  isActive    Boolean     @default(true)
+  criadoEm   DateTime    @default(now())
+
+  transacoes  Transacao[]
 }
 
 model Meta {
