@@ -12,12 +12,10 @@ export async function POST(req: NextRequest) {
 
     const { valor, tipo, categoriaId, data, descricao, tags } = await req.json();
 
-    // Validações básicas
     if (!valor || !tipo || !data) {
       return NextResponse.json({ error: "Dados obrigatórios não fornecidos" }, { status: 400 });
     }
 
-    // Buscar o usuário
     const usuario = await prisma.usuario.findUnique({
       where: { email: session.user.email }
     });
@@ -26,7 +24,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
-    // Verificar se a categoria pertence ao usuário
     const categoria = await prisma.categoria.findFirst({
       where: {
         id: categoriaId,
@@ -38,14 +35,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Categoria não encontrada" }, { status: 404 });
     }
 
-    // Verificar se o tipo da transação é compatível com a categoria
     if (categoria.tipo !== "ambos" && categoria.tipo !== tipo) {
       return NextResponse.json({ 
         error: `Esta categoria só aceita transações do tipo: ${categoria.tipo}` 
       }, { status: 400 });
     }
 
-    // Criar a transação
     const transacao = await prisma.transacao.create({
       data: {
         userId: usuario.id,
@@ -54,12 +49,20 @@ export async function POST(req: NextRequest) {
         valor: parseFloat(valor),
         data: new Date(data + 'T00:00:00'),
         descricao: descricao || null,
-        tags: Array.isArray(tags) ? tags : [],
-        anexos: [],
+        Tag: {
+          create: Array.isArray(tags)
+            ? tags.map((nome: string) => ({ nome }))
+            : [],
+        },
+        anexos: {
+          create: [], // Ajuste aqui para anexos se precisar
+        },
         isRecorrente: false,
       },
       include: {
-        categoria: true
+        categoria: true,
+        Tag: true,
+        anexos: true,
       }
     });
 
@@ -84,7 +87,6 @@ export async function GET(req: NextRequest) {
 
     console.log('👤 Usuário autenticado:', session.user.email);
 
-    // Buscar o usuário
     const usuario = await prisma.usuario.findUnique({
       where: { email: session.user.email }
     });
@@ -95,14 +97,12 @@ export async function GET(req: NextRequest) {
 
     console.log('✅ Usuário encontrado:', usuario.id);
 
-    // Buscar categorias do usuário para verificar se existem
     const categorias = await prisma.categoria.findMany({
       where: { userId: usuario.id }
     });
 
     console.log('📂 Categorias encontradas:', categorias.length);
 
-    // Parâmetros de filtro
     const { searchParams } = new URL(req.url);
     const tipo = searchParams.get("tipo");
     const categoriaId = searchParams.get("categoriaId");
@@ -112,18 +112,15 @@ export async function GET(req: NextRequest) {
     const valorMin = searchParams.get("valorMin");
     const valorMax = searchParams.get("valorMax");
 
-    // Parâmetros de paginação
     const pagina = parseInt(searchParams.get("pagina") || "1");
     const limite = parseInt(searchParams.get("limite") || "10");
     const skip = (pagina - 1) * limite;
 
-    // Parâmetros de ordenação
     const ordenarPor = searchParams.get("ordenarPor") || "data";
     const direcao = searchParams.get("direcao") || "desc";
 
     console.log('🔧 Parâmetros:', { tipo, categoriaId, dataInicio, dataFim, busca, valorMin, valorMax, pagina, limite, ordenarPor, direcao });
 
-    // Construir filtros
     const where: any = {
       userId: usuario.id
     };
@@ -151,7 +148,6 @@ export async function GET(req: NextRequest) {
     }
 
     if (busca) {
-      // Removido mode: 'insensitive' para compatibilidade com MySQL
       where.descricao = {
         contains: busca
       };
@@ -173,7 +169,6 @@ export async function GET(req: NextRequest) {
 
     console.log('🔍 Filtros construídos:', JSON.stringify(where, null, 2));
 
-    // Construir ordenação
     const orderBy: any = {};
     if (ordenarPor === "categoria") {
       orderBy.categoria = { nome: direcao };
@@ -183,19 +178,19 @@ export async function GET(req: NextRequest) {
 
     console.log('📊 Ordenação:', orderBy);
 
-    // Contar total de transações (para paginação)
     console.log('🔢 Contando transações...');
     const totalTransacoes = await prisma.transacao.count({ where });
     const totalPaginas = Math.ceil(totalTransacoes / limite);
 
     console.log('📊 Total de transações:', totalTransacoes);
 
-    // Buscar transações com paginação
     console.log('📋 Buscando transações...');
     const transacoes = await prisma.transacao.findMany({
       where,
       include: {
-        categoria: true
+        categoria: true,
+        Tag: true,
+        anexos: true,
       },
       orderBy,
       skip,
@@ -204,7 +199,6 @@ export async function GET(req: NextRequest) {
 
     console.log('✅ Transações encontradas:', transacoes.length);
 
-    // Calcular totais (baseado em todas as transações, não apenas a página atual)
     console.log('💰 Calculando totais...');
     const todasTransacoes = await prisma.transacao.findMany({
       where,
@@ -244,7 +238,6 @@ export async function GET(req: NextRequest) {
         total: totalTransacoes,
         limite
       },
-      // Para compatibilidade com o frontend
       totalPaginas,
       total: totalTransacoes
     };

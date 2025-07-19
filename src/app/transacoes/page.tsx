@@ -39,14 +39,14 @@ interface FormData {
 export default function TransacoesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  
+
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState("");
-  
+
   // Filtros
   const [filtroTipo, setFiltroTipo] = useState<"" | "receita" | "despesa">("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
@@ -55,15 +55,15 @@ export default function TransacoesPage() {
   const [filtroBusca, setFiltroBusca] = useState("");
   const [filtroValorMin, setFiltroValorMin] = useState("");
   const [filtroValorMax, setFiltroValorMax] = useState("");
-  
+
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [totalTransacoes, setTotalTransacoes] = useState(0);
   const itensPorPagina = 10;
-  
+
   // Ordenação
-  const [ordenacao, setOrdenacao] = useState<{campo: string, direcao: 'asc' | 'desc'}>({
+  const [ordenacao, setOrdenacao] = useState<{ campo: string, direcao: 'asc' | 'desc' }>({
     campo: 'data',
     direcao: 'desc'
   });
@@ -114,7 +114,7 @@ export default function TransacoesPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
+
       if (filtroTipo) params.append("tipo", filtroTipo);
       if (filtroCategoria) params.append("categoriaId", filtroCategoria);
       if (filtroDataInicio) params.append("dataInicio", filtroDataInicio);
@@ -122,11 +122,11 @@ export default function TransacoesPage() {
       if (filtroBusca) params.append("busca", filtroBusca);
       if (filtroValorMin) params.append("valorMin", filtroValorMin);
       if (filtroValorMax) params.append("valorMax", filtroValorMax);
-      
+
       // Paginação
       params.append("pagina", paginaAtual.toString());
       params.append("limite", itensPorPagina.toString());
-      
+
       // Ordenação
       params.append("ordenarPor", ordenacao.campo);
       params.append("direcao", ordenacao.direcao);
@@ -291,7 +291,7 @@ export default function TransacoesPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     setMensagem("Transações exportadas com sucesso!");
   }
 
@@ -413,11 +413,10 @@ export default function TransacoesPage() {
 
         {/* Mensagem de Feedback */}
         {mensagem && (
-          <div className={`mb-6 p-4 rounded-xl text-sm font-medium ${
-            mensagem.includes("sucesso") 
-              ? "bg-green-50 text-green-800 border border-green-200" 
-              : "bg-red-50 text-red-800 border border-red-200"
-          }`}>
+          <div className={`mb-6 p-4 rounded-xl text-sm font-medium ${mensagem.includes("sucesso")
+            ? "bg-green-50 text-green-800 border border-green-200"
+            : "bg-red-50 text-red-800 border border-red-200"
+            }`}>
             {mensagem}
           </div>
         )}
@@ -442,7 +441,7 @@ export default function TransacoesPage() {
                 >
                   📊 Exportar CSV
                 </button>
-                
+
                 {(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax) && (
                   <button
                     onClick={limparFiltros}
@@ -566,7 +565,7 @@ export default function TransacoesPage() {
                 </label>
                 <select
                   value={ordenacao.campo}
-                  onChange={(e) => setOrdenacao({...ordenacao, campo: e.target.value})}
+                  onChange={(e) => setOrdenacao({ ...ordenacao, campo: e.target.value })}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 >
                   <option value="data">Data</option>
@@ -583,7 +582,7 @@ export default function TransacoesPage() {
                 </label>
                 <select
                   value={ordenacao.direcao}
-                  onChange={(e) => setOrdenacao({...ordenacao, direcao: e.target.value as 'asc' | 'desc'})}
+                  onChange={(e) => setOrdenacao({ ...ordenacao, direcao: e.target.value as 'asc' | 'desc' })}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 >
                   <option value="desc">Decrescente</option>
@@ -743,7 +742,7 @@ export default function TransacoesPage() {
                 Nenhuma transação encontrada
               </h3>
               <p className="text-gray-600 mb-6">
-                {(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax) 
+                {(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax)
                   ? "Tente ajustar os filtros para encontrar suas transações."
                   : "Comece criando sua primeira transação financeira."
                 }
@@ -775,9 +774,8 @@ export default function TransacoesPage() {
 
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
-                              <span className={`text-2xl font-bold ${
-                                transacao.tipo === "receita" ? "text-green-600" : "text-red-600"
-                              }`}>
+                              <span className={`text-2xl font-bold ${transacao.tipo === "receita" ? "text-green-600" : "text-red-600"
+                                }`}>
                                 {transacao.tipo === "receita" ? "+" : "-"}{formatarValor(transacao.valor)}
                               </span>
                               <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
@@ -790,18 +788,19 @@ export default function TransacoesPage() {
                               <p className="text-sm">{formatarData(transacao.data)}</p>
                             </div>
 
-                            {transacao.tags.length > 0 && (
+                            {(transacao.tags?.length ?? 0) > 0 && (
                               <div className="flex flex-wrap gap-2 mb-2">
-                                {transacao.tags.map((tag, index) => (
+                                {transacao.tags!.map((tag, index) => (
                                   <span
                                     key={index}
-                                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs"
+                                    className="bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300"
                                   >
-                                    #{tag}
+                                    tag.
                                   </span>
                                 ))}
                               </div>
                             )}
+
                           </div>
                         </div>
                       </div>
@@ -834,7 +833,7 @@ export default function TransacoesPage() {
                     <div className="text-sm text-gray-600">
                       Página {paginaAtual} de {totalPaginas}
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => setPaginaAtual(1)}
@@ -843,7 +842,7 @@ export default function TransacoesPage() {
                       >
                         Primeira
                       </button>
-                      
+
                       <button
                         onClick={() => setPaginaAtual(paginaAtual - 1)}
                         disabled={paginaAtual === 1}
@@ -851,7 +850,7 @@ export default function TransacoesPage() {
                       >
                         Anterior
                       </button>
-                      
+
                       {/* Páginas numeradas */}
                       {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
                         let pageNum;
@@ -864,22 +863,21 @@ export default function TransacoesPage() {
                         } else {
                           pageNum = paginaAtual - 2 + i;
                         }
-                        
+
                         return (
                           <button
                             key={pageNum}
                             onClick={() => setPaginaAtual(pageNum)}
-                            className={`px-3 py-2 text-sm border rounded-lg transition-colors ${
-                              pageNum === paginaAtual
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'border-gray-300 hover:bg-white'
-                            }`}
+                            className={`px-3 py-2 text-sm border rounded-lg transition-colors ${pageNum === paginaAtual
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-gray-300 hover:bg-white'
+                              }`}
                           >
                             {pageNum}
                           </button>
                         );
                       })}
-                      
+
                       <button
                         onClick={() => setPaginaAtual(paginaAtual + 1)}
                         disabled={paginaAtual === totalPaginas}
@@ -887,7 +885,7 @@ export default function TransacoesPage() {
                       >
                         Próxima
                       </button>
-                      
+
                       <button
                         onClick={() => setPaginaAtual(totalPaginas)}
                         disabled={paginaAtual === totalPaginas}
