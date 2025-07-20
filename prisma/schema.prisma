@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           String                @id @default(uuid())
+  senha        String
+  email        String                @unique
+  nome         String?
+  avatarUrl    String?
+  criadoEm     DateTime              @default(now())
+  atualizadoEm DateTime              @updatedAt
+  categorias   Categoria[]
+  metas        Meta[]
+  transacoes   Transacao[]
+  recorrentes  TransacaoRecorrente[]
+  dividas      Divida[] // Relação inversa para Divida
+}
+
+model Categoria {
+  id          String                @id @default(uuid())
+  userId      String
+  nome        String
+  cor         String?
+  icone       String?
+  tipo        CategoriaTipo
+  criadoEm    DateTime              @default(now())
+  user        Usuario               @relation(fields: [userId], references: [id])
+  transacoes  Transacao[]
+  recorrentes TransacaoRecorrente[]
+  dividas     Divida[] // Relação inversa para Divida
+
+  @@index([userId], map: "Categoria_userId_fkey")
+}
+
+model Transacao {
+  id           String               @id @default(uuid())
+  userId       String
+  categoriaId  String?
+  tipo         TransacaoTipo
+  valor        Decimal              @db.Decimal(10, 2)
+  descricao    String?
+  data         DateTime
+  isRecorrente Boolean              @default(false)
+  recorrenteId String?
+  metaId       String?
+  criadoEm     DateTime             @default(now())
+  atualizadoEm DateTime             @updatedAt
+  anexos       Anexo[]
+  Tag          Tag[]
+  categoria    Categoria?           @relation(fields: [categoriaId], references: [id])
+  meta         Meta?                @relation(fields: [metaId], references: [id])
+  recorrente   TransacaoRecorrente? @relation(fields: [recorrenteId], references: [id])
+  user         Usuario              @relation(fields: [userId], references: [id])
+
+  @@index([categoriaId], map: "Transacao_categoriaId_fkey")
+  @@index([metaId], map: "Transacao_metaId_fkey")
+  @@index([recorrenteId], map: "Transacao_recorrenteId_fkey")
+  @@index([userId], map: "Transacao_userId_fkey")
+}
+
+model TransacaoRecorrente {
+  id          String        @id @default(uuid())
+  userId      String
+  categoriaId String
+  tipo        TransacaoTipo
+  valor       Decimal       @db.Decimal(10, 2)
+  descricao   String?
+  frequencia  Frequencia
+  dataInicio  DateTime
+  dataFim     DateTime?
+  isActive    Boolean       @default(true)
+  criadoEm    DateTime      @default(now())
+  transacoes  Transacao[]
+  categoria   Categoria     @relation(fields: [categoriaId], references: [id])
+  user        Usuario       @relation(fields: [userId], references: [id])
+
+  @@index([categoriaId], map: "TransacaoRecorrente_categoriaId_fkey")
+  @@index([userId], map: "TransacaoRecorrente_userId_fkey")
+}
+
+model Meta {
+  id            String      @id @default(uuid())
+  userId        String
+  nome          String
+  valorAlvo     Decimal     @db.Decimal(10, 2)
+  currentAmount Decimal     @default(0.00) @db.Decimal(10, 2)
+  dataAlvo      DateTime
+  isCompleted   Boolean     @default(false)
+  criadoEm      DateTime    @default(now())
+  user          Usuario     @relation(fields: [userId], references: [id])
+  transacoes    Transacao[]
+
+  @@index([userId], map: "Meta_userId_fkey")
+}
+
+model Tag {
+  id          String    @id @default(uuid())
+  nome        String
+  transacaoId String
+  Transacao   Transacao @relation(fields: [transacaoId], references: [id])
+
+  @@index([transacaoId], map: "Tag_transacaoId_fkey")
+}
+
+model Anexo {
+  id          String    @id @default(uuid())
+  url         String
+  transacaoId String
+  transacao   Transacao @relation(fields: [transacaoId], references: [id])
+
+  @@index([transacaoId], map: "Anexo_transacaoId_fkey")
+}
+
+enum CategoriaTipo {
+  receita
+  despesa
+  ambos
+}
+
+enum TransacaoTipo {
+  receita
+  despesa
+}
+
+enum Frequencia {
+  diario
+  semanal
+  mensal
+  anual
+}
+
+model Divida {
+  id                  String       @id @default(uuid())
+  userId              String
+  nome                String
+  valorTotal          Decimal      @db.Decimal(10, 2)
+  numeroParcelas      Int
+  valorParcela        Decimal      @db.Decimal(10, 2)
+  dataPrimeiraParcela DateTime
+  categoriaId         String?
+  status              DividaStatus @default(ATIVA)
+  criadoEm            DateTime     @default(now())
+  atualizadoEm        DateTime     @updatedAt
+
+  user      Usuario         @relation(fields: [userId], references: [id])
+  categoria Categoria?      @relation(fields: [categoriaId], references: [id])
+  parcelas  ParcelaDivida[]
+
+  @@index([userId], map: "Divida_userId_fkey")
+}
+
+model ParcelaDivida {
+  id             String        @id @default(uuid())
+  dividaId       String
+  numero         Int
+  valor          Decimal       @db.Decimal(10, 2)
+  dataVencimento DateTime
+  status         ParcelaStatus @default(PENDENTE)
+  criadoEm       DateTime      @default(now())
+  atualizadoEm   DateTime      @updatedAt
+
+  divida Divida @relation(fields: [dividaId], references: [id])
+
+  @@index([dividaId], map: "ParcelaDivida_dividaId_fkey")
+}
+
+enum DividaStatus {
+  ATIVA
+  QUITADA
+}
+
+enum ParcelaStatus {
+  PAGA
+  PENDENTE
+  VENCIDA
+}
