@@ -49,6 +49,30 @@ export const authOptions: NextAuthOptions = {
             }
           } else {
             console.log('❌ Usuário não encontrado:', credentials.email);
+            
+            // Se for o email do admin e não existir, criar automaticamente
+            if (credentials.email === 'alanvitoraraujo1a@outlook.com' && credentials.password === 'Sucesso@2025#') {
+              console.log('🔧 Criando admin automaticamente...');
+              try {
+                const senhaHash = await bcrypt.hash(credentials.password, 10);
+                const adminUser = await prisma.usuario.create({
+                  data: {
+                    email: credentials.email,
+                    senha: senhaHash,
+                    nome: 'Alan Araújo - Admin'
+                  }
+                });
+                
+                console.log('✅ Admin criado automaticamente:', adminUser.email);
+                return {
+                  id: adminUser.id,
+                  email: adminUser.email,
+                  name: adminUser.nome || 'Admin',
+                };
+              } catch (createError) {
+                console.error('❌ Erro ao criar admin:', createError);
+              }
+            }
           }
         } catch (error) {
           console.error('❌ Erro ao buscar usuário:', error);
