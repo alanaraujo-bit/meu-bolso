@@ -10,28 +10,6 @@ const ADMIN_EMAILS = [
   // Adicione outros emails de admin aqui
 ];
 
-// Usuários temporários para teste (remover quando o banco estiver funcionando)
-const TEMP_USERS = [
-  {
-    id: '1',
-    email: 'teste@teste.com',
-    nome: 'Usuário Teste',
-    senha: '$2b$10$g92IzJGsugx/Olm/4WqHJO3SHiJb9vqMiXSOVEfG4yD0Yy1znTN2q' // password: 123456
-  },
-  {
-    id: '2',
-    email: 'alanvitoraraujo1a@outlook.com',
-    nome: 'Alan Araújo - Admin',
-    senha: '$2b$10$sqFIaTQ2ZSO2tvrhYJKMgepfk5NlYlHjQjk.mjwr3z/fYRe2wLM02' // password: Sucesso@2025#
-  },
-  {
-    id: '3',
-    email: 'admin@admin.com',
-    nome: 'Administrador',
-    senha: '$2b$10$g92IzJGsugx/Olm/4WqHJO3SHiJb9vqMiXSOVEfG4yD0Yy1znTN2q' // password: 123456
-  }
-];
-
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -48,26 +26,32 @@ export const authOptions: NextAuthOptions = {
 
         console.log('🔍 Tentativa de login:', credentials.email);
 
-        // Usar apenas usuários temporários por enquanto
-        const tempUser = TEMP_USERS.find(user => user.email === credentials.email);
-        
-        if (tempUser) {
-          console.log('👤 Usuário encontrado:', tempUser.nome);
-          const isPasswordValid = await bcrypt.compare(credentials.password, tempUser.senha);
-          console.log('🔐 Senha válida:', isPasswordValid);
+        try {
+          // Buscar usuário no banco de dados real
+          const user = await prisma.usuario.findUnique({
+            where: { email: credentials.email }
+          });
           
-          if (isPasswordValid) {
-            console.log('✅ Login autorizado para:', tempUser.email);
-            return {
-              id: tempUser.id,
-              email: tempUser.email,
-              name: tempUser.nome,
-            };
+          if (user) {
+            console.log('👤 Usuário encontrado:', user.nome);
+            const isPasswordValid = await bcrypt.compare(credentials.password, user.senha);
+            console.log('🔐 Senha válida:', isPasswordValid);
+            
+            if (isPasswordValid) {
+              console.log('✅ Login autorizado para:', user.email);
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.nome || 'Usuário',
+              };
+            } else {
+              console.log('❌ Senha incorreta para:', user.email);
+            }
           } else {
-            console.log('❌ Senha incorreta para:', tempUser.email);
+            console.log('❌ Usuário não encontrado:', credentials.email);
           }
-        } else {
-          console.log('❌ Usuário não encontrado:', credentials.email);
+        } catch (error) {
+          console.error('❌ Erro ao buscar usuário:', error);
         }
 
         return null;
