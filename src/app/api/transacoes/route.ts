@@ -47,12 +47,20 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('📅 Debug data recebida:', { data, tipo: typeof data });
+    console.log('📅 Debug data transação normal:', { 
+      dataRecebida: data, 
+      tipoData: typeof data,
+      dataVazia: !data || data === "",
+      dataAtualBrasil: new Date().toISOString(),
+      dataAtualLocal: new Date().toLocaleString('pt-BR')
+    });
     
     const dataParaBanco = prepararDataParaBanco(data);
-    console.log('📅 Data preparada para banco:', dataParaBanco);
-    console.log('📅 Data formatada:', dataParaBanco.toISOString());
-    console.log('📅 Data local Brasil:', dataParaBanco.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
+    console.log('📅 Data preparada para banco:', {
+      dataParaBanco: dataParaBanco,
+      dataParaBancoISO: dataParaBanco.toISOString(),
+      dataParaBancoLocal: dataParaBanco.toLocaleString('pt-BR')
+    });
 
     const transacao = await prisma.transacao.create({
       data: {

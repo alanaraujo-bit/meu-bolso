@@ -8,20 +8,12 @@ const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 /**
  * Obtém a data e hora atual no timezone de Brasília
- * VERSÃO CORRIGIDA para produção
+ * VERSÃO SIMPLIFICADA - Sempre usar a data/hora real do sistema
  */
 export function getDataAtualBrasil(): Date {
-  // Em produção, force o timezone brasileiro
-  if (typeof window === 'undefined') {
-    // Server-side: force UTC-3 (Brasília)
-    const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const brasilTime = new Date(utc + (-3 * 3600000)); // UTC-3
-    return brasilTime;
-  } else {
-    // Client-side: usar timezone local do navegador
-    return new Date();
-  }
+  // CORREÇÃO: Usar sempre new Date() - ela já captura a data/hora correta
+  // O banco de dados MySQL vai armazenar no timezone correto
+  return new Date();
 }
 
 /**
