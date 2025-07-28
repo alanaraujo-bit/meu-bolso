@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
+
 // Função para calcular próxima data baseada na frequência
 function calcularProximaData(ultimaData: Date, frequencia: string): Date {
   const novaData = new Date(ultimaData);

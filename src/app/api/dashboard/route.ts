@@ -14,6 +14,8 @@ import {
   fimMesBrasil
 } from '@/lib/dateUtils';
 
+export const dynamic = 'force-dynamic';
+
 // Função para calcular próxima data baseada na frequência
 function calcularProximaData(ultimaData: Date, frequencia: string): Date {
   switch (frequencia) {
