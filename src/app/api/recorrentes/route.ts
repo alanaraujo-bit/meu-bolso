@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
     }
 
     const { categoriaId, tipo, valor, descricao, frequencia, dataInicio, dataFim } = await req.json();
+    
+    // LOG TEMPORÁRIO PARA DEBUG DA DATA
+    console.log('DEBUG RECORRENTES - Dados recebidos:', {
+      dataInicio: dataInicio,
+      tipoDataInicio: typeof dataInicio,
+      dataFim: dataFim
+    });
 
     // Validar campos obrigatórios
     if (!categoriaId || !tipo || !valor || !frequencia || !dataInicio) {
@@ -50,6 +57,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Preparar datas para o banco
+    const dataInicioProcessada = prepararDataParaBanco(dataInicio);
+    const dataFimProcessada = dataFim ? prepararDataParaBanco(dataFim) : null;
+    
+    // LOG TEMPORÁRIO PARA DEBUG DA DATA - APÓS PROCESSAMENTO
+    console.log('DEBUG RECORRENTES - Dados processados:', {
+      dataInicio: dataInicio,
+      dataInicioProcessada: dataInicioProcessada,
+      dataInicioProcessadaISO: dataInicioProcessada.toISOString(),
+      dataInicioProcessadaLocalDate: dataInicioProcessada.toLocaleDateString('pt-BR'),
+      dataFim: dataFim,
+      dataFimProcessada: dataFimProcessada
+    });
+
     // Criar a transação recorrente
     const recorrente = await prisma.transacaoRecorrente.create({
       data: {
@@ -59,8 +80,8 @@ export async function POST(req: NextRequest) {
         valor: parseFloat(valor),
         descricao,
         frequencia,
-        dataInicio: prepararDataParaBanco(dataInicio),
-        dataFim: dataFim ? prepararDataParaBanco(dataFim) : null,
+        dataInicio: dataInicioProcessada,
+        dataFim: dataFimProcessada,
         isActive: true,
       },
       include: {
