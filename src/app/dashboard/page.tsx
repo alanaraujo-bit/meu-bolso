@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import MoneyLoading from '@/components/MoneyLoading';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import HelpButton from '@/components/HelpButton';
 import { helpContents } from '@/lib/helpContents';
 import { 
@@ -63,6 +64,13 @@ interface DashboardData {
       valor: number;
       categoria: string;
     };
+    // Informações sobre dívidas
+    dividasAtivas?: number;
+    valorTotalDividas?: number;
+    valorTotalPagoDividas?: number;
+    valorTotalRestanteDividas?: number;
+    parcelasVencidas?: number;
+    proximasParcelas?: number;
   };
   graficos: {
     receitasPorCategoria: Array<{
@@ -106,18 +114,138 @@ interface DashboardData {
       totalEconomizado: number;
     };
   };
+  dividas?: {
+    proximasParcelas: Array<{
+      id: string;
+      dividaId: string;
+      dividaNome: string;
+      numero: number;
+      valor: number;
+      dataVencimento: string;
+      categoria: string;
+      cor: string;
+      diasParaVencimento: number;
+    }>;
+    totalProximas: number;
+    resumo: {
+      ativas: number;
+      valorTotal: number;
+      valorPago: number;
+      valorRestante: number;
+      parcelasVencidas: number;
+      proximasParcelas: number;
+    };
+  };
   insights: Array<{
     tipo: string;
+    categoria?: string;
     titulo: string;
     descricao: string;
+    recomendacao?: string;
+    metricas?: string;
     icone: string;
+    prioridade?: string;
   }>;
+}
+
+interface InsightCardProps {
+  insight: {
+    tipo: string;
+    categoria?: string;
+    titulo: string;
+    descricao: string;
+    recomendacao?: string;
+    metricas?: string;
+    icone: string;
+    prioridade?: string;
+  };
+  getPriorityBorderColor: (prioridade?: string) => string;
+  getPriorityBgColor: (prioridade?: string) => string;
+  getCategoryColor: (categoria?: string) => string;
+  getPriorityColor: (prioridade?: string) => string;
+}
+
+function InsightCard({ insight, getPriorityBorderColor, getPriorityBgColor, getCategoryColor, getPriorityColor }: InsightCardProps) {
+  const [expandido, setExpandido] = useState(false);
+  
+  return (
+    <div className={`bg-white rounded-lg sm:rounded-xl shadow-sm border-l-4 overflow-hidden ${getPriorityBorderColor(insight.prioridade)} hover:shadow-md transition-all duration-200`}>
+      <div className="p-4 sm:p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
+            <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-xl ${getPriorityBgColor(insight.prioridade)}`}>
+              {insight.icone}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {insight.categoria && (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(insight.categoria)}`}>
+                    {insight.categoria}
+                  </span>
+                )}
+                {insight.prioridade && (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(insight.prioridade)}`}>
+                    {insight.prioridade.charAt(0).toUpperCase() + insight.prioridade.slice(1)}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{insight.titulo}</h3>
+              <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{insight.descricao}</p>
+              
+              {/* Conteúdo expandível */}
+              {expandido && (
+                <div className="mt-4 space-y-3">
+                  {insight.recomendacao && (
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <Info className="h-4 w-4 text-blue-400 mt-0.5" />
+                        </div>
+                        <div className="ml-2">
+                          <p className="text-sm text-blue-800">
+                            <span className="font-medium">Recomendação:</span> {insight.recomendacao}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {insight.metricas && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-start text-sm text-gray-600">
+                        <BarChart3 className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium">Métricas:</span>
+                          <span className="ml-2 break-all">{insight.metricas}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Botão de expandir */}
+          {(insight.recomendacao || insight.metricas) && (
+            <button
+              onClick={() => setExpandido(!expandido)}
+              className="flex-shrink-0 ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              aria-label={expandido ? "Recolher" : "Expandir"}
+            >
+              <ChevronRight className={`h-5 w-5 transform transition-transform duration-200 ${expandido ? 'rotate-90' : ''}`} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Dashboard() {
   const { status } = useSession();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [error, setError] = useState<string | null>(null);
   const [modoAvancado, setModoAvancado] = useState(false);
   const [mesAtual, setMesAtual] = useState(new Date().getMonth() + 1);
@@ -206,11 +334,7 @@ export default function Dashboard() {
   };
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <MoneyLoading text="Carregando dashboard..." size="lg" />
-      </div>
-    );
+    return <CleanLoading text="Carregando dashboard..." fullScreen />;
   }
 
   if (error) {
@@ -265,6 +389,55 @@ export default function Dashboard() {
       case 'sucesso': return 'bg-green-50 border-green-200 text-green-800';
       case 'alerta': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
       default: return 'bg-blue-50 border-blue-200 text-blue-800';
+    }
+  };
+
+  // Novas funções para insights profissionais
+  const getPriorityBorderColor = (prioridade?: string) => {
+    switch (prioridade) {
+      case 'critica': return 'border-l-red-500';
+      case 'alta': return 'border-l-orange-500';
+      case 'media': return 'border-l-blue-500';
+      case 'baixa': return 'border-l-gray-400';
+      default: return 'border-l-blue-500';
+    }
+  };
+
+  const getPriorityBgColor = (prioridade?: string) => {
+    switch (prioridade) {
+      case 'critica': return 'bg-red-100 text-red-600';
+      case 'alta': return 'bg-orange-100 text-orange-600';
+      case 'media': return 'bg-blue-100 text-blue-600';
+      case 'baixa': return 'bg-gray-100 text-gray-600';
+      default: return 'bg-blue-100 text-blue-600';
+    }
+  };
+
+  const getPriorityColor = (prioridade?: string) => {
+    switch (prioridade) {
+      case 'critica': return 'bg-red-100 text-red-800';
+      case 'alta': return 'bg-orange-100 text-orange-800';
+      case 'media': return 'bg-blue-100 text-blue-800';
+      case 'baixa': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getCategoryColor = (categoria?: string) => {
+    switch (categoria) {
+      case 'Performance': return 'bg-green-100 text-green-800';
+      case 'Alerta Crítico': return 'bg-red-100 text-red-800';
+      case 'Tendência': return 'bg-purple-100 text-purple-800';
+      case 'Conquista': return 'bg-emerald-100 text-emerald-800';
+      case 'Otimização': return 'bg-yellow-100 text-yellow-800';
+      case 'Endividamento': return 'bg-orange-100 text-orange-800';
+      case 'Urgente': return 'bg-red-100 text-red-800';
+      case 'Planejamento': return 'bg-indigo-100 text-indigo-800';
+      case 'Projeção': return 'bg-cyan-100 text-cyan-800';
+      case 'Comportamento': return 'bg-pink-100 text-pink-800';
+      case 'Automação': return 'bg-slate-100 text-slate-800';
+      case 'Oportunidade': return 'bg-lime-100 text-lime-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -384,7 +557,7 @@ export default function Dashboard() {
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
@@ -476,26 +649,136 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <CreditCard className="h-6 w-6 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Dívidas</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {dashboardData.resumo.dividasAtivas || 0}
+                </p>
+                {modoAvancado ? (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {dashboardData.resumo.valorTotalRestanteDividas ? 
+                      formatCurrency(dashboardData.resumo.valorTotalRestanteDividas) : 'R$ 0,00'} restante
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {dashboardData.resumo.parcelasVencidas || 0} vencidas
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Insights */}
+        {/* Insights Profissionais */}
         {modoAvancado && dashboardData.insights.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Insights</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Insights Financeiros</h2>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">Análises inteligentes para otimizar sua gestão financeira</p>
+              </div>
+              <div className="hidden sm:flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-xs text-gray-500">Crítico</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-xs text-gray-500">Alto</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-xs text-gray-500">Médio</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
               {dashboardData.insights.map((insight, index) => (
-                <div key={index} className={`p-4 rounded-lg border ${getInsightColor(insight.tipo)}`}>
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getInsightIcon(insight.tipo)}
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{insight.titulo}</h3>
-                      <p className="text-sm mt-1">{insight.descricao}</p>
+                <InsightCard 
+                  key={index} 
+                  insight={insight} 
+                  getPriorityBorderColor={getPriorityBorderColor}
+                  getPriorityBgColor={getPriorityBgColor}
+                  getCategoryColor={getCategoryColor}
+                  getPriorityColor={getPriorityColor}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Próximas Parcelas de Dívidas */}
+        {dashboardData.dividas && dashboardData.dividas.proximasParcelas.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Próximas Parcelas</h2>
+              <span className="text-sm text-gray-500">
+                {dashboardData.dividas.totalProximas} parcela(s) nos próximos 30 dias
+              </span>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="max-h-96 overflow-y-auto">
+                {dashboardData.dividas.proximasParcelas.map((parcela, index) => (
+                  <div key={parcela.id} className={`p-4 border-l-4 ${index !== dashboardData.dividas!.proximasParcelas.length - 1 ? 'border-b border-gray-100' : ''}`} 
+                       style={{ borderLeftColor: parcela.cor }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{parcela.dividaNome}</h3>
+                        <p className="text-sm text-gray-600">
+                          Parcela {parcela.numero} • {parcela.categoria}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                          {parcela.diasParaVencimento <= 7 && (
+                            <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                              parcela.diasParaVencimento <= 0 
+                                ? 'bg-red-100 text-red-800' 
+                                : parcela.diasParaVencimento <= 3
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {parcela.diasParaVencimento <= 0 
+                                ? 'Vencida' 
+                                : parcela.diasParaVencimento === 1
+                                ? 'Vence amanhã'
+                                : `${parcela.diasParaVencimento} dias`
+                              }
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          {formatCurrency(parcela.valor)}
+                        </p>
+                        <button 
+                          onClick={() => window.location.href = `/dividas/${parcela.dividaId}`}
+                          className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                        >
+                          Ver detalhes
+                        </button>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+              {dashboardData.dividas.totalProximas > 10 && (
+                <div className="bg-gray-50 px-4 py-3 text-center">
+                  <a 
+                    href="/dividas" 
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Ver todas as {dashboardData.dividas.totalProximas} parcelas
+                  </a>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         )}

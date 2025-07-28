@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function DebugUsers() {
   const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -51,8 +52,9 @@ export default function DebugUsers() {
             <button
               onClick={carregarUsuarios}
               disabled={loading}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 mx-auto"
             >
+              {loading && <LoadingSpinner size="xs" color="white" />}
               {loading ? 'Carregando...' : 'Mostrar Usuários Configurados'}
             </button>
           </div>

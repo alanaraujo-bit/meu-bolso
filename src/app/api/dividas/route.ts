@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { parseDataBrasil, prepararDataParaBanco, adicionarMeses } from '@/lib/dateUtils';
 
 
 export async function POST(req: NextRequest) {
@@ -21,20 +22,34 @@ export async function POST(req: NextRequest) {
 
     const {
       nome,
-      valorTotal,
-      numeroParcelas,
       valorParcela,
+      numeroParcelas,
+      parcelasJaPagas = 0,
       dataPrimeiraParcela,
       categoriaId,
       status,
     } = await req.json();
 
-    if (!nome || !valorTotal || !numeroParcelas || !dataPrimeiraParcela) {
+    if (!nome || !valorParcela || !numeroParcelas || !dataPrimeiraParcela) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
     }
 
-    // Calcular valorParcela se não fornecido
-    const valorParcelaCalculado = valorParcela || (valorTotal / numeroParcelas);
+    console.log('📅 Debug - Data recebida para dívida:', {
+      dataPrimeiraParcela,
+      tipo: typeof dataPrimeiraParcela
+    });
+
+    // Calcular valorTotal baseado no valorParcela e numeroParcelas
+    const valorTotal = valorParcela * numeroParcelas;
+
+    // Preparar data da primeira parcela corretamente
+    const dataParcelaPreparada = prepararDataParaBanco(dataPrimeiraParcela);
+    
+    console.log('📅 Debug - Data preparada para dívida:', {
+      original: dataPrimeiraParcela,
+      preparada: dataParcelaPreparada,
+      formatada: dataParcelaPreparada.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    });
 
     // Criar dívida
     const divida = await prisma.divida.create({
@@ -43,22 +58,34 @@ export async function POST(req: NextRequest) {
         nome,
         valorTotal,
         numeroParcelas,
-        valorParcela: valorParcelaCalculado,
-        dataPrimeiraParcela: new Date(dataPrimeiraParcela),
+        valorParcela: valorParcela,
+        dataPrimeiraParcela: dataParcelaPreparada,
         categoriaId: categoriaId || null,
         status: status || "ATIVA",
       },
     });
 
-    // Gerar parcelas
+    // Gerar parcelas com timezone correto
     const parcelasData = [];
+    const dataPrimeira = dataParcelaPreparada;
+    
     for (let i = 0; i < numeroParcelas; i++) {
+      const isPaga = i < parcelasJaPagas;
+      const dataVencimento = adicionarMeses(dataPrimeira, i);
+      
+      console.log(`📅 Debug - Parcela ${i + 1}:`, {
+        numero: i + 1,
+        dataVencimento: dataVencimento,
+        formatada: dataVencimento.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+        status: isPaga ? "PAGA" : "PENDENTE"
+      });
+      
       parcelasData.push({
         dividaId: divida.id,
         numero: i + 1,
-        valor: valorParcelaCalculado,
-        dataVencimento: new Date(new Date(dataPrimeiraParcela).setMonth(new Date(dataPrimeiraParcela).getMonth() + i)),
-        status: "PENDENTE" as any,
+        valor: valorParcela,
+        dataVencimento: dataVencimento,
+        status: isPaga ? "PAGA" : "PENDENTE" as any,
       });
     }
 

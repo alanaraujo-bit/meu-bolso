@@ -8,18 +8,24 @@ datasource db {
 }
 
 model Usuario {
-  id           String                @id @default(uuid())
-  senha        String
-  email        String                @unique
-  nome         String?
-  avatarUrl    String?
-  criadoEm     DateTime              @default(now())
-  atualizadoEm DateTime              @updatedAt
-  categorias   Categoria[]
-  metas        Meta[]
-  transacoes   Transacao[]
-  recorrentes  TransacaoRecorrente[]
-  dividas      Divida[] // Relação inversa para Divida
+  id               String                @id @default(uuid())
+  senha            String
+  email            String                @unique
+  nome             String?
+  avatarUrl        String?
+  criadoEm         DateTime              @default(now())
+  atualizadoEm     DateTime              @updatedAt
+  ultimaAtividade  DateTime              @default(now())
+  statusOnline     StatusOnline          @default(OFFLINE)
+  ultimoAcesso     DateTime?
+  tempoSessao      Int                   @default(0) // em segundos
+  dispositivoAtual String?
+  ipAtual          String?
+  categorias       Categoria[]
+  metas            Meta[]
+  transacoes       Transacao[]
+  recorrentes      TransacaoRecorrente[]
+  dividas          Divida[] // Relação inversa para Divida
 }
 
 model Categoria {
@@ -179,4 +185,10 @@ enum ParcelaStatus {
   PAGA
   PENDENTE
   VENCIDA
+}
+
+enum StatusOnline {
+  ONLINE
+  AUSENTE
+  OFFLINE
 }

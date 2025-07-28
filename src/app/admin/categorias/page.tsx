@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   Tag, Search, TrendingUp, Users, DollarSign,
   RefreshCw, BarChart3, PieChart, Plus
@@ -33,7 +35,7 @@ interface CategoriaEstatistica {
 export default function CategoriasGlobais() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [estatisticas, setEstatisticas] = useState<CategoriaEstatistica[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [filtros, setFiltros] = useState({
     search: '',
     tipo: 'todos',

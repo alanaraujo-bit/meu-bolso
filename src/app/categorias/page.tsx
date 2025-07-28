@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import HelpButton from "@/components/HelpButton";
+import CleanLoading from "@/components/CleanLoading";
+import { useCleanLoading } from "@/hooks/useCleanLoading";
 import { helpContents } from "@/lib/helpContents";
 
 interface Categoria {
@@ -45,7 +47,7 @@ export default function CategoriasPage() {
   const router = useRouter();
   
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState("");
@@ -176,14 +178,7 @@ export default function CategoriasPage() {
   }
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <CleanLoading text="Carregando categorias..." fullScreen />;
   }
 
   return (
@@ -395,9 +390,14 @@ export default function CategoriasPage() {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Carregando categorias...</p>
+            <div className="p-4 text-center">
+              <div className="flex items-center justify-center">
+                <div className="w-4 h-4 relative mr-3">
+                  <div className="absolute inset-0 border-2 border-blue-200 rounded-full"></div>
+                  <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+                <span className="text-sm text-gray-500">Carregando categorias...</span>
+              </div>
             </div>
           ) : categorias.length === 0 ? (
             <div className="p-8 text-center">

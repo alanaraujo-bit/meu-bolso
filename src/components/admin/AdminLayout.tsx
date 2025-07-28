@@ -7,8 +7,9 @@ import {
   BarChart3, Users, Settings, Database, FileText, 
   TrendingUp, Shield, LogOut, Bell, Search,
   Home, Activity, DollarSign, Target, Calendar,
-  MessageSquare, CreditCard, AlertTriangle
+  MessageSquare, CreditCard, AlertTriangle, Wifi
 } from 'lucide-react';
+import NotificacaoAdmin from './NotificacaoAdmin';
 
 const ADMIN_EMAILS = ['alanvitoraraujo1a@outlook.com', 'admin@meubolso.com'];
 
@@ -45,10 +46,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       description: 'Visão geral e métricas principais'
     },
     {
+      name: 'Dashboard Aprimorado',
+      href: '/admin/dashboard-aprimorado',
+      icon: Activity,
+      description: 'Dashboard avançado com tempo real'
+    },
+    {
       name: 'Analytics Avançado',
       href: '/admin/analytics',
       icon: BarChart3,
       description: 'Gráficos e análises detalhadas'
+    },
+    {
+      name: 'Usuários Online',
+      href: '/admin/usuarios-online',
+      icon: Wifi,
+      description: 'Monitor de usuários em tempo real'
     },
     {
       name: 'Gerenciar Usuários',
@@ -229,12 +242,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               
               {/* Notifications */}
-              <button className="p-2 rounded-lg hover:bg-gray-100 relative">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  3
-                </span>
-              </button>
+              <NotificacaoAdmin />
               
               {/* User Menu */}
               <div className="flex items-center space-x-2 p-2 rounded-lg bg-gray-50">

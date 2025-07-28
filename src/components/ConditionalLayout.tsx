@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import FloatingHelp from "@/components/FloatingHelp";
 import AdminRedirect from "@/components/AdminRedirect";
+import ActivityTracker from "@/components/ActivityTracker";
 
 export default function ConditionalLayout({
   children,
@@ -33,13 +34,19 @@ export default function ConditionalLayout({
 
   // Se for admin e estiver em rota admin, renderiza apenas o children (sem navbar/help normais)
   if (isAdmin && isAdminRoute) {
-    return <>{children}</>;
+    return (
+      <>
+        <ActivityTracker />
+        {children}
+      </>
+    );
   }
 
   // Caso contrário, renderiza o layout normal
   return (
     <>
       <AdminRedirect />
+      <ActivityTracker />
       <Navbar />
       {children}
       <FloatingHelp />

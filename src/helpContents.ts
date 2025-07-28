@@ -69,23 +69,64 @@ Imagens esperadas:
 
 /docs/ajuda-recorrente-exemplo.png
 `,
-  dividas: `# Dívidas e Parcelamentos (em planejamento)
+  dividas: `# Controle de Dívidas - Sistema Completo
 
 Tutorial: /ajuda/dividas.md
 
-Objetivo: Explicar como registrar e controlar dívidas parceladas.
+Objetivo: Explicar como registrar, controlar e gerenciar dívidas parceladas com sistema completo de análise.
 
-Tópicos previstos:
+## ✅ Funcionalidades Implementadas:
 
-- Como registrar uma dívida
-- Quantidade de parcelas
-- Juros embutidos (futuramente)
-- Progresso do pagamento
+### 📝 Cadastro de Dívidas
+- Nome da dívida (ex: Cartão Nubank, Financiamento)
+- Valor de cada parcela
+- Quantidade total de parcelas
+- Categorização opcional
+- Cálculo automático do valor total
+
+### 📊 Dashboard e Estatísticas
+- Total de dívidas (ativas e quitadas)
+- Valor total e valor restante
+- Progresso de pagamento em percentual
+- Contagem de parcelas vencidas
+
+### 🎯 Sistema de Insights Inteligentes
+- **Performance**: Análise de progresso de pagamentos
+- **Endividamento**: Avaliação de concentração de dívidas
+- **Planejamento**: Projeções de pagamentos futuros
+- **Alertas**: Identificação de parcelas vencidas
+- **Oportunidades**: Sugestões de quitação antecipada
+- **Riscos**: Identificação de problemas financeiros
+- **Estratégias**: Recomendações de reorganização
+
+### ⚙️ Funcionalidades de Controle
+- Edição completa de dívidas existentes
+- Exclusão de dívidas
+- Filtros por status (ativa/quitada)
+- Visualização detalhada de cada dívida
+- Barra de progresso visual
+
+### 📱 Interface Responsiva
+- Otimizada para celular e desktop
+- Cards organizados e informativos
+- Navegação intuitiva
+- Loading screens suaves
+
+## 🔧 Como Usar:
+
+1. **Cadastrar Nova Dívida**: Clique em "Nova Dívida"
+2. **Preencher Dados**: Nome, valor da parcela e quantidade
+3. **Categorizar**: Selecione uma categoria (opcional)
+4. **Acompanhar**: Use insights para monitorar progresso
+5. **Editar**: Clique no ícone de edição para modificar
+6. **Filtrar**: Use filtros para organizar visualização
 
 Imagens previstas:
 
-/docs/ajuda-divida-exemplo.png
-`,
+/docs/ajuda-divida-cadastro.png
+/docs/ajuda-divida-dashboard.png
+/docs/ajuda-divida-insights.png
+/docs/ajuda-divida-edicao.png`,
   default: `# Ajuda
 
 Selecione uma aba para ver o tutorial de ajuda correspondente.`

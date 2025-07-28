@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   Target, Search, TrendingUp, Calendar, DollarSign,
   CheckCircle, Clock, AlertCircle, RefreshCw, Award
@@ -24,7 +26,7 @@ interface Meta {
 
 export default function MetasGlobais() {
   const [metas, setMetas] = useState<Meta[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [filtros, setFiltros] = useState({
     search: '',
     status: 'todos',

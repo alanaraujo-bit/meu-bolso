@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import Logo from "@/components/branding/Logo";
 
 export default function CadastroPage() {
   const [nome, setNome] = useState("");
@@ -50,8 +52,8 @@ export default function CadastroPage() {
         <div className="max-w-md w-full">
           {/* Logo e Título */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <span className="text-white font-bold text-2xl">💰</span>
+            <div className="flex justify-center mb-6">
+              <Logo size="lg" showText={false} animated />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               Meu Bolso
@@ -136,16 +138,10 @@ export default function CadastroPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-lg shadow-lg"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-lg shadow-lg flex items-center justify-center gap-2"
               >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Criando conta...
-                  </div>
-                ) : (
-                  "Criar Conta"
-                )}
+                {loading && <LoadingSpinner size="sm" color="white" />}
+                {loading ? 'Criando conta...' : 'Criar Conta'}
               </button>
             </form>
 

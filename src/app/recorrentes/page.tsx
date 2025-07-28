@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import MoneyLoading from "@/components/MoneyLoading";
+import CleanLoading from "@/components/CleanLoading";
+import { useCleanLoading } from "@/hooks/useCleanLoading";
 import SeletorCategoria from "@/components/SeletorCategoria";
 import TotaisRecorrentes from "@/components/TotaisRecorrentes";
 import HelpButton from "@/components/HelpButton";
@@ -13,7 +14,7 @@ import { helpContents } from "@/lib/helpContents";
 interface Categoria {
   id: string;
   nome: string;
-  tipo: "receita" | "despesa" | "ambos";
+  tipo: string;
   cor: string;
   icone: string;
 }
@@ -61,7 +62,7 @@ export default function RecorrentesPage() {
   const [recorrentes, setRecorrentes] = useState<TransacaoRecorrente[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [pendentesInfo, setPendentesInfo] = useState<PendentesInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState("");
@@ -373,11 +374,7 @@ export default function RecorrentesPage() {
   }
 
   if (status === "loading" || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <MoneyLoading />
-      </div>
-    );
+    return <CleanLoading text="Carregando transações recorrentes..." fullScreen />;
   }
 
   return (

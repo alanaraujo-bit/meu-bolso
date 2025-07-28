@@ -18,7 +18,10 @@ export const metadata: Metadata = {
   title: "Meu Bolso",
   description: "Aplicativo de controle financeiro pessoal",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
   },
 };
 

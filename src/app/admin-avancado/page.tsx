@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import CleanLoading from '@/components/CleanLoading';
 import DashboardAvancado from '@/components/admin/DashboardAvancado';
 import AdminNavigation from '@/components/admin/AdminNavigation';
 
@@ -27,11 +28,7 @@ export default function AdminPage() {
   }, [session, status, router]);
 
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <CleanLoading text="Verificando acesso..." fullScreen />;
   }
 
   if (!session?.user?.email) {

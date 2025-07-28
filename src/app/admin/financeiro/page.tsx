@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   DollarSign, TrendingUp, TrendingDown, PieChart, BarChart3,
   Calculator, Wallet, CreditCard, Calendar, RefreshCw,
@@ -60,7 +62,7 @@ export default function FinanceiroAdmin() {
   const [fluxoCaixa, setFluxoCaixa] = useState<FluxoCaixa[]>([]);
   const [categorias, setCategorias] = useState<AnaliseCategoria[]>([]);
   const [comparativo, setComparativo] = useState<MetricaComparativa[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [periodoSelecionado, setPeriodoSelecionado] = useState('30d');
 
   useEffect(() => {

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   Mail, Send, Users, MessageSquare, Bell, Globe,
   Calendar, RefreshCw, Eye, Trash2, Edit, Plus,
@@ -48,7 +50,7 @@ export default function ComunicacaoAdmin() {
   const [campanhas, setCampanhas] = useState<CampanhaEmail[]>([]);
   const [notificacoes, setNotificacoes] = useState<NotificacaoSistema[]>([]);
   const [templates, setTemplates] = useState<TemplateEmail[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [abaSelecionada, setAbaSelecionada] = useState('campanhas');
   const [modalNovaCampanha, setModalNovaCampanha] = useState(false);
   const [modalNotificacao, setModalNotificacao] = useState(false);

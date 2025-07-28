@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import MoneyLoading from '@/components/MoneyLoading';
+import CleanLoading from '@/components/CleanLoading';
 import { getInitialRoute } from '@/lib/adminConfig';
 
 export default function Home() {
@@ -25,7 +25,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-      <MoneyLoading text="Redirecionando..." />
+      <CleanLoading text="Redirecionando..." fullScreen />
     </div>
   );
 }

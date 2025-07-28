@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { 
   getDataAtualBrasil, 
@@ -243,8 +243,53 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Combinar transações reais com projeções
-    const todasTransacoes = [...transacoes, ...projecaoRecorrentes].sort((a, b) => 
+    // Buscar dívidas e suas parcelas para incluir as do mês atual como projeções de despesa
+    const dividasComParcelas = await prisma.divida.findMany({
+      where: { 
+        userId: usuario.id,
+        status: 'ATIVA'
+      },
+      include: {
+        parcelas: {
+          where: {
+            status: 'PENDENTE',
+            dataVencimento: {
+              gte: inicioMes,
+              lte: fimMes
+            }
+          }
+        },
+        categoria: true,
+      },
+    });
+
+    // Gerar projeções das parcelas de dívidas como despesas
+    const projecaoParcelas: any[] = [];
+    dividasComParcelas.forEach(divida => {
+      divida.parcelas.forEach(parcela => {
+        projecaoParcelas.push({
+          id: `debt_projection_${parcela.id}`,
+          userId: usuario.id,
+          categoriaId: divida.categoriaId,
+          tipo: 'despesa',
+          valor: parcela.valor,
+          descricao: `${divida.nome} - Parcela ${parcela.numero}/${divida.numeroParcelas}`,
+          data: parcela.dataVencimento,
+          isRecorrente: false,
+          recorrenteId: null,
+          isProjection: true,
+          isDividaProjection: true, // Flag específica para parcelas de dívida
+          dividaId: divida.id,
+          parcelaId: parcela.id,
+          categoria: divida.categoria,
+          criadoEm: new Date(),
+          atualizadoEm: new Date()
+        });
+      });
+    });
+
+    // Combinar transações reais com projeções (recorrentes + parcelas de dívidas)
+    const todasTransacoes = [...transacoes, ...projecaoRecorrentes, ...projecaoParcelas].sort((a, b) => 
       new Date(b.data).getTime() - new Date(a.data).getTime()
     );
 
@@ -330,7 +375,7 @@ export async function GET(request: NextRequest) {
       .filter(t => t.tipo === 'despesa')
       .reduce((acc, transacao) => {
         const categoria = transacao.categoria?.nome || 'Sem categoria';
-        const existing = acc.find(item => item.categoria === categoria);
+        const existing = acc.find((item: any) => item.categoria === categoria);
         
         if (existing) {
           existing.valor += Number(transacao.valor);
@@ -351,14 +396,14 @@ export async function GET(request: NextRequest) {
         return acc;
       }, [] as Array<{ categoria: string; valor: number; cor: string; transacoes: number; projecoes?: number }>);
 
-    const categoriaMaisGasta = gastosComCategoria.sort((a, b) => b.valor - a.valor)[0];
+    const categoriaMaisGasta = gastosComCategoria.sort((a: any, b: any) => b.valor - a.valor)[0];
 
     // Receitas por categoria (incluindo projeções)
     const receitasComCategoria = todasTransacoes
       .filter(t => t.tipo === 'receita')
       .reduce((acc, transacao) => {
         const categoria = transacao.categoria?.nome || 'Sem categoria';
-        const existing = acc.find(item => item.categoria === categoria);
+        const existing = acc.find((item: any) => item.categoria === categoria);
         
         if (existing) {
           existing.valor += Number(transacao.valor);
@@ -431,85 +476,298 @@ export async function GET(request: NextRequest) {
     const metasConcluidas = metasProcessadas.filter(m => m.isCompleted);
     const metasVencidas = metasAtivas.filter(m => new Date(m.dataAlvo) < new Date());
 
-    // Insights automáticos
+    // Buscar informações sobre dívidas
+    const dividas = await prisma.divida.findMany({
+      where: { userId: usuario.id },
+      include: {
+        parcelas: true,
+        categoria: true,
+      },
+    });
+
+    // Calcular estatísticas das dívidas
+    const dividasAtivas = dividas.filter(d => d.status === 'ATIVA').length;
+    const valorTotalDividas = dividas.reduce((acc, d) => acc + d.valorTotal.toNumber(), 0);
+    const valorTotalPagoDividas = dividas.reduce((acc, divida) => {
+      const parcelasPagas = divida.parcelas.filter(p => p.status === 'PAGA').length;
+      return acc + (parcelasPagas * divida.valorParcela.toNumber());
+    }, 0);
+    const valorTotalRestanteDividas = valorTotalDividas - valorTotalPagoDividas;
+
+    // Parcelas vencidas
+    const agora = new Date();
+    const parcelasVencidas = dividas.reduce((acc, divida) => {
+      const vencidas = divida.parcelas.filter(p => 
+        p.status === 'PENDENTE' && new Date(p.dataVencimento) < agora
+      ).length;
+      return acc + vencidas;
+    }, 0);
+
+    // Próximas parcelas (próximos 7 dias)
+    const em7Dias = new Date();
+    em7Dias.setDate(em7Dias.getDate() + 7);
+    
+    const proximasParcelas = dividas.reduce((acc, divida) => {
+      const proximas = divida.parcelas.filter(p => 
+        p.status === 'PENDENTE' && 
+        new Date(p.dataVencimento) >= agora && 
+        new Date(p.dataVencimento) <= em7Dias
+      );
+      return acc + proximas.length;
+    }, 0);
+
+    // Lista detalhada das próximas parcelas (próximos 30 dias)
+    const em30Dias = new Date();
+    em30Dias.setDate(em30Dias.getDate() + 30);
+    
+    const proximasParcelasDetalhadas: Array<{
+      id: string;
+      dividaId: string;
+      dividaNome: string;
+      numero: number;
+      valor: number;
+      dataVencimento: Date;
+      categoria: string;
+      cor: string;
+      diasParaVencimento: number;
+    }> = [];
+    
+    dividas.forEach(divida => {
+      divida.parcelas
+        .filter(p => 
+          p.status === 'PENDENTE' && 
+          new Date(p.dataVencimento) >= agora && 
+          new Date(p.dataVencimento) <= em30Dias
+        )
+        .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())
+        .forEach(parcela => {
+          proximasParcelasDetalhadas.push({
+            id: parcela.id,
+            dividaId: divida.id,
+            dividaNome: divida.nome,
+            numero: parcela.numero,
+            valor: parcela.valor.toNumber(),
+            dataVencimento: parcela.dataVencimento,
+            categoria: divida.categoria?.nome || 'Sem categoria',
+            cor: divida.categoria?.cor || '#EF4444',
+            diasParaVencimento: Math.ceil((new Date(parcela.dataVencimento).getTime() - agora.getTime()) / (1000 * 60 * 60 * 24))
+          });
+        });
+    });
+
+    // Ordenar por data de vencimento
+    proximasParcelasDetalhadas.sort((a, b) => 
+      new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime()
+    );
+
+    // Sistema de Insights Inteligentes e Profissionais
     const insights = [];
     
-    if (maiorGasto) {
-      insights.push({
-        tipo: 'info',
-        titulo: 'Maior Gasto do Mês',
-        descricao: `${maiorGasto.descricao} - ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(maiorGasto.valor))}`,
-        icone: '💸'
-      });
+    // 1. ANÁLISE DE PERFORMANCE FINANCEIRA
+    if (totalReceitas > 0) {
+      const saudefinanceira = (saldo / totalReceitas) * 100;
+      
+      if (saudefinanceira >= 20) {
+        insights.push({
+          tipo: 'sucesso',
+          categoria: 'Performance',
+          titulo: 'Excelente Gestão Financeira',
+          descricao: `Parabéns! Você está mantendo ${saudefinanceira.toFixed(1)}% da sua renda como saldo positivo. Isso demonstra disciplina e planejamento eficaz.`,
+          recomendacao: 'Continue assim e considere investir o excedente para acelerar seus objetivos financeiros.',
+          metricas: `Taxa de economia: ${saudefinanceira.toFixed(1)}%`,
+          icone: '🎯',
+          prioridade: 'alta'
+        });
+      } else if (saudefinanceira >= 10) {
+        insights.push({
+          tipo: 'sucesso',
+          categoria: 'Performance',
+          titulo: 'Gestão Financeira Sólida',
+          descricao: `Você está economizando ${saudefinanceira.toFixed(1)}% da sua renda. Está no caminho certo para uma vida financeira equilibrada.`,
+          recomendacao: 'Tente aumentar gradualmente sua taxa de economia para 20% cortando gastos supérfluos.',
+          metricas: `Meta recomendada: 20% | Atual: ${saudefinanceira.toFixed(1)}%`,
+          icone: '�',
+          prioridade: 'media'
+        });
+      } else if (saldoReal < 0) {
+        insights.push({
+          tipo: 'erro',
+          categoria: 'Alerta Crítico',
+          titulo: 'Orçamento no Vermelho',
+          descricao: `Atenção! Seus gastos superaram a renda em ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(saldoReal))}. Ação imediata necessária.`,
+          recomendacao: 'Revise seus gastos essenciais vs. supérfluos e crie um plano de corte de 20% nas despesas não essenciais.',
+          metricas: `Déficit: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(saldoReal))}`,
+          icone: '�',
+          prioridade: 'critica'
+        });
+      } else {
+        insights.push({
+          tipo: 'alerta',
+          categoria: 'Oportunidade',
+          titulo: 'Margem de Economia Baixa',
+          descricao: `Sua taxa de economia está em ${saudefinanceira.toFixed(1)}%. Há espaço para otimização do seu orçamento.`,
+          recomendacao: 'Analise a categoria que mais consome seu orçamento e estabeleça limites mensais para aumentar sua economia.',
+          metricas: `Economia atual: ${saudefinanceira.toFixed(1)}% | Recomendado: 20%`,
+          icone: '💡',
+          prioridade: 'media'
+        });
+      }
     }
 
+    // 2. ANÁLISE COMPARATIVA MENSAL
+    if (variacaoDespesas !== 0) {
+      if (variacaoDespesas > 15) {
+        insights.push({
+          tipo: 'alerta',
+          categoria: 'Tendência',
+          titulo: 'Crescimento Significativo nos Gastos',
+          descricao: `Seus gastos aumentaram ${variacaoDespesas.toFixed(1)}% comparado ao mês anterior. Isso pode impactar seus objetivos financeiros.`,
+          recomendacao: 'Identifique quais categorias tiveram maior aumento e avalie se foram gastos necessários ou supérfluos.',
+          metricas: `Variação: +${variacaoDespesas.toFixed(1)}% | Valor: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDespesas - totalDespesasMesAnterior)}`,
+          icone: '📊',
+          prioridade: 'alta'
+        });
+      } else if (variacaoDespesas < -10) {
+        insights.push({
+          tipo: 'sucesso',
+          categoria: 'Conquista',
+          titulo: 'Redução Efetiva de Gastos',
+          descricao: `Parabéns! Você reduziu seus gastos em ${Math.abs(variacaoDespesas).toFixed(1)}%. Isso demonstra disciplina financeira.`,
+          recomendacao: 'Mantenha essa tendência e redirecione a economia para seus objetivos de longo prazo.',
+          metricas: `Economia: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(totalDespesas - totalDespesasMesAnterior))}`,
+          icone: '🏆',
+          prioridade: 'alta'
+        });
+      }
+    }
+
+    // 3. INTELIGÊNCIA SOBRE CATEGORIAS
     if (categoriaMaisGasta) {
-      insights.push({
-        tipo: 'info',
-        titulo: 'Categoria Mais Gasta',
-        descricao: `${categoriaMaisGasta.categoria} - ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(categoriaMaisGasta.valor)}`,
-        icone: '📊'
-      });
+      const percentualCategoria = (categoriaMaisGasta.valor / totalDespesas) * 100;
+      
+      if (percentualCategoria > 40) {
+        insights.push({
+          tipo: 'dica',
+          categoria: 'Otimização',
+          titulo: 'Concentração Excessiva de Gastos',
+          descricao: `${categoriaMaisGasta.categoria} representa ${percentualCategoria.toFixed(1)}% dos seus gastos. Alta concentração em uma categoria pode ser um risco.`,
+          recomendacao: 'Diversifique seus gastos e estabeleça um teto máximo de 35% para qualquer categoria individual.',
+          metricas: `${categoriaMaisGasta.categoria}: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(categoriaMaisGasta.valor)} (${percentualCategoria.toFixed(1)}%)`,
+          icone: '⚖️',
+          prioridade: 'media'
+        });
+      }
     }
 
-    if (variacaoDespesas > 10) {
+    // 4. GESTÃO DE DÍVIDAS ESTRATÉGICA
+    if (dividasAtivas > 0) {
+      const razaoDividaRenda = totalReceitas > 0 ? (valorTotalRestanteDividas / totalReceitas) * 100 : 0;
+      
+      if (razaoDividaRenda > 30) {
+        insights.push({
+          tipo: 'erro',
+          categoria: 'Endividamento',
+          titulo: 'Nível de Endividamento Crítico',
+          descricao: `Suas dívidas representam ${razaoDividaRenda.toFixed(1)}% da sua renda. Isso está acima do limite recomendado de 30%.`,
+          recomendacao: 'Priorize quitar as dívidas com maiores juros e evite novos endividamentos. Considere renegociar condições.',
+          metricas: `Comprometimento: ${razaoDividaRenda.toFixed(1)}% da renda | Limite seguro: 30%`,
+          icone: '⚠️',
+          prioridade: 'critica'
+        });
+      } else if (razaoDividaRenda > 15) {
+        insights.push({
+          tipo: 'dica',
+          categoria: 'Endividamento',
+          titulo: 'Gestão de Dívidas Moderada',
+          descricao: `Suas dívidas representam ${razaoDividaRenda.toFixed(1)}% da renda. Está dentro do aceitável, mas há espaço para melhoria.`,
+          recomendacao: 'Acelere o pagamento das dívidas destinando qualquer renda extra para quitação antecipada.',
+          metricas: `Valor restante: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorTotalRestanteDividas)}`,
+          icone: '💳',
+          prioridade: 'media'
+        });
+      }
+      
+      // Insight específico sobre parcelas vencidas
+      if (parcelasVencidas > 0) {
+        insights.push({
+          tipo: 'erro',
+          categoria: 'Urgente',
+          titulo: 'Parcelas em Atraso Detectadas',
+          descricao: `${parcelasVencidas} parcela(s) vencida(s) podem gerar juros e afetar seu score de crédito.`,
+          recomendacao: 'Quite imediatamente as parcelas em atraso e configure lembretes para evitar futuros atrasos.',
+          metricas: `Parcelas vencidas: ${parcelasVencidas}`,
+          icone: '🚨',
+          prioridade: 'critica'
+        });
+      }
+
+      // Insight sobre próximas parcelas
+      if (proximasParcelas > 0) {
+        insights.push({
+          tipo: 'info',
+          categoria: 'Planejamento',
+          titulo: 'Parcelas Próximas do Vencimento',
+          descricao: `${proximasParcelas} parcela(s) vencem nos próximos 7 dias. Organize seu fluxo de caixa.`,
+          recomendacao: 'Reserve o valor necessário e considere antecipar o pagamento se houver desconto.',
+          metricas: `Próximas parcelas: ${proximasParcelas} em 7 dias`,
+          icone: '📅',
+          prioridade: 'media'
+        });
+      }
+    }
+
+    // 5. PROJEÇÕES E PLANEJAMENTO
+    if (projecoes.length > 0) {
+      const despesasProjetadas = projecoes.filter(p => p.tipo === 'despesa').reduce((sum, p) => sum + Number(p.valor), 0);
+      const receitasProjetadas = projecoes.filter(p => p.tipo === 'receita').reduce((sum, p) => sum + Number(p.valor), 0);
+      
+      if (despesasProjetadas > 0) {
+        const impactoOrcamento = totalReceitas > 0 ? (despesasProjetadas / totalReceitas) * 100 : 0;
+        
+        insights.push({
+          tipo: 'info',
+          categoria: 'Projeção',
+          titulo: 'Compromissos Financeiros Programados',
+          descricao: `Você tem ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(despesasProjetadas)} em despesas programadas (recorrentes + parcelas).`,
+          recomendacao: 'Mantenha esses valores reservados para garantir o cumprimento dos compromissos.',
+          metricas: `Impacto no orçamento: ${impactoOrcamento.toFixed(1)}% da renda`,
+          icone: '📋',
+          prioridade: 'media'
+        });
+      }
+    }
+
+    // 6. INSIGHTS DE PERFORMANCE HISTÓRICA
+    if (maiorGasto && Number(maiorGasto.valor) > mediaGastoDiario * 10) {
       insights.push({
         tipo: 'alerta',
-        titulo: 'Aumento nos Gastos',
-        descricao: `Seus gastos aumentaram ${variacaoDespesas.toFixed(1)}% em relação ao mês anterior`,
-        icone: '⚠️'
+        categoria: 'Comportamento',
+        titulo: 'Gasto Atípico Identificado',
+        descricao: `Detectamos um gasto de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(maiorGasto.valor))}, significativamente acima da sua média diária.`,
+        recomendacao: 'Avalie se este gasto estava planejado e ajuste seu orçamento para os próximos dias se necessário.',
+        metricas: `Gasto: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(maiorGasto.valor))} | Média diária: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(mediaGastoDiario)}`,
+        icone: '�',
+        prioridade: 'media'
       });
     }
 
-    if (taxaEconomia > 20) {
-      insights.push({
-        tipo: 'sucesso',
-        titulo: 'Excelente Economia!',
-        descricao: `Você está economizando ${taxaEconomia.toFixed(1)}% da sua renda`,
-        icone: '🎉'
-      });
-    } else if (taxaEconomia < 5 && totalReceitas > 0) {
-      insights.push({
-        tipo: 'dica',
-        titulo: 'Melhore sua Economia',
-        descricao: `Tente economizar mais. Sua taxa atual é de ${taxaEconomia.toFixed(1)}%`,
-        icone: '💡'
-      });
-    }
-
-    // Insight sobre transações recorrentes executadas
+    // 7. TRANSAÇÕES AUTOMÁTICAS
     if (transacoesRecorrentesExecutadas.length > 0) {
       insights.push({
         tipo: 'info',
-        titulo: 'Transações Automáticas',
-        descricao: `${transacoesRecorrentesExecutadas.length} transação(ões) recorrente(s) foram adicionadas automaticamente`,
-        icone: '🔄'
+        categoria: 'Automação',
+        titulo: 'Transações Processadas Automaticamente',
+        descricao: `${transacoesRecorrentesExecutadas.length} transação(ões) recorrente(s) foram processadas automaticamente neste período.`,
+        recomendacao: 'Revise periodicamente suas transações recorrentes para garantir que ainda fazem sentido para seu orçamento.',
+        metricas: `Transações processadas: ${transacoesRecorrentesExecutadas.length}`,
+        icone: '🤖',
+        prioridade: 'baixa'
       });
     }
 
-    // Insight sobre projeções
-    if (projecoes.length > 0) {
-      const receitasProjetadas = projecoes.filter(p => p.tipo === 'receita').reduce((sum, p) => sum + Number(p.valor), 0);
-      const despesasProjetadas = projecoes.filter(p => p.tipo === 'despesa').reduce((sum, p) => sum + Number(p.valor), 0);
-      
-      if (receitasProjetadas > 0) {
-        insights.push({
-          tipo: 'info',
-          titulo: 'Receitas Projetadas',
-          descricao: `${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(receitasProjetadas)} em receitas recorrentes previstas para este mês`,
-          icone: '💰'
-        });
-      }
-
-      if (despesasProjetadas > 0) {
-        insights.push({
-          tipo: 'alerta',
-          titulo: 'Despesas Projetadas',
-          descricao: `${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(despesasProjetadas)} em despesas recorrentes previstas para este mês`,
-          icone: '📊'
-        });
-      }
-    }
+    // Ordenar insights por prioridade (crítica > alta > média > baixa)
+    const prioridadeOrdem: { [key: string]: number } = { 'critica': 4, 'alta': 3, 'media': 2, 'baixa': 1 };
+    insights.sort((a: any, b: any) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
 
     return NextResponse.json({
       periodo: {
@@ -549,7 +807,26 @@ export async function GET(request: NextRequest) {
           isProjection: (maiorGasto as any).isProjection || false
         } : null,
         // Informações sobre transações recorrentes executadas
-        transacoesRecorrentesExecutadas: transacoesRecorrentesExecutadas.length
+        transacoesRecorrentesExecutadas: transacoesRecorrentesExecutadas.length,
+        // Informações sobre dívidas
+        dividasAtivas,
+        valorTotalDividas,
+        valorTotalPagoDividas,
+        valorTotalRestanteDividas,
+        parcelasVencidas,
+        proximasParcelas
+      },
+      dividas: {
+        proximasParcelas: proximasParcelasDetalhadas.slice(0, 10), // Máximo 10 próximas parcelas
+        totalProximas: proximasParcelasDetalhadas.length,
+        resumo: {
+          ativas: dividasAtivas,
+          valorTotal: valorTotalDividas,
+          valorPago: valorTotalPagoDividas,
+          valorRestante: valorTotalRestanteDividas,
+          parcelasVencidas,
+          proximasParcelas
+        }
       },
       graficos: {
         receitasPorCategoria: receitasComCategoria,

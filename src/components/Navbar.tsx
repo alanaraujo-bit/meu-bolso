@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+import Logo from "./branding/Logo";
 
 // Lista de emails de administradores
 const ADMIN_EMAILS = [
@@ -40,15 +41,13 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div 
-            className="flex items-center space-x-2 cursor-pointer"
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
             onClick={() => router.push("/")}
           >
-            <span className="text-2xl">💰</span>
+            <Logo size="sm" showText={false} animated />
             <span className="text-xl font-bold text-gray-900">Meu Bolso</span>
-          </div>
-
-          {/* Desktop Navigation */}
+          </div>          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
               <button

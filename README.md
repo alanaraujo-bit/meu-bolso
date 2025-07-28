@@ -1,6 +1,22 @@
 # 💰 Meu Bolso
 
-Uma aplicação completa de controle financeiro pessoal desenvolvida com Next.js, TypeScript e MySQL, com sistema administrativo avançado para gestão completa de usuários e dados.
+Uma aplicação comp### 💳 Sistema Completo de Controle de Dívidas
+- **Cadastro Inteligente**: Registro de dívidas com nome, valor da parcela e quantidade
+- **Dashboard de Dívidas**: Estatísticas completas com totais, progresso e parcelas vencidas
+- **Sistema de Insights Profissional**: 
+  - **Performance**: Análise de progresso de pagamentos
+  - **Endividamento**: Avaliação de concentração de dívidas  
+  - **Planejamento**: Projeções de pagamentos futuros
+  - **Alertas**: Identificação de parcelas vencidas
+  - **Oportunidades**: Sugestões de quitação antecipada
+  - **Riscos**: Identificação de problemas financeiros
+  - **Estratégias**: Recomendações de reorganização
+- **Interface Responsiva**: Otimizada para celular e desktop
+- **Edição Completa**: Sistema CRUD completo para dívidas
+- **Categorização**: Organização por categorias personalizáveis
+- **Filtros Avançados**: Por status (ativa/quitada) e outros critérios
+- **Progresso Visual**: Barras de progresso e indicadores visuais
+- **Cálculos Automáticos**: Valor total, percentual quitado e valores restantesde controle financeiro pessoal desenvolvida com Next.js, TypeScript e MySQL, com sistema administrativo avançado para gestão completa de usuários e dados.
 
 ## 🚀 Funcionalidades Principais
 

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   CreditCard, Search, Filter, Calendar, DollarSign, 
   TrendingUp, Download, Eye, RefreshCw
@@ -22,7 +24,7 @@ interface Transacao {
 
 export default function TransacoesGlobais() {
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [filtros, setFiltros] = useState({
     search: '',
     tipo: 'todos',

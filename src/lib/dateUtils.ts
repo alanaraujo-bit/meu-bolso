@@ -1,17 +1,14 @@
-// Utilitários para manipulação de datas com timezone brasileiro
-// Esse módulo garante que todas as datas sejam tratadas corretamente
+// Utilitários para manipulação de datas com timezone brasileiro (America/Sao_Paulo)
+// Garante que todas as datas sejam tratadas corretamente no horário de Brasília
 
 /**
- * Obtém a data atual no timezone de Brasília
+ * Obtém a data e hora atual no timezone de Brasília
  */
 export function getDataAtualBrasil(): Date {
-  // Criar uma nova data com a hora atual do Brasil
   const agora = new Date();
-  
-  // Converter para o timezone brasileiro
-  const brasilTime = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  
-  return brasilTime;
+  // Usar toLocaleString para garantir o timezone brasileiro
+  const brasilTimeString = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  return new Date(brasilTimeString);
 }
 
 /**
@@ -27,20 +24,24 @@ export function parseDataBrasil(dataString: string): Date {
       return new Date(dataString);
     }
     
-    // Para datas no formato YYYY-MM-DD, adicionar hora zero no timezone local
-    const [ano, mes, dia] = dataString.split('-').map(Number);
+    // Para datas no formato YYYY-MM-DD, criar a data exatamente no dia informado
+    const partes = dataString.split('-');
+    if (partes.length !== 3) {
+      throw new Error('Formato de data inválido. Use YYYY-MM-DD');
+    }
+    
+    const ano = parseInt(partes[0]);
+    const mes = parseInt(partes[1]) - 1; // JavaScript usa 0-11 para meses
+    const dia = parseInt(partes[2]);
     
     // Validar se os valores são números válidos
     if (isNaN(ano) || isNaN(mes) || isNaN(dia)) {
       throw new Error(`Data inválida: ${dataString}`);
     }
     
-    // Validar ranges básicos
-    if (mes < 1 || mes > 12 || dia < 1 || dia > 31) {
-      throw new Error(`Data fora dos limites válidos: ${dataString}`);
-    }
-    
-    return new Date(ano, mes - 1, dia, 0, 0, 0, 0);
+    // Criar a data no timezone local às 12:00 para evitar problemas de DST
+    const data = new Date(ano, mes, dia, 12, 0, 0, 0);
+    return data;
   } catch (error) {
     console.error('Erro ao fazer parse da data:', error, 'String recebida:', dataString);
     throw error;
@@ -49,19 +50,15 @@ export function parseDataBrasil(dataString: string): Date {
 
 /**
  * Formata uma Date para string no formato YYYY-MM-DD
- * Garante que a data seja formatada no timezone brasileiro
  */
 export function formatDataBrasil(data: Date): string {
   if (!data || !(data instanceof Date)) {
     throw new Error('Data deve ser uma instância válida de Date');
   }
   
-  // Garantir que usamos o timezone brasileiro
-  const dataLocal = new Date(data.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }));
-  
-  const ano = dataLocal.getFullYear();
-  const mes = String(dataLocal.getMonth() + 1).padStart(2, '0');
-  const dia = String(dataLocal.getDate()).padStart(2, '0');
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
   
   return `${ano}-${mes}-${dia}`;
 }
@@ -101,82 +98,8 @@ export function formatDataHoraBrasileiraExibicao(data: Date): string {
 }
 
 /**
- * Cria uma data para início do mês (00:00:00) no timezone brasileiro
- */
-export function criarInicioMesBrasil(ano: number, mes: number): Date {
-  return new Date(ano, mes - 1, 1, 0, 0, 0, 0);
-}
-
-/**
- * Cria uma data para fim do mês (23:59:59) no timezone brasileiro  
- */
-export function criarFimMesBrasil(ano: number, mes: number): Date {
-  return new Date(ano, mes, 0, 23, 59, 59, 999);
-}
-
-/**
- * Compara se duas datas são do mesmo dia (ignorando hora)
- */
-export function saoMesmoDia(data1: Date, data2: Date): boolean {
-  if (!data1 || !data2) return false;
-  
-  const d1 = new Date(data1.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }));
-  const d2 = new Date(data2.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }));
-  
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate();
-}
-
-/**
- * Adiciona dias a uma data no timezone brasileiro
- */
-export function adicionarDias(data: Date, dias: number): Date {
-  const novaData = new Date(data);
-  novaData.setDate(novaData.getDate() + dias);
-  return novaData;
-}
-
-/**
- * Adiciona meses a uma data no timezone brasileiro
- */
-export function adicionarMeses(data: Date, meses: number): Date {
-  const novaData = new Date(data);
-  novaData.setMonth(novaData.getMonth() + meses);
-  return novaData;
-}
-
-/**
- * Adiciona anos a uma data no timezone brasileiro
- */
-export function adicionarAnos(data: Date, anos: number): Date {
-  const novaData = new Date(data);
-  novaData.setFullYear(novaData.getFullYear() + anos);
-  return novaData;
-}
-
-/**
- * Obtém a data de hoje no formato YYYY-MM-DD para inputs de data
- */
-export function getDataHojeInput(): string {
-  return formatDataBrasil(getDataAtualBrasil());
-}
-
-/**
- * Converte uma data do banco (UTC) para Date local
- */
-export function converterDataDoBanco(dataString: string | Date): Date {
-  if (!dataString) return new Date();
-  
-  if (typeof dataString === 'string') {
-    return new Date(dataString);
-  }
-  
-  return dataString;
-}
-
-/**
- * Prepara uma data para salvar no banco (converte para UTC)
+ * Prepara uma data para salvar no banco
+ * Garante que receba o horário correto do Brasil
  */
 export function prepararDataParaBanco(data: Date | string): Date {
   try {
@@ -189,11 +112,11 @@ export function prepararDataParaBanco(data: Date | string): Date {
       // Se recebeu só a data (YYYY-MM-DD), adicionar a hora atual
       if (data.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const agora = getDataAtualBrasil();
-        const [ano, mes, dia] = data.split('-').map(Number);
+        const partesData = data.split('-').map(Number);
         
         // Criar data com a hora atual brasileira
         const dataComHora = new Date();
-        dataComHora.setFullYear(ano, mes - 1, dia);
+        dataComHora.setFullYear(partesData[0], partesData[1] - 1, partesData[2]);
         dataComHora.setHours(agora.getHours(), agora.getMinutes(), agora.getSeconds(), agora.getMilliseconds());
         
         return dataComHora;
@@ -217,61 +140,79 @@ export function prepararDataParaBanco(data: Date | string): Date {
 }
 
 /**
- * Cria data de início do dia (00:00:00) no timezone brasileiro
+ * Adiciona meses a uma data
  */
-export function inicioDataBrasil(data: Date): Date {
-  const dataBrasil = new Date(data.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }));
-  dataBrasil.setHours(0, 0, 0, 0);
-  return dataBrasil;
+export function adicionarMeses(data: Date, meses: number): Date {
+  const novaData = new Date(data);
+  novaData.setMonth(novaData.getMonth() + meses);
+  return novaData;
 }
 
 /**
- * Cria data de fim do dia (23:59:59) no timezone brasileiro
+ * Compara se duas datas são do mesmo dia (ignorando hora)
  */
-export function fimDataBrasil(data: Date): Date {
-  const dataBrasil = new Date(data.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }));
-  dataBrasil.setHours(23, 59, 59, 999);
-  return dataBrasil;
+export function saoMesmoDia(data1: Date, data2: Date): boolean {
+  if (!data1 || !data2) return false;
+  
+  const d1Str = data1.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const d2Str = data2.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  
+  return d1Str === d2Str;
 }
 
 /**
- * Cria data de início de mês no timezone brasileiro
+ * Obtém a data de hoje no formato YYYY-MM-DD para inputs
+ */
+export function getDataHojeInput(): string {
+  return formatDataBrasil(getDataAtualBrasil());
+}
+
+/**
+ * Cria data de início do mês brasileiro
  */
 export function inicioMesBrasil(ano: number, mes: number): Date {
-  // Ajustar para mês anterior se necessário
-  if (mes <= 0) {
-    ano -= 1;
-    mes = 12 + mes; // mes será negativo, então somamos
-  }
-  if (mes > 12) {
-    ano += Math.floor((mes - 1) / 12);
-    mes = ((mes - 1) % 12) + 1;
-  }
-  
-  // mes é 1-indexed (Janeiro = 1)
-  const data = new Date();
-  data.setFullYear(ano, mes - 1, 1);
-  data.setHours(0, 0, 0, 0);
-  return new Date(data.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return new Date(ano, mes - 1, 1, 0, 0, 0, 0);
 }
 
 /**
- * Cria data de fim de mês no timezone brasileiro
+ * Cria data de fim do mês brasileiro
  */
 export function fimMesBrasil(ano: number, mes: number): Date {
-  // Ajustar para mês anterior se necessário
-  if (mes <= 0) {
-    ano -= 1;
-    mes = 12 + mes; // mes será negativo, então somamos
-  }
-  if (mes > 12) {
-    ano += Math.floor((mes - 1) / 12);
-    mes = ((mes - 1) % 12) + 1;
-  }
-  
-  // mes é 1-indexed (Janeiro = 1)
-  const data = new Date();
-  data.setFullYear(ano, mes, 0); // Dia 0 do próximo mês = último dia do mês atual
-  data.setHours(23, 59, 59, 999);
-  return new Date(data.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return new Date(ano, mes, 0, 23, 59, 59, 999);
+}
+
+/**
+ * Adiciona dias a uma data
+ */
+export function adicionarDias(data: Date, dias: number): Date {
+  const novaData = new Date(data);
+  novaData.setDate(novaData.getDate() + dias);
+  return novaData;
+}
+
+/**
+ * Adiciona anos a uma data
+ */
+export function adicionarAnos(data: Date, anos: number): Date {
+  const novaData = new Date(data);
+  novaData.setFullYear(novaData.getFullYear() + anos);
+  return novaData;
+}
+
+/**
+ * Início do dia no timezone brasileiro
+ */
+export function inicioDataBrasil(data: Date): Date {
+  const novaData = new Date(data);
+  novaData.setHours(0, 0, 0, 0);
+  return novaData;
+}
+
+/**
+ * Fim do dia no timezone brasileiro
+ */
+export function fimDataBrasil(data: Date): Date {
+  const novaData = new Date(data);
+  novaData.setHours(23, 59, 59, 999);
+  return novaData;
 }

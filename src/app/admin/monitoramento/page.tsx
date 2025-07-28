@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   Monitor, Activity, AlertTriangle, CheckCircle, Clock,
   Cpu, HardDrive, Zap, Globe, Database, RefreshCw,
@@ -60,7 +62,7 @@ export default function MonitoramentoAdmin() {
   
   const [alertas, setAlertas] = useState<AlertaAtivo[]>([]);
   const [logs, setLogs] = useState<LogAtividade[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {

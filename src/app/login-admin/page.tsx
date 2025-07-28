@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import Logo from '@/components/branding/Logo';
 
 export default function LoginSimples() {
   const [email, setEmail] = useState('alanvitoraraujo1a@outlook.com');
@@ -56,6 +58,9 @@ export default function LoginSimples() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
         <div className="text-center mb-6">
+          <div className="flex justify-center mb-4">
+            <Logo size="lg" showText={false} animated />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">🛡️ Login Admin Direto</h1>
           <p className="text-gray-600">Teste de login administrativo</p>
         </div>
@@ -88,8 +93,9 @@ export default function LoginSimples() {
           <button
             onClick={fazerLogin}
             disabled={loading}
-            className="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
+            className="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold flex items-center justify-center gap-2"
           >
+            {loading && <LoadingSpinner size="sm" color="white" />}
             {loading ? 'Fazendo Login...' : '🚀 FAZER LOGIN ADMIN'}
           </button>
           

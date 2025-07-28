@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import MoneyLoading from "@/components/MoneyLoading";
+import CleanLoading from "@/components/CleanLoading";
+import { useCleanLoading } from "@/hooks/useCleanLoading";
 import SeletorCategoria from "@/components/SeletorCategoria";
 import HelpButton from "@/components/HelpButton";
 import { formatDataBrasil, getDataAtualBrasil } from "@/lib/dateUtils";
@@ -12,7 +13,7 @@ import { helpContents } from "@/lib/helpContents";
 interface Categoria {
   id: string;
   nome: string;
-  tipo: "receita" | "despesa" | "ambos";
+  tipo: string;
   cor?: string;
   icone?: string;
 }
@@ -46,7 +47,7 @@ export default function TransacoesPage() {
 
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading(true);
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false); // Novo estado para controlar filtros
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -393,11 +394,7 @@ export default function TransacoesPage() {
   const saldo = totalReceitas - totalDespesas;
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <MoneyLoading text="Carregando transações..." />
-      </div>
-    );
+    return <CleanLoading text="Carregando transações..." fullScreen />;
   }
 
   return (
@@ -824,9 +821,12 @@ export default function TransacoesPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Carregando transações...</span>
+            <div className="flex items-center justify-center py-8">
+              <div className="w-4 h-4 relative mr-3">
+                <div className="absolute inset-0 border-2 border-blue-200 rounded-full"></div>
+                <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+              <span className="text-sm text-gray-500">Carregando transações...</span>
             </div>
           ) : transacoes.length === 0 ? (
             <div className="text-center py-12">

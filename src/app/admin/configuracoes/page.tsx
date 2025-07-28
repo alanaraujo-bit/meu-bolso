@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { 
   Settings, Save, RefreshCw, Shield, Database, Mail,
   Bell, Globe, Palette, Users, Lock, AlertTriangle,
@@ -30,7 +32,7 @@ interface BackupInfo {
 export default function ConfiguracoesAdmin() {
   const [configuracoes, setConfiguracoes] = useState<ConfiguracaoSistema[]>([]);
   const [backups, setBackups] = useState<BackupInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [salvando, setSalvando] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('geral');
   const [mensagem, setMensagem] = useState<{ tipo: 'success' | 'error'; texto: string } | null>(null);

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 interface Categoria {
   id: string;
   nome: string;
-  tipo: 'receita' | 'despesa' | 'ambos';
+  tipo: string;
   cor?: string;
   icone?: string;
 }

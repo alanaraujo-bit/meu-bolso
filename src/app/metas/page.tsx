@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import HelpButton from '@/components/HelpButton';
+import CleanLoading from '@/components/CleanLoading';
+import { useCleanLoading } from '@/hooks/useCleanLoading';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatDataBrasil, getDataAtualBrasil } from '@/lib/dateUtils';
 import { helpContents } from '@/lib/helpContents';
 
@@ -39,7 +42,7 @@ export default function MetasPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [metas, setMetas] = useState<Meta[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, setLoading } = useCleanLoading();
   const [showForm, setShowForm] = useState(false);
   const [showContribuicaoModal, setShowContribuicaoModal] = useState(false);
   // Adicionar estado para controlar modal de histórico
@@ -276,11 +279,7 @@ export default function MetasPage() {
   };
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <CleanLoading text="Carregando metas..." fullScreen />;
   }
 
   return (
@@ -599,8 +598,9 @@ export default function MetasPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
+                    {loading && <LoadingSpinner size="xs" color="white" />}
                     {loading ? 'Salvando...' : (editingId ? 'Atualizar' : 'Criar')}
                   </button>
                 </div>
@@ -678,8 +678,9 @@ export default function MetasPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
+                    {loading && <LoadingSpinner size="xs" color="white" />}
                     {loading ? 'Contribuindo...' : 'Contribuir'}
                   </button>
                 </div>
