@@ -1,29 +1,37 @@
 // Utilitários para manipulação de datas com timezone brasileiro (America/Sao_Paulo)
-// Garante que todas as datas sejam tratadas corretamente no horário de Brasília
+// CORRIGE PROBLEMAS DE DIFERENÇA DE DATA ENTRE LOCAL E PRODUÇÃO
+
+/**
+ * Timezone brasileiro
+ */
+const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 /**
  * Obtém a data e hora atual no timezone de Brasília
+ * VERSÃO CORRIGIDA para produção
  */
 export function getDataAtualBrasil(): Date {
-  const agora = new Date();
-  // Usar toLocaleString para garantir o timezone brasileiro
-  const brasilTimeString = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
-  return new Date(brasilTimeString);
+  // Em produção, force o timezone brasileiro
+  if (typeof window === 'undefined') {
+    // Server-side: force UTC-3 (Brasília)
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const brasilTime = new Date(utc + (-3 * 3600000)); // UTC-3
+    return brasilTime;
+  } else {
+    // Client-side: usar timezone local do navegador
+    return new Date();
+  }
 }
 
 /**
  * Converte uma string de data (YYYY-MM-DD) para Date no timezone de Brasília
- * Garante que a data seja interpretada corretamente sem deslocamento de timezone
+ * CORRIGIDO: Garante que a data seja EXATAMENTE a data informada
  */
 export function parseDataBrasil(dataString: string): Date {
   if (!dataString) throw new Error('Data string é obrigatória');
   
   try {
-    // Se já tem informação de hora, usar direto
-    if (dataString.includes('T') || dataString.includes(' ')) {
-      return new Date(dataString);
-    }
-    
     // Para datas no formato YYYY-MM-DD, criar a data exatamente no dia informado
     const partes = dataString.split('-');
     if (partes.length !== 3) {
@@ -39,9 +47,22 @@ export function parseDataBrasil(dataString: string): Date {
       throw new Error(`Data inválida: ${dataString}`);
     }
     
-    // Criar a data no timezone local às 12:00 para evitar problemas de DST
-    const data = new Date(ano, mes, dia, 12, 0, 0, 0);
-    return data;
+    // CORREÇÃO: Criar a data forçando o timezone brasileiro
+    if (typeof window === 'undefined') {
+      // Server-side: criar data fixa no timezone brasileiro
+      const data = new Date();
+      data.setFullYear(ano);
+      data.setMonth(mes);
+      data.setDate(dia);
+      data.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de DST
+      
+      // Ajustar para timezone brasileiro em produção
+      const utc = data.getTime() + (data.getTimezoneOffset() * 60000);
+      return new Date(utc + (-3 * 3600000)); // UTC-3
+    } else {
+      // Client-side: criar data local
+      return new Date(ano, mes, dia, 12, 0, 0, 0);
+    }
   } catch (error) {
     console.error('Erro ao fazer parse da data:', error, 'String recebida:', dataString);
     throw error;

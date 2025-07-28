@@ -52,12 +52,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       description: 'Dashboard avançado com tempo real'
     },
     {
-      name: 'Analytics Avançado',
-      href: '/admin/analytics',
-      icon: BarChart3,
-      description: 'Gráficos e análises detalhadas'
-    },
-    {
       name: 'Usuários Online',
       href: '/admin/usuarios-online',
       icon: Wifi,
@@ -76,52 +70,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       description: 'Todas as transações do sistema'
     },
     {
-      name: 'Metas e Objetivos',
-      href: '/admin/metas',
-      icon: Target,
-      description: 'Análise de metas dos usuários'
-    },
-    {
-      name: 'Categorias Sistema',
-      href: '/admin/categorias',
-      icon: FileText,
-      description: 'Gestão de categorias globais'
-    },
-    {
-      name: 'Relatórios',
-      href: '/admin/relatorios',
-      icon: Activity,
-      description: 'Relatórios e exportações'
-    },
-    {
-      name: 'Monitoramento',
-      href: '/admin/monitoramento',
-      icon: AlertTriangle,
-      description: 'Alertas e monitoramento sistema'
-    },
-    {
-      name: 'Financeiro Global',
-      href: '/admin/financeiro',
-      icon: DollarSign,
-      description: 'Visão financeira consolidada'
-    },
-    {
-      name: 'Configurações',
-      href: '/admin/configuracoes',
-      icon: Settings,
-      description: 'Configurações do sistema'
-    },
-    {
       name: 'Logs do Sistema',
       href: '/admin/logs',
       icon: Database,
       description: 'Logs e auditoria'
     },
     {
-      name: 'Comunicação',
-      href: '/admin/comunicacao',
-      icon: MessageSquare,
-      description: 'Mensagens e notificações'
+      name: 'Monitoramento',
+      href: '/admin/monitoramento',
+      icon: AlertTriangle,
+      description: 'Performance e recursos do sistema'
+    },
+    {
+      name: 'Configurações',
+      href: '/admin/configuracoes',
+      icon: Settings,
+      description: 'Configurações do sistema'
     }
   ];
 
