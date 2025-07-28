@@ -47,22 +47,16 @@ export function parseDataBrasil(dataString: string): Date {
       throw new Error(`Data inválida: ${dataString}`);
     }
     
-    // CORREÇÃO: Criar a data forçando o timezone brasileiro
-    if (typeof window === 'undefined') {
-      // Server-side: criar data fixa no timezone brasileiro
-      const data = new Date();
-      data.setFullYear(ano);
-      data.setMonth(mes);
-      data.setDate(dia);
-      data.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de DST
-      
-      // Ajustar para timezone brasileiro em produção
-      const utc = data.getTime() + (data.getTimezoneOffset() * 60000);
-      return new Date(utc + (-3 * 3600000)); // UTC-3
-    } else {
-      // Client-side: criar data local
-      return new Date(ano, mes, dia, 12, 0, 0, 0);
+    // CORREÇÃO DEFINITIVA: Criar a data exatamente como informada
+    // Usar constructor que sempre respeita valores locais
+    const data = new Date(ano, mes, dia, 12, 0, 0, 0);
+    
+    // Verificar se a data foi criada corretamente
+    if (data.getFullYear() !== ano || data.getMonth() !== mes || data.getDate() !== dia) {
+      throw new Error(`Data inválida criada: ${dataString}`);
     }
+    
+    return data;
   } catch (error) {
     console.error('Erro ao fazer parse da data:', error, 'String recebida:', dataString);
     throw error;
@@ -130,17 +124,10 @@ export function prepararDataParaBanco(data: Date | string): Date {
         return getDataAtualBrasil();
       }
       
-      // Se recebeu só a data (YYYY-MM-DD), adicionar a hora atual
+      // Se recebeu só a data (YYYY-MM-DD), usar exatamente essa data
       if (data.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const agora = getDataAtualBrasil();
-        const partesData = data.split('-').map(Number);
-        
-        // Criar data com a hora atual brasileira
-        const dataComHora = new Date();
-        dataComHora.setFullYear(partesData[0], partesData[1] - 1, partesData[2]);
-        dataComHora.setHours(agora.getHours(), agora.getMinutes(), agora.getSeconds(), agora.getMilliseconds());
-        
-        return dataComHora;
+        // CORREÇÃO: usar parseDataBrasil que já trata timezone corretamente
+        return parseDataBrasil(data);
       }
       
       return parseDataBrasil(data);
