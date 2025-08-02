@@ -19,6 +19,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { 
@@ -605,7 +606,7 @@ export default function DividasPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Dívidas por Categoria
               </h3>
-              <div className="h-64">
+              <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -613,8 +614,8 @@ export default function DividasPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ nome, percentage }) => `${nome}: ${percentage}%`}
-                      outerRadius={80}
+                      label={({ nome, percentage }) => percentage > 5 ? `${percentage}%` : ''}
+                      outerRadius={90}
                       fill="#8884d8"
                       dataKey="valorRestante"
                     >
@@ -622,7 +623,17 @@ export default function DividasPage() {
                         <Cell key={`cell-${index}`} fill={CORES_GRAFICOS[index % CORES_GRAFICOS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: any) => formatarMoeda(value)} />
+                    <Tooltip 
+                      formatter={(value: any, name: any, props: any) => [
+                        formatarMoeda(value), 
+                        `${props.payload.nome} (${props.payload.percentage}%)`
+                      ]} 
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value, entry) => `${entry.payload.nome}: ${entry.payload.percentage}%`}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

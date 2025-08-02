@@ -93,6 +93,15 @@ export async function GET(req: NextRequest) {
       return acc;
     }, {} as any);
 
+    // Calcular percentuais para o gráfico
+    const dividasPorCategoriaArray = Object.values(dividasPorCategoria) as any[];
+    const totalValorRestante = dividasPorCategoriaArray.reduce((sum, cat) => sum + cat.valorRestante, 0);
+    
+    const dividasPorCategoriaComPercentual = dividasPorCategoriaArray.map(categoria => ({
+      ...categoria,
+      percentage: totalValorRestante > 0 ? Math.round((categoria.valorRestante / totalValorRestante) * 100) : 0
+    }));
+
     // Média de valor por dívida
     const valorMedioPorDivida = totalDividas > 0 ? valorTotalDividas / totalDividas : 0;
 
@@ -114,7 +123,7 @@ export async function GET(req: NextRequest) {
       proximasParcelas: proximasParcelas
         .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())
         .slice(0, 10), // Próximas 10 parcelas
-      dividasPorCategoria: Object.values(dividasPorCategoria),
+      dividasPorCategoria: dividasPorCategoriaComPercentual,
       insights: [
         ...(parcelasVencidas > 0 ? [{
           tipo: 'warning',
