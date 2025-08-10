@@ -28,18 +28,19 @@ export async function POST(request: NextRequest) {
       const base64Data = avatarUrl.split(',')[1];
       if (base64Data) {
         const sizeInBytes = (base64Data.length * 3) / 4;
-        const maxSize = 1 * 1024 * 1024; // 1MB em base64
+        const maxSize = 200 * 1024; // 200KB em base64 (muito mais conservador)
         
         if (sizeInBytes > maxSize) {
           console.log('❌ Avatar base64 muito grande:', sizeInBytes);
           return NextResponse.json({ 
             error: 'Imagem muito grande para o banco de dados',
             currentSize: Math.round(sizeInBytes / 1024) + 'KB',
-            maxSize: Math.round(maxSize / 1024) + 'KB'
+            maxSize: Math.round(maxSize / 1024) + 'KB',
+            suggestion: 'A imagem foi comprimida mas ainda está muito grande. Use uma imagem menor.'
           }, { status: 400 });
         }
       }
-      console.log('✅ Base64 aceito (produção) - tamanho:', Math.round((base64Data?.length || 0) * 3 / 4 / 1024) + 'KB');
+      console.log('✅ Base64 aceito - tamanho:', Math.round((base64Data?.length || 0) * 3 / 4 / 1024) + 'KB');
     }
     // Validar que é uma URL válida se não for base64
     else if (!avatarUrl.startsWith('/uploads/') && !avatarUrl.startsWith('http')) {

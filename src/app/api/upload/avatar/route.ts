@@ -78,111 +78,131 @@ export async function POST(request: NextRequest) {
       }, { status: 400, headers });
     }
 
-    // Validar tamanho (2MB max para produção)
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    // Validar tamanho inicial (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       console.log('❌ Arquivo muito grande:', file.size);
       return NextResponse.json({ 
-        error: 'Arquivo muito grande. Tamanho máximo: 2MB',
+        error: 'Arquivo muito grande. Tamanho máximo: 5MB',
         fileSize: file.size,
         maxSize
       }, { status: 400, headers });
     }
 
-    console.log('📋 Passo 3: Processando arquivo...');
+    console.log('📋 Passo 3: Processando e comprimindo imagem...');
     
-    // Em produção (Vercel), não podemos salvar arquivos físicos
-    // Vamos usar base64 otimizado para imagens pequenas
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+    // Processar arquivo com compressão
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
     
-    if (isProduction) {
-      console.log('🌐 Ambiente de produção detectado - usando base64 otimizado');
-      
-      // Converter para base64
-      const bytes = await file.arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const dataUrl = `data:${file.type};base64,${base64}`;
-
-      console.log('✅ Upload processado (produção):', {
-        usuario: session.user.email,
-        tamanho: file.size,
-        tipo: file.type,
-        urlLength: dataUrl.length
-      });
-
-      const response = {
-        success: true,
-        url: dataUrl,
-        fileName: file.name,
-        size: file.size,
-        type: file.type,
-        message: 'Foto processada com sucesso!'
-      };
-      
-      console.log('🎉 === UPLOAD COMPLETO (PRODUÇÃO) ===');
-      return NextResponse.json(response, { headers });
-    }
-    
-    // Em desenvolvimento, salvar arquivo físico
-    console.log('🏠 Ambiente de desenvolvimento - salvando arquivo físico');
+    let processedBuffer: Buffer;
+    let outputFormat = 'jpeg';
     
     try {
-      // Criar diretório de uploads se não existir
-      const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars');
-      if (!existsSync(uploadsDir)) {
-        await mkdir(uploadsDir, { recursive: true });
+      // Tentar usar Sharp se disponível (não funciona na Vercel por limitações)
+      const sharp = require('sharp');
+      
+      console.log('📋 Usando Sharp para compressão...');
+      processedBuffer = await sharp(buffer)
+        .resize(200, 200, { 
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({ 
+          quality: 70,
+          progressive: true 
+        })
+        .toBuffer();
+        
+      outputFormat = 'jpeg';
+      console.log('✅ Imagem processada com Sharp:', {
+        tamanhoOriginal: buffer.length,
+        tamanhoComprimido: processedBuffer.length,
+        reducao: Math.round((1 - processedBuffer.length / buffer.length) * 100) + '%'
+      });
+      
+    } catch (sharpError) {
+      console.log('⚠️ Sharp não disponível, usando Canvas API...');
+      
+      // Fallback: usar canvas (funciona na Vercel)
+      try {
+        const canvas = require('canvas');
+        const img = await canvas.loadImage(buffer);
+        
+        // Criar canvas redimensionado
+        const targetSize = 200;
+        const canvasElement = canvas.createCanvas(targetSize, targetSize);
+        const ctx = canvasElement.getContext('2d');
+        
+        // Desenhar imagem redimensionada
+        ctx.drawImage(img, 0, 0, targetSize, targetSize);
+        
+        // Converter para buffer JPEG
+        processedBuffer = canvasElement.toBuffer('image/jpeg', { quality: 0.7 });
+        outputFormat = 'jpeg';
+        
+        console.log('✅ Imagem processada com Canvas:', {
+          tamanhoOriginal: buffer.length,
+          tamanhoComprimido: processedBuffer.length,
+          reducao: Math.round((1 - processedBuffer.length / buffer.length) * 100) + '%'
+        });
+        
+      } catch (canvasError) {
+        console.log('⚠️ Canvas não disponível, usando compressão básica...');
+        
+        // Fallback final: apenas reduzir qualidade do JPEG
+        if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
+          // Para JPEG, usar o buffer original mas limitado
+          if (buffer.length > 50000) { // Se maior que 50KB
+            console.log('❌ Imagem muito grande e não foi possível comprimir');
+            return NextResponse.json({ 
+              error: 'Imagem muito grande. Use uma imagem menor (máximo 200KB) ou em formato JPEG',
+              originalSize: Math.round(buffer.length / 1024) + 'KB',
+              suggestion: 'Comprima a imagem antes de fazer upload'
+            }, { status: 400, headers });
+          }
+        }
+        
+        processedBuffer = buffer;
+        outputFormat = file.type.split('/')[1] || 'jpeg';
       }
-
-      // Gerar nome único para o arquivo
-      const timestamp = Date.now();
-      const userId = session.user.email.replace(/[^a-zA-Z0-9]/g, '_'); // Sanitizar email
-      const extension = file.name.split('.').pop() || 'jpg';
-      const fileName = `${userId}_${timestamp}.${extension}`;
-      const filePath = join(uploadsDir, fileName);
-
-      // Salvar arquivo
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await writeFile(filePath, buffer);
-
-      // URL pública do arquivo
-      const avatarUrl = `/uploads/avatars/${fileName}`;
-
-      console.log('✅ Arquivo salvo com sucesso:', avatarUrl);
-
-      const response = {
-        success: true,
-        url: avatarUrl,
-        fileName: file.name,
-        size: file.size,
-        type: file.type,
-        message: 'Foto salva com sucesso!'
-      };
-      
-      console.log('🎉 === UPLOAD COMPLETO (DEV) ===');
-      return NextResponse.json(response, { headers });
-
-    } catch (fileError) {
-      console.log('❌ Erro ao salvar arquivo:', fileError);
-      console.error('💥 Erro completo:', fileError);
-      
-      // Fallback para base64 se não conseguir salvar arquivo
-      const bytes = await file.arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const dataUrl = `data:${file.type};base64,${base64}`;
-
-      const response = {
-        success: true,
-        url: dataUrl,
-        fileName: file.name,
-        size: file.size,
-        type: file.type,
-        message: 'Foto processada com sucesso (fallback)!'
-      };
-      
-      console.log('🎉 === UPLOAD COMPLETO (FALLBACK) ===');
-      return NextResponse.json(response, { headers });
     }
+    
+    // Verificar tamanho final
+    if (processedBuffer.length > 100000) { // 100KB
+      console.log('❌ Imagem ainda muito grande após compressão:', processedBuffer.length);
+      return NextResponse.json({ 
+        error: 'Imagem muito grande mesmo após compressão',
+        finalSize: Math.round(processedBuffer.length / 1024) + 'KB',
+        maxSize: '100KB',
+        suggestion: 'Use uma imagem menor ou de menor resolução'
+      }, { status: 400, headers });
+    }
+
+    // Converter para base64 para o banco de dados
+    const base64 = processedBuffer.toString('base64');
+    const dataUrl = `data:image/${outputFormat};base64,${base64}`;
+
+    console.log('✅ Upload processado com sucesso:', {
+      usuario: session.user.email,
+      tamanhoFinal: processedBuffer.length,
+      formato: outputFormat,
+      base64Length: dataUrl.length
+    });
+
+    const response = {
+      success: true,
+      url: dataUrl,
+      fileName: file.name,
+      size: processedBuffer.length,
+      type: `image/${outputFormat}`,
+      originalSize: file.size,
+      compressed: true,
+      message: 'Foto processada e comprimida com sucesso!'
+    };
+    
+    console.log('🎉 === UPLOAD COMPLETO ===');
+    return NextResponse.json(response, { headers });
 
   } catch (error) {
     console.error('💥 === ERRO NO UPLOAD ===');
