@@ -201,9 +201,9 @@ export default function PerfilPage() {
     setUploadingFoto(true);
     try {
       const formData = new FormData();
-      formData.append('foto', file);
+      formData.append('file', file);
 
-      const response = await fetch('/api/usuario/upload-foto', {
+      const response = await fetch('/api/upload/avatar', {
         method: 'POST',
         body: formData
       });
@@ -214,7 +214,7 @@ export default function PerfilPage() {
         alert('✅ Foto atualizada com sucesso!');
         // Atualizar o perfil com a nova foto
         if (perfil) {
-          setPerfil({ ...perfil, avatarUrl: data.avatarUrl });
+          setPerfil({ ...perfil, avatarUrl: data.url });
         }
         setMostrarEditarFoto(false);
       } else {
@@ -236,7 +236,13 @@ export default function PerfilPage() {
 
     setUploadingFoto(true);
     try {
-      const response = await fetch('/api/usuario/remover-foto', {
+      // Extrair nome do arquivo da URL atual
+      let fileName = '';
+      if (perfil?.avatarUrl) {
+        fileName = perfil.avatarUrl.split('/').pop() || '';
+      }
+
+      const response = await fetch(`/api/upload/avatar/delete?file=${fileName}`, {
         method: 'DELETE'
       });
 
