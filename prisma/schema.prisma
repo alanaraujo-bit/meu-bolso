@@ -192,3 +192,20 @@ enum StatusOnline {
   AUSENTE
   OFFLINE
 }
+
+model PerfilFinanceiro {
+  id                    String   @id @default(uuid())
+  userEmail             String   @unique
+  fonteRenda           String?
+  rendaMensal          String?
+  temDividas           String?
+  controlGastos        String?
+  guardaDinheiro       String?
+  objetivoPrincipal    String?
+  prazoObjetivo        String?
+  experienciaFinanceira String?
+  categoriasPrioritarias Json?   @default("[]")
+  onboardingCompleto   Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

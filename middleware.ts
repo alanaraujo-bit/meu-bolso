@@ -12,6 +12,11 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
     
+    // Não interferir com rotas de onboarding
+    if (pathname === '/onboarding') {
+      return NextResponse.next();
+    }
+    
     // Se o usuário está logado e é admin, mas não está no painel admin
     if (token?.email && ADMIN_EMAILS.includes(token.email)) {
       // Se está tentando acessar o dashboard normal, redirecionar para admin
@@ -33,7 +38,7 @@ export default withAuth(
         const { pathname } = req.nextUrl;
         
         // Páginas públicas
-        if (pathname === '/' || pathname === '/login' || pathname === '/cadastro') {
+        if (pathname === '/' || pathname === '/login' || pathname === '/cadastro' || pathname === '/onboarding') {
           return true;
         }
         

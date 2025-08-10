@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Logo from "@/components/branding/Logo";
 
@@ -19,6 +20,7 @@ export default function CadastroPage() {
     setLoading(true);
 
     try {
+      // Primeiro, cadastrar o usuário
       const res = await fetch("/api/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,14 +30,35 @@ export default function CadastroPage() {
       const data = await res.json();
       
       if (res.ok) {
-        setMensagem("Usuário cadastrado com sucesso! Redirecionando para login...");
+        setMensagem("Conta criada com sucesso! Fazendo login...");
+        
+        // Fazer login automaticamente
+        const loginResult = await signIn("credentials", {
+          email,
+          password: senha,
+          redirect: false,
+        });
+
+        if (loginResult?.ok) {
+          setMensagem("Login realizado! Redirecionando para configuração inicial...");
+          
+          // Aguardar um pouco para a sessão ser estabelecida
+          setTimeout(() => {
+            // Forçar navegação direta para onboarding
+            window.location.href = "/onboarding";
+          }, 1000);
+        } else {
+          // Se o login automático falhar, redirecionar para login manual
+          setMensagem("Conta criada! Redirecionando para login...");
+          setTimeout(() => {
+            router.push("/login?email=" + encodeURIComponent(email));
+          }, 2000);
+        }
+        
+        // Limpar campos
         setNome("");
         setEmail("");
         setSenha("");
-        // Redireciona para login após 2 segundos
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
       } else {
         setMensagem(data.error || "Erro ao cadastrar usuário.");
       }

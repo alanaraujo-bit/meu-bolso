@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Logo from '@/components/branding/Logo';
 
@@ -13,6 +13,16 @@ export default function LoginPage() {
   const [mensagem, setMensagem] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Pré-preencher email se vier da URL (vindo do cadastro)
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+      setMensagem('Conta criada com sucesso! Faça login para continuar.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +40,12 @@ export default function LoginPage() {
         setMensagem('Email ou senha inválidos');
       } else {
         setMensagem('Login realizado com sucesso!');
-        router.push('/dashboard');
+        
+        // Aguardar um pouco para a sessão ser estabelecida
+        setTimeout(() => {
+          // O OnboardingGuard vai cuidar do redirecionamento apropriado
+          router.push('/dashboard');
+        }, 500);
       }
     } catch (err) {
       console.error('Erro no login:', err);

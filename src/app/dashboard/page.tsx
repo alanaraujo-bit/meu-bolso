@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import CleanLoading from '@/components/CleanLoading';
 import { useCleanLoading } from '@/hooks/useCleanLoading';
+import { usePerfilFinanceiro } from '@/hooks/useOnboarding';
 import HelpButton from '@/components/HelpButton';
 import { helpContents } from '@/lib/helpContents';
 import { 
@@ -243,7 +244,7 @@ function InsightCard({ insight, getPriorityBorderColor, getPriorityBgColor, getC
 }
 
 export default function Dashboard() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const { loading, setLoading } = useCleanLoading();
   const [error, setError] = useState<string | null>(null);
@@ -251,12 +252,28 @@ export default function Dashboard() {
   const [mostrarInsights, setMostrarInsights] = useState(false);
   const [mesAtual, setMesAtual] = useState(new Date().getMonth() + 1);
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
+  const [mostrarBoasVindas, setMostrarBoasVindas] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       redirect('/login');
     }
   }, [status]);
+
+  // Verificar parâmetro de boas-vindas
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('welcome') === 'true') {
+      setMostrarBoasVindas(true);
+      // Remover o parâmetro da URL
+      window.history.replaceState({}, '', '/dashboard');
+      
+      // Ocultar mensagem após 5 segundos
+      setTimeout(() => {
+        setMostrarBoasVindas(false);
+      }, 5000);
+    }
+  }, []);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -500,6 +517,31 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Mensagem de Boas-vindas */}
+        {mostrarBoasVindas && (
+          <div className="mb-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="h-8 w-8" />
+                <div>
+                  <h2 className="text-xl font-bold">
+                    🎉 Bem-vindo ao Meu Bolso, {session?.user?.name?.split(' ')[0]}!
+                  </h2>
+                  <p className="text-blue-100">
+                    Configuração concluída! Agora você pode começar a controlar suas finanças de forma inteligente.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMostrarBoasVindas(false)}
+                className="text-blue-100 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+        
         {/* Header com Navegação de Mês */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
