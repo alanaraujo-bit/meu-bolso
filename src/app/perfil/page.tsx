@@ -69,20 +69,6 @@ export default function PerfilPage() {
     try {
       console.log('🔄 Salvando configurações:', configuracoes);
       
-      // Primeiro testar a API simples
-      console.log('🧪 Testando API simples primeiro...');
-      const testResponse = await fetch('/api/test-config', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(configuracoes)
-      });
-      
-      console.log('🧪 Teste - Status:', testResponse.status);
-      const testData = await testResponse.text();
-      console.log('🧪 Teste - Resposta:', testData);
-      
-      // Agora tentar a API real
-      console.log('🔄 Tentando API real...');
       const response = await fetch('/api/usuario/configuracoes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -90,7 +76,6 @@ export default function PerfilPage() {
       });
 
       console.log('📡 Status da resposta:', response.status);
-      console.log('📡 Headers da resposta:', response.headers);
 
       let data;
       const responseText = await response.text();
@@ -101,7 +86,6 @@ export default function PerfilPage() {
         console.log('📦 Resposta parseada:', data);
       } catch (parseError) {
         console.error('❌ Erro ao fazer parse da resposta:', parseError);
-        console.error('❌ Resposta recebida:', responseText);
         alert('❌ Erro: Resposta inválida do servidor');
         return;
       }
