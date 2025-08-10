@@ -129,14 +129,25 @@ export async function POST(request: NextRequest) {
 
     } catch (fileError) {
       console.log('❌ Erro ao salvar arquivo:', fileError);
-      console.error('💥 Erro completo:', fileError);
       
-      // Em produção, não usar fallback base64 - retornar erro
-      return NextResponse.json({ 
-        error: 'Erro ao salvar arquivo no servidor',
-        details: fileError instanceof Error ? fileError.message : 'Erro desconhecido ao salvar arquivo',
-        suggestion: 'Tente novamente ou use uma imagem menor'
-      }, { status: 500, headers });
+      // Fallback para base64 se não conseguir salvar arquivo
+      console.log('🔄 Tentando fallback para base64...');
+      
+      const bytes = await file.arrayBuffer();
+      const base64 = Buffer.from(bytes).toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
+
+      const response = {
+        success: true,
+        url: dataUrl,
+        fileName: file.name,
+        size: file.size,
+        type: file.type,
+        message: 'Foto processada com sucesso (fallback)!'
+      };
+      
+      console.log('🎉 === UPLOAD COMPLETO (FALLBACK) ===');
+      return NextResponse.json(response, { headers });
     }
 
   } catch (error) {

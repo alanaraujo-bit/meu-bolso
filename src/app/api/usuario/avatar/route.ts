@@ -23,8 +23,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'URL do avatar é obrigatória' }, { status: 400 });
     }
     
+    // Validar que é uma URL válida e não base64
+    if (avatarUrl.startsWith('data:')) {
+      console.log('❌ Base64 não é permitido - deve ser URL de arquivo');
+      return NextResponse.json({ 
+        error: 'Base64 não suportado. Use a API de upload para gerar uma URL de arquivo.',
+        receivedUrlType: 'base64'
+      }, { status: 400 });
+    }
+    
+    // Validar que é uma URL do nosso sistema ou externa válida
+    if (!avatarUrl.startsWith('/uploads/') && !avatarUrl.startsWith('http')) {
+      console.log('❌ URL inválida:', avatarUrl);
+      return NextResponse.json({ 
+        error: 'URL inválida. Deve começar com /uploads/ ou http',
+        receivedUrl: avatarUrl.substring(0, 100)
+      }, { status: 400 });
+    }
+    
     console.log('📋 Salvando avatar para usuário:', session.user.email);
-    console.log('📋 URL do avatar:', avatarUrl.substring(0, 50) + '...');
+    console.log('📋 URL do avatar:', avatarUrl);
 
     // Buscar usuário
     const usuario = await prisma.usuario.findUnique({
