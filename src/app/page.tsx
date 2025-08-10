@@ -25,10 +25,16 @@ export default function Home() {
           }
           
           // Para usuários normais, buscar configuração de página inicial
+          console.log('🔍 Buscando configurações do usuário...');
           const response = await fetch('/api/usuario/configuracoes');
+          console.log('📡 Status da resposta de configurações:', response.status);
+          
           if (response.ok) {
             const data = await response.json();
+            console.log('📦 Dados de configuração recebidos:', data);
+            
             const paginaInicial = data.configuracoes?.paginaInicial || 'dashboard';
+            console.log('🎯 Página inicial configurada:', paginaInicial);
             
             // Mapear página inicial para rota
             const rotaMap: { [key: string]: string } = {
@@ -40,10 +46,10 @@ export default function Home() {
             };
             
             const rota = rotaMap[paginaInicial] || '/dashboard';
-            console.log(`🔄 Redirecionando para página inicial configurada: ${rota} (${paginaInicial})`);
+            console.log(`� Redirecionando para página inicial configurada: ${rota} (${paginaInicial})`);
             router.push(rota);
           } else {
-            console.log('🔄 Erro ao buscar configurações, redirecionando para dashboard padrão');
+            console.log('❌ Erro ao buscar configurações, redirecionando para dashboard padrão');
             router.push('/dashboard');
           }
         } catch (error) {
