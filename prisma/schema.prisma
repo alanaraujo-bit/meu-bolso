@@ -12,7 +12,7 @@ model Usuario {
   senha            String
   email            String                @unique
   nome             String?
-  avatarUrl        String?
+  avatarUrl        String?               @db.Text // Mudado para TEXT para suportar base64
   criadoEm         DateTime              @default(now())
   atualizadoEm     DateTime              @updatedAt
   ultimaAtividade  DateTime              @default(now())

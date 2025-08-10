@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar tamanho (2MB max para produção)
-    const maxSize = 2 * 1024 * 1024; // 2MB (reduzido para produção)
+    const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
       console.log('❌ Arquivo muito grande:', file.size);
       return NextResponse.json({ 
@@ -86,40 +89,66 @@ export async function POST(request: NextRequest) {
       }, { status: 400, headers });
     }
 
-    console.log('📋 Passo 3: Convertendo para base64...');
+    console.log('📋 Passo 3: Salvando arquivo no servidor...');
     
-    let bytes, base64, dataUrl;
     try {
-      bytes = await file.arrayBuffer();
-      base64 = Buffer.from(bytes).toString('base64');
-      dataUrl = `data:${file.type};base64,${base64}`;
-    } catch (conversionError) {
-      console.log('❌ Erro na conversão:', conversionError);
-      return NextResponse.json({ 
-        error: 'Erro ao processar arquivo',
-        details: conversionError instanceof Error ? conversionError.message : 'Erro na conversão'
-      }, { status: 500, headers });
+      // Criar diretório de uploads se não existir
+      const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars');
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true });
+      }
+
+      // Gerar nome único para o arquivo
+      const timestamp = Date.now();
+      const userId = session.user.email.replace(/[^a-zA-Z0-9]/g, '_'); // Sanitizar email
+      const extension = file.name.split('.').pop() || 'jpg';
+      const fileName = `${userId}_${timestamp}.${extension}`;
+      const filePath = join(uploadsDir, fileName);
+
+      // Salvar arquivo
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+
+      // URL pública do arquivo
+      const avatarUrl = `/uploads/avatars/${fileName}`;
+
+      console.log('✅ Arquivo salvo com sucesso:', avatarUrl);
+
+      const response = {
+        success: true,
+        url: avatarUrl,
+        fileName: file.name,
+        size: file.size,
+        type: file.type,
+        message: 'Foto salva com sucesso!'
+      };
+      
+      console.log('🎉 === UPLOAD COMPLETO ===');
+      return NextResponse.json(response, { headers });
+
+    } catch (fileError) {
+      console.log('❌ Erro ao salvar arquivo:', fileError);
+      
+      // Fallback para base64 se não conseguir salvar arquivo
+      console.log('🔄 Tentando fallback para base64...');
+      
+      const bytes = await file.arrayBuffer();
+      const base64 = Buffer.from(bytes).toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
+
+      const response = {
+        success: true,
+        url: dataUrl,
+        fileName: file.name,
+        size: file.size,
+        type: file.type,
+        message: 'Foto processada com sucesso (fallback)!'
+      };
+      
+      console.log('🎉 === UPLOAD COMPLETO (FALLBACK) ===');
+      return NextResponse.json(response, { headers });
     }
-
-    console.log('✅ Upload processado com sucesso:', {
-      usuario: session.user.email,
-      tamanho: file.size,
-      tipo: file.type,
-      urlLength: dataUrl.length
-    });
-
-    // Por enquanto, retornar o data URL para uso direto
-    const response = {
-      success: true,
-      url: dataUrl,
-      fileName: file.name,
-      size: file.size,
-      type: file.type,
-      message: 'Foto processada com sucesso!'
-    };
-    
-    console.log('🎉 === UPLOAD COMPLETO ===');
-    return NextResponse.json(response, { headers });
 
   } catch (error) {
     console.error('💥 === ERRO NO UPLOAD ===');
