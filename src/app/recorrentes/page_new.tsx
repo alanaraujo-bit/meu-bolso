@@ -302,7 +302,12 @@ export default function RecorrentesPage() {
               <h1 className="text-4xl font-bold text-gray-900">
                 Transações Recorrentes
               </h1>
-              <HelpButton content={helpContents.recorrentes} />
+              <HelpButton 
+                title="Como usar transações recorrentes"
+                steps={helpContents.recorrentes}
+                size="md"
+                variant="inline"
+              />
             </div>
             <p className="text-gray-600">
               Gerencie suas transações automáticas
@@ -483,7 +488,7 @@ export default function RecorrentesPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Início:</span>
                       <span className="font-medium text-gray-900">
-                        {formatDataBrasil(recorrente.dataInicio)}
+                        {formatDataBrasil(new Date(recorrente.dataInicio))}
                       </span>
                     </div>
                     
@@ -491,7 +496,7 @@ export default function RecorrentesPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Fim:</span>
                         <span className="font-medium text-gray-900">
-                          {formatDataBrasil(recorrente.dataFim)}
+                          {formatDataBrasil(new Date(recorrente.dataFim))}
                         </span>
                       </div>
                     )}
@@ -507,7 +512,7 @@ export default function RecorrentesPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Próxima:</span>
                         <span className="font-medium text-blue-600">
-                          {formatDataBrasil(recorrente.proximaExecucao)}
+                          {formatDataBrasil(new Date(recorrente.proximaExecucao))}
                         </span>
                       </div>
                     )}

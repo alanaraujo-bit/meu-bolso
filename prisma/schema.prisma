@@ -21,6 +21,15 @@ model Usuario {
   tempoSessao      Int                   @default(0) // em segundos
   dispositivoAtual String?
   ipAtual          String?
+  
+  // Configurações do usuário
+  tema             String                @default("automatico") // claro, escuro, automatico
+  formatoMoeda     String                @default("BRL") // BRL, USD, EUR
+  confirmarExclusoes Boolean             @default(true)
+  timeoutSessao    Int                   @default(60) // em minutos
+  paginaInicial    String                @default("dashboard") // dashboard, transacoes, relatorios, metas
+  mostrarTooltips  Boolean               @default(true)
+  
   categorias       Categoria[]
   metas            Meta[]
   transacoes       Transacao[]
