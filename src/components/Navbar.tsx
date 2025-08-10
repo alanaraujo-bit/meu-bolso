@@ -29,6 +29,7 @@ export default function Navbar() {
     { name: "Metas", href: "/metas", icon: "🎯" },
     { name: "Categorias", href: "/categorias", icon: "🏷️" },
     { name: "Dívidas", href: "/dividas", icon: "👛" },
+    { name: "Perfil", href: "/perfil", icon: "👤" },
     ...(isAdmin ? [{ name: "Admin", href: "/admin", icon: "🛡️" }] : []),
   ];
 

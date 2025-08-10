@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
-    "@prisma/client": "^6.11.1",
+    "@prisma/client": "^6.13.0",
     "@types/recharts": "^1.8.29",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.5.0",

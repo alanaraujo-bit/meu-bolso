@@ -373,7 +373,29 @@ export default function TransacoesPage() {
   }
 
   function formatarData(data: string): string {
-    return new Date(data).toLocaleString('pt-BR', {
+    const dataObj = new Date(data);
+    const hoje = new Date();
+    const ontem = new Date();
+    ontem.setDate(hoje.getDate() - 1);
+    
+    // Verificar se é hoje
+    if (dataObj.toDateString() === hoje.toDateString()) {
+      return `Hoje, ${dataObj.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
+    }
+    
+    // Verificar se é ontem
+    if (dataObj.toDateString() === ontem.toDateString()) {
+      return `Ontem, ${dataObj.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
+    }
+    
+    // Para outras datas, mostrar data completa com hora
+    return dataObj.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -540,7 +562,7 @@ export default function TransacoesPage() {
                 placeholder="Digite para buscar nas descrições..."
                 value={filtroBusca}
                 onChange={(e) => setFiltroBusca(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
               />
             </div>
 
@@ -554,11 +576,15 @@ export default function TransacoesPage() {
                 <select
                   value={filtroTipo}
                   onChange={(e) => setFiltroTipo(e.target.value as "" | "receita" | "despesa")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+                  style={{ 
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff'
+                  }}
                 >
-                  <option value="">Todos</option>
-                  <option value="receita">Receitas</option>
-                  <option value="despesa">Despesas</option>
+                  <option value="" style={{ color: '#6b7280' }}>Todos</option>
+                  <option value="receita" style={{ color: '#1f2937', fontWeight: '500' }}>Receitas</option>
+                  <option value="despesa" style={{ color: '#1f2937', fontWeight: '500' }}>Despesas</option>
                 </select>
               </div>
 
@@ -569,11 +595,23 @@ export default function TransacoesPage() {
                 <select
                   value={filtroCategoria}
                   onChange={(e) => setFiltroCategoria(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+                  style={{ 
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff'
+                  }}
                 >
-                  <option value="">Todas</option>
+                  <option value="" style={{ color: '#6b7280' }}>Todas</option>
                   {categorias.map((categoria) => (
-                    <option key={categoria.id} value={categoria.id}>
+                    <option 
+                      key={categoria.id} 
+                      value={categoria.id}
+                      style={{ 
+                        color: '#1f2937',
+                        backgroundColor: '#ffffff',
+                        fontWeight: '500'
+                      }}
+                    >
                       {categoria.icone} {categoria.nome}
                     </option>
                   ))}
@@ -615,7 +653,7 @@ export default function TransacoesPage() {
                   placeholder="0,00"
                   value={filtroValorMin}
                   onChange={(e) => setFiltroValorMin(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
                 />
               </div>
 
@@ -630,7 +668,7 @@ export default function TransacoesPage() {
                   placeholder="0,00"
                   value={filtroValorMax}
                   onChange={(e) => setFiltroValorMax(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
                 />
               </div>
             </div>
@@ -646,13 +684,17 @@ export default function TransacoesPage() {
                 <select
                   value={ordenacao.campo}
                   onChange={(e) => setOrdenacao({ ...ordenacao, campo: e.target.value as keyof Transacao })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+                  style={{ 
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff'
+                  }}
                 >
-                  <option value="data">Data</option>
-                  <option value="valor">Valor</option>
-                  <option value="categoria">Categoria</option>
-                  <option value="tipo">Tipo</option>
-                  <option value="criadoEm">Data de Criação</option>
+                  <option value="data" style={{ color: '#1f2937', fontWeight: '500' }}>Data</option>
+                  <option value="valor" style={{ color: '#1f2937', fontWeight: '500' }}>Valor</option>
+                  <option value="categoria" style={{ color: '#1f2937', fontWeight: '500' }}>Categoria</option>
+                  <option value="tipo" style={{ color: '#1f2937', fontWeight: '500' }}>Tipo</option>
+                  <option value="criadoEm" style={{ color: '#1f2937', fontWeight: '500' }}>Data de Criação</option>
                 </select>
               </div>
 
@@ -663,10 +705,14 @@ export default function TransacoesPage() {
                 <select
                   value={ordenacao.direcao}
                   onChange={(e) => setOrdenacao({ ...ordenacao, direcao: e.target.value as 'asc' | 'desc' })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+                  style={{ 
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff'
+                  }}
                 >
-                  <option value="desc">Decrescente</option>
-                  <option value="asc">Crescente</option>
+                  <option value="desc" style={{ color: '#1f2937', fontWeight: '500' }}>Decrescente</option>
+                  <option value="asc" style={{ color: '#1f2937', fontWeight: '500' }}>Crescente</option>
                 </select>
               </div>
             </div>
@@ -693,7 +739,7 @@ export default function TransacoesPage() {
                   placeholder="0,00"
                   value={formData.valor}
                   onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
                   required
                 />
               </div>
@@ -716,11 +762,15 @@ export default function TransacoesPage() {
                       categoriaId: categoriaTipoCompativel ? formData.categoriaId : ""
                     });
                   }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+                  style={{ 
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff'
+                  }}
                   required
                 >
-                  <option value="receita">Receita</option>
-                  <option value="despesa">Despesa</option>
+                  <option value="receita" style={{ color: '#1f2937', fontWeight: '500' }}>Receita</option>
+                  <option value="despesa" style={{ color: '#1f2937', fontWeight: '500' }}>Despesa</option>
                 </select>
               </div>
 
@@ -765,7 +815,7 @@ export default function TransacoesPage() {
                   placeholder="Descrição da transação"
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
                 />
               </div>
 
@@ -778,7 +828,7 @@ export default function TransacoesPage() {
                   placeholder="Separe as tags por vírgula (ex: alimentação, restaurante)"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
                 />
               </div>
 

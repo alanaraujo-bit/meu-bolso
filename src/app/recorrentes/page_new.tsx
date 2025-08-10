@@ -302,6 +302,7 @@ export default function RecorrentesPage() {
               <h1 className="text-4xl font-bold text-gray-900">
                 Transações Recorrentes
               </h1>
+              <HelpButton content={helpContents.recorrentes} />
             </div>
             <p className="text-gray-600">
               Gerencie suas transações automáticas
@@ -311,7 +312,7 @@ export default function RecorrentesPage() {
           <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
             <button
               onClick={() => setMostrarTotais(true)}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
             >
               📊 Ver Totais
             </button>
@@ -320,7 +321,7 @@ export default function RecorrentesPage() {
               <button
                 onClick={executarRecorrentes}
                 disabled={executandoRecorrentes}
-                className="bg-gradient-to-r from-secondary to-red-500 text-white px-6 py-3 rounded-xl hover:from-red-500 hover:to-red-600 transition-all duration-200 font-medium shadow-lg disabled:opacity-50"
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium shadow-lg disabled:opacity-50"
               >
                 {executandoRecorrentes ? "⏳ Executando..." : `⚡ Executar Pendentes (${pendentesInfo.totalPendentes})`}
               </button>
@@ -328,7 +329,7 @@ export default function RecorrentesPage() {
             
             <button
               onClick={() => setShowForm(true)}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+              className="bg-gradient-to-r from-primary to-primary/80 text-white px-6 py-3 rounded-xl hover:from-primary/90 hover:to-primary/70 transition-all duration-200 font-medium shadow-lg"
             >
               ➕ Nova Recorrente
             </button>
@@ -391,15 +392,11 @@ export default function RecorrentesPage() {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value as any)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-              style={{ 
-                color: '#1f2937',
-                backgroundColor: '#ffffff'
-              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
-              <option value="todos" style={{ color: '#1f2937', fontWeight: '500' }}>Todos</option>
-              <option value="ativo" style={{ color: '#1f2937', fontWeight: '500' }}>Ativo</option>
-              <option value="inativo" style={{ color: '#1f2937', fontWeight: '500' }}>Inativo</option>
+              <option value="todos">Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
             </select>
           </div>
           
@@ -410,15 +407,11 @@ export default function RecorrentesPage() {
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value as any)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-              style={{ 
-                color: '#1f2937',
-                backgroundColor: '#ffffff'
-              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
-              <option value="todos" style={{ color: '#1f2937', fontWeight: '500' }}>Todos</option>
-              <option value="receita" style={{ color: '#1f2937', fontWeight: '500' }}>Receita</option>
-              <option value="despesa" style={{ color: '#1f2937', fontWeight: '500' }}>Despesa</option>
+              <option value="todos">Todos</option>
+              <option value="receita">Receita</option>
+              <option value="despesa">Despesa</option>
             </select>
           </div>
         </div>
@@ -438,7 +431,7 @@ export default function RecorrentesPage() {
               </p>
               <button
                 onClick={() => setShowForm(true)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+                className="bg-gradient-to-r from-primary to-primary/80 text-white px-6 py-3 rounded-xl hover:from-primary/90 hover:to-primary/70 transition-all duration-200 font-medium shadow-lg"
               >
                 ➕ Criar Primeira Recorrente
               </button>
@@ -490,7 +483,7 @@ export default function RecorrentesPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Início:</span>
                       <span className="font-medium text-gray-900">
-                        {new Date(recorrente.dataInicio).toLocaleDateString('pt-BR')}
+                        {formatDataBrasil(recorrente.dataInicio)}
                       </span>
                     </div>
                     
@@ -498,7 +491,7 @@ export default function RecorrentesPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Fim:</span>
                         <span className="font-medium text-gray-900">
-                          {new Date(recorrente.dataFim).toLocaleDateString('pt-BR')}
+                          {formatDataBrasil(recorrente.dataFim)}
                         </span>
                       </div>
                     )}
@@ -514,7 +507,7 @@ export default function RecorrentesPage() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600">Próxima:</span>
                         <span className="font-medium text-blue-600">
-                          {new Date(recorrente.proximaExecucao).toLocaleDateString('pt-BR')}
+                          {formatDataBrasil(recorrente.proximaExecucao)}
                         </span>
                       </div>
                     )}
@@ -523,23 +516,23 @@ export default function RecorrentesPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => editRecorrente(recorrente)}
-                      className="flex-1 bg-blue-50 text-blue-700 py-2.5 px-3 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium border border-blue-200"
+                      className="flex-1 bg-blue-50 text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                     >
                       ✏️ Editar
                     </button>
                     <button
                       onClick={() => toggleRecorrente(recorrente.id, recorrente.isActive)}
-                      className={`flex-1 py-2.5 px-3 rounded-lg transition-colors text-sm font-medium border ${
+                      className={`flex-1 py-2 px-3 rounded-lg transition-colors text-sm font-medium ${
                         recorrente.isActive 
-                          ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' 
-                          : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
+                          ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100' 
+                          : 'bg-green-50 text-green-700 hover:bg-green-100'
                       }`}
                     >
                       {recorrente.isActive ? '⏸️ Pausar' : '▶️ Ativar'}
                     </button>
                     <button
                       onClick={() => deleteRecorrente(recorrente.id)}
-                      className="flex-1 bg-red-50 text-red-700 py-2.5 px-3 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium border border-red-200"
+                      className="flex-1 bg-red-50 text-red-700 py-2 px-3 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
                     >
                       🗑️ Excluir
                     </button>
@@ -552,32 +545,31 @@ export default function RecorrentesPage() {
 
         {/* Modal do Formulário */}
         {showForm && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-hidden transform transition-all">
-              {/* Header com gradiente mais harmonioso */}
-              <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-600 p-8 relative overflow-hidden">
-                {/* Decorações de fundo mais suaves */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
-                <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+              {/* Header com gradiente */}
+              <div className="bg-gradient-to-r from-primary via-primary/90 to-accent p-6 relative overflow-hidden">
+                {/* Decoração de fundo */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
                 
                 <div className="flex justify-between items-center relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
-                      <span className="text-3xl">🔄</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                      <span className="text-2xl">🔄</span>
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-white drop-shadow-sm">
+                      <h2 className="text-2xl font-bold text-white">
                         {editingId ? "Editar" : "Nova"} Recorrente
                       </h2>
-                      <p className="text-white/90 text-sm font-medium">
+                      <p className="text-white/80 text-sm">
                         {editingId ? "Atualize os dados" : "Configure uma nova transação automática"}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={resetForm}
-                    className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30 font-bold text-lg"
+                    className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors backdrop-blur-sm"
                   >
                     ✕
                   </button>
@@ -585,12 +577,12 @@ export default function RecorrentesPage() {
               </div>
 
               {/* Conteúdo do formulário */}
-              <div className="p-8 overflow-y-auto max-h-[calc(95vh-180px)]">
-                <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="p-6 overflow-y-auto max-h-[calc(95vh-140px)]">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Categoria */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                      <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <span className="w-2 h-2 bg-primary rounded-full"></span>
                       Categoria *
                     </label>
                     <div className="relative">
@@ -612,12 +604,12 @@ export default function RecorrentesPage() {
                   </div>
 
                   {/* Tipo */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                      <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <span className="w-2 h-2 bg-primary rounded-full"></span>
                       Tipo *
                     </label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => {
@@ -631,14 +623,14 @@ export default function RecorrentesPage() {
                             categoriaId: categoriaTipoCompativel ? formData.categoriaId : ""
                           });
                         }}
-                        className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all font-semibold ${
+                        className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
                           formData.tipo === "receita" 
-                            ? "border-green-500 bg-green-500 text-white shadow-lg shadow-green-500/25 scale-105" 
-                            : "border-gray-300 bg-white text-gray-700 hover:border-green-400 hover:bg-green-50"
+                            ? "border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20" 
+                            : "border-gray-200 bg-gray-50 text-gray-600 hover:border-primary/30"
                         }`}
                       >
                         <TrendingUp className="w-5 h-5" />
-                        <span>Receita</span>
+                        <span className="font-medium">Receita</span>
                       </button>
                       <button
                         type="button"
@@ -653,26 +645,26 @@ export default function RecorrentesPage() {
                             categoriaId: categoriaTipoCompativel ? formData.categoriaId : ""
                           });
                         }}
-                        className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all font-semibold ${
+                        className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
                           formData.tipo === "despesa" 
-                            ? "border-red-500 bg-red-500 text-white shadow-lg shadow-red-500/25 scale-105" 
-                            : "border-gray-300 bg-white text-gray-700 hover:border-red-400 hover:bg-red-50"
+                            ? "border-secondary bg-secondary/10 text-secondary shadow-lg shadow-secondary/20" 
+                            : "border-gray-200 bg-gray-50 text-gray-600 hover:border-secondary/30"
                         }`}
                       >
                         <TrendingDown className="w-5 h-5" />
-                        <span>Despesa</span>
+                        <span className="font-medium">Despesa</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Valor */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                      <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <span className="w-2 h-2 bg-primary rounded-full"></span>
                       Valor *
                     </label>
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 font-bold text-lg">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                         R$
                       </div>
                       <input
@@ -681,92 +673,92 @@ export default function RecorrentesPage() {
                         min="0"
                         value={formData.valor}
                         onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-lg font-semibold text-gray-900 placeholder-gray-600"
-                        placeholder="100,00"
+                        className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-gray-50 hover:bg-white text-lg font-medium"
+                        placeholder="0,00"
                         required
                       />
                     </div>
                   </div>
 
                   {/* Descrição */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                      <span className="w-3 h-3 bg-orange-500 rounded-full shadow-sm"></span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <span className="w-2 h-2 bg-accent rounded-full"></span>
                       Descrição
                     </label>
                     <input
                       type="text"
                       value={formData.descricao}
                       onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                      className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-medium text-gray-900 placeholder-gray-600"
-                      placeholder="Ex: Salário, Aluguel, Internet..."
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-gray-50 hover:bg-white"
+                      placeholder="Descrição da transação"
                     />
                   </div>
 
                   {/* Frequência */}
-                  <div className="space-y-3">
-                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                      <span className="w-3 h-3 bg-purple-500 rounded-full shadow-sm"></span>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <span className="w-2 h-2 bg-info rounded-full"></span>
                       Frequência *
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
                       {[
-                        { value: "diario", label: "Diário", icon: "📅", color: "from-blue-500 to-blue-600" },
-                        { value: "semanal", label: "Semanal", icon: "📆", color: "from-green-500 to-green-600" },
-                        { value: "mensal", label: "Mensal", icon: "🗓️", color: "from-purple-500 to-purple-600" },
-                        { value: "anual", label: "Anual", icon: "📋", color: "from-orange-500 to-orange-600" }
+                        { value: "diario", label: "Diário", icon: "📅" },
+                        { value: "semanal", label: "Semanal", icon: "📆" },
+                        { value: "mensal", label: "Mensal", icon: "🗓️" },
+                        { value: "anual", label: "Anual", icon: "📋" }
                       ].map((freq) => (
                         <button
                           key={freq.value}
                           type="button"
                           onClick={() => setFormData({ ...formData, frequencia: freq.value as any })}
-                          className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all font-semibold ${
+                          className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
                             formData.frequencia === freq.value
-                              ? `bg-gradient-to-r ${freq.color} text-white border-transparent shadow-lg scale-105`
-                              : "border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50"
+                              ? "border-info bg-info/10 text-info shadow-md shadow-info/20"
+                              : "border-gray-200 bg-gray-50 text-gray-600 hover:border-info/30"
                           }`}
                         >
-                          <span className="text-lg">{freq.icon}</span>
-                          <span>{freq.label}</span>
+                          <span>{freq.icon}</span>
+                          <span className="text-sm font-medium">{freq.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Datas */}
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                        <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <span className="w-2 h-2 bg-primary rounded-full"></span>
                         Data de Início *
                       </label>
                       <input
                         type="date"
                         value={formData.dataInicio}
                         onChange={(e) => setFormData({ ...formData, dataInicio: e.target.value })}
-                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
+                        className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-gray-50 hover:bg-white"
                         required
                       />
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
-                        <span className="w-3 h-3 bg-orange-500 rounded-full shadow-sm"></span>
-                        Data de Fim <span className="text-sm font-normal text-gray-500">(opcional)</span>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <span className="w-2 h-2 bg-accent rounded-full"></span>
+                        Data de Fim (opcional)
                       </label>
                       <input
                         type="date"
                         value={formData.dataFim}
                         onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
-                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
+                        className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-gray-50 hover:bg-white"
                       />
                     </div>
                   </div>
 
                   {/* Status Ativo (apenas em edição) */}
                   {editingId && (
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-2xl border-2 border-gray-200">
-                      <label className="flex items-center gap-4 cursor-pointer">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <label className="flex items-center gap-3 cursor-pointer">
                         <div className="relative">
                           <input
                             type="checkbox"
@@ -775,33 +767,33 @@ export default function RecorrentesPage() {
                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                             className="sr-only"
                           />
-                          <div className={`w-14 h-7 rounded-full transition-all duration-300 shadow-inner ${formData.isActive ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gray-400'}`}>
-                            <div className={`w-5 h-5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${formData.isActive ? 'translate-x-7' : 'translate-x-1'} mt-1`}></div>
+                          <div className={`w-12 h-6 rounded-full transition-colors ${formData.isActive ? 'bg-primary' : 'bg-gray-300'}`}>
+                            <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${formData.isActive ? 'translate-x-6' : 'translate-x-0.5'} mt-0.5`}></div>
                           </div>
                         </div>
                         <div>
-                          <span className="text-lg font-bold text-gray-800">Transação ativa</span>
-                          <p className="text-sm text-gray-600 leading-relaxed">Quando desativada, não será executada automaticamente</p>
+                          <span className="text-sm font-medium text-gray-700">Transação ativa</span>
+                          <p className="text-xs text-gray-500">Quando desativada, não será executada automaticamente</p>
                         </div>
                       </label>
                     </div>
                   )}
 
                   {/* Botões de Ação */}
-                  <div className="flex gap-4 pt-8 border-t-2 border-gray-100">
+                  <div className="flex gap-4 pt-6 border-t border-gray-100">
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-4 px-6 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-bold text-lg flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-gray-300"
+                      className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl hover:bg-gray-200 transition-all duration-200 font-semibold flex items-center justify-center gap-2"
                     >
-                      <span className="text-xl">✕</span>
+                      <span>✕</span>
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 hover:scale-105 transform"
+                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 text-white py-4 rounded-xl hover:from-primary/90 hover:to-primary/70 transition-all duration-200 font-semibold shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
                     >
-                      <span className="text-xl">{editingId ? "💾" : "✨"}</span>
+                      <span>{editingId ? "💾" : "✨"}</span>
                       {editingId ? "Atualizar" : "Criar"}
                     </button>
                   </div>

@@ -48,6 +48,10 @@ next-env.d.ts
 .vscode/
 .idea/
 *.swp
+
+# uploads (arquivos de usuário)
+/public/uploads/**/*
+!/public/uploads/**/.gitkeep
 *.swo
 
 # OS

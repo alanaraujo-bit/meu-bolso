@@ -245,10 +245,22 @@ export default function RelatoriosAdmin() {
             <select
               value={filtroCategoria}
               onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+              style={{ 
+                color: '#1f2937',
+                backgroundColor: '#ffffff'
+              }}
             >
               {categorias.map(categoria => (
-                <option key={categoria} value={categoria}>
+                <option 
+                  key={categoria} 
+                  value={categoria}
+                  style={{ 
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff',
+                    fontWeight: '500'
+                  }}
+                >
                   {categoria === 'todos' ? 'Todas as Categorias' : categoria}
                 </option>
               ))}

@@ -384,7 +384,7 @@ export default function DividasPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <button
               onClick={() => setShowModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               <Plus size={18} />
               Nova Dívida
@@ -395,11 +395,15 @@ export default function DividasPage() {
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1 sm:flex-none"
+                className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium flex-1 sm:flex-none"
+                style={{ 
+                  color: '#1f2937',
+                  backgroundColor: '#ffffff'
+                }}
               >
-                <option value="TODAS">Todas</option>
-                <option value="ATIVA">Ativas</option>
-                <option value="QUITADA">Quitadas</option>
+                <option value="TODAS" style={{ color: '#1f2937', fontWeight: '500' }}>Todas</option>
+                <option value="ATIVA" style={{ color: '#1f2937', fontWeight: '500' }}>Ativas</option>
+                <option value="QUITADA" style={{ color: '#1f2937', fontWeight: '500' }}>Quitadas</option>
               </select>
             </div>
           </div>
@@ -418,7 +422,7 @@ export default function DividasPage() {
               </p>
               <button
                 onClick={() => setShowModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 rounded-lg font-medium transition-colors text-sm sm:text-base"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg text-sm sm:text-base"
               >
                 Cadastrar Primeira Dívida
               </button>
@@ -632,7 +636,10 @@ export default function DividasPage() {
                     <Legend 
                       verticalAlign="bottom" 
                       height={36}
-                      formatter={(value, entry) => `${entry.payload.nome}: ${entry.payload.percentage}%`}
+                      formatter={(value, entry: any) => {
+                        const data = estatisticas.dividasPorCategoria.find(item => item.nome === value);
+                        return data ? `${data.nome}: ${data.percentage}%` : value;
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -671,56 +678,85 @@ export default function DividasPage() {
 
         {/* Modal de Nova Dívida */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">Nova Dívida</h2>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[95vh] overflow-hidden transform transition-all">
+              {/* Header com gradiente */}
+              <div className="bg-gradient-to-br from-red-600 via-red-600 to-pink-600 p-8 relative overflow-hidden">
+                {/* Decorações de fundo */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
+                <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+                      <span className="text-3xl">💳</span>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white drop-shadow-sm">
+                        Nova Dívida
+                      </h2>
+                      <p className="text-white/90 text-sm font-medium">
+                        Cadastre uma nova dívida para controle
+                      </p>
+                    </div>
+                  </div>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600 p-1"
+                    className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30 font-bold text-lg"
                   >
-                    <X size={20} className="sm:w-6 sm:h-6" />
+                    ✕
                   </button>
                 </div>
+              </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+              {/* Conteúdo do formulário */}
+              <div className="p-8 overflow-y-auto max-h-[calc(95vh-180px)]">
+                <form onSubmit={handleSubmit} className="space-y-8">
                   {/* Nome da Dívida */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-2">
-                      📝 Nome da Dívida *
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-red-600 rounded-full shadow-sm"></span>
+                      Nome da Dívida *
                     </label>
                     <input
                       type="text"
                       value={formulario.nome}
                       onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
-                      className="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500 text-sm sm:text-base"
+                      className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all bg-white font-medium text-gray-900 placeholder-gray-600"
                       placeholder="Ex: Cartão Nubank, Financiamento do Carro, Empréstimo..."
                       required
                     />
                   </div>
 
                   {/* Valor da Parcela e Número de Parcelas */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-2">
-                        💰 Valor de Cada Parcela *
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span className="w-3 h-3 bg-green-600 rounded-full shadow-sm"></span>
+                        Valor de Cada Parcela *
                       </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formulario.valorParcela}
-                        onChange={(e) => setFormulario({ ...formulario, valorParcela: e.target.value })}
-                        onBlur={calcularValorTotal}
-                        className="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500 text-sm sm:text-base"
-                        placeholder="Ex: 250,00"
-                        required
-                      />
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-red-600 font-bold text-lg">
+                          R$
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formulario.valorParcela}
+                          onChange={(e) => setFormulario({ ...formulario, valorParcela: e.target.value })}
+                          onBlur={calcularValorTotal}
+                          className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all bg-white text-lg font-semibold text-gray-900 placeholder-gray-600"
+                          placeholder="250,00"
+                          required
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-2">
-                        🔢 Quantidade de Parcelas *
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                        Quantidade de Parcelas *
                       </label>
                       <input
                         type="number"
@@ -728,7 +764,7 @@ export default function DividasPage() {
                         value={formulario.numeroParcelas}
                         onChange={(e) => setFormulario({ ...formulario, numeroParcelas: e.target.value })}
                         onBlur={calcularValorTotal}
-                        className="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500 text-sm sm:text-base"
+                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
                         placeholder="Ex: 12"
                         required
                       />
@@ -736,60 +772,70 @@ export default function DividasPage() {
                   </div>
 
                   {/* Valor Total (Calculado) */}
-                  <div>
-                    <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-2">
-                      💵 Valor Total da Dívida (Calculado Automaticamente)
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-purple-600 rounded-full shadow-sm"></span>
+                      Valor Total da Dívida (Calculado)
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formulario.valorTotal}
-                      readOnly
-                      className="w-full border-2 border-green-300 bg-green-50 rounded-lg px-4 py-3 text-green-800 font-semibold cursor-not-allowed"
-                      placeholder="R$ 0,00"
-                    />
-                    <p className="text-xs text-green-600 mt-1">
-                      ✅ Este valor é calculado automaticamente: Valor da Parcela × Quantidade de Parcelas
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-600 font-bold text-lg">
+                        R$
+                      </div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formulario.valorTotal}
+                        readOnly
+                        className="w-full pl-12 pr-4 py-4 border-2 border-green-300 bg-green-50 rounded-xl text-green-800 font-semibold cursor-not-allowed"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <p className="text-sm text-green-600 flex items-center gap-2">
+                      <span className="text-green-500">✅</span>
+                      Este valor é calculado automaticamente: Valor da Parcela × Quantidade de Parcelas
                     </p>
                   </div>
 
                   {/* Parcelas já pagas e Data */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-800 mb-2">
-                        ✅ Parcelas Já Pagas
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span className="w-3 h-3 bg-orange-600 rounded-full shadow-sm"></span>
+                        Parcelas Já Pagas
                       </label>
                       <input
                         type="number"
                         min="0"
                         value={formulario.parcelasJaPagas}
                         onChange={(e) => setFormulario({ ...formulario, parcelasJaPagas: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
                         placeholder="0"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-sm text-gray-600">
                         Quantas parcelas você já pagou desta dívida?
                       </p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-bold text-gray-800 mb-2">
-                        📅 Data da Próxima Parcela *
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                        Data da Próxima Parcela *
                       </label>
                       <input
                         type="date"
                         value={formulario.dataProximaParcela}
                         onChange={(e) => setFormulario({ ...formulario, dataProximaParcela: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all bg-white font-semibold text-gray-900"
                         required
                       />
                     </div>
                   </div>
 
                   {/* Categoria */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-800 mb-2">
-                      🏷️ Categoria (Opcional)
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-indigo-600 rounded-full shadow-sm"></span>
+                      Categoria <span className="text-sm font-normal text-gray-500">(opcional)</span>
                     </label>
                     <SeletorCategoria
                       categorias={categorias}
@@ -798,20 +844,22 @@ export default function DividasPage() {
                     />
                   </div>
 
-                  {/* Botões */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6">
+                  {/* Botões de Ação */}
+                  <div className="flex gap-4 pt-8 border-t-2 border-gray-100">
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="flex-1 border-2 border-gray-300 text-gray-700 py-2 sm:py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-sm sm:text-base"
+                      className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-4 px-6 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-bold text-lg flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-gray-300"
                     >
+                      <span className="text-xl">✕</span>
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 sm:py-3 px-4 rounded-lg transition-colors font-semibold text-sm sm:text-base"
+                      className="flex-1 bg-gradient-to-r from-red-600 to-pink-600 text-white py-4 px-6 rounded-xl hover:from-red-700 hover:to-pink-700 transition-all duration-200 font-bold text-lg shadow-xl shadow-red-600/30 flex items-center justify-center gap-3 hover:scale-105 transform"
                     >
-                      💾 Cadastrar Dívida
+                      <span className="text-xl">💾</span>
+                      Cadastrar Dívida
                     </button>
                   </div>
                 </form>

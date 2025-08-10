@@ -178,7 +178,7 @@ export default function TransacoesGlobais() {
                 placeholder="Buscar por usuário ou descrição..."
                 value={filtros.search}
                 onChange={(e) => setFiltros({ ...filtros, search: e.target.value })}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
               />
             </div>
 
@@ -206,13 +206,17 @@ export default function TransacoesGlobais() {
             <select
               value={filtros.categoria}
               onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
+              style={{ 
+                color: '#1f2937',
+                backgroundColor: '#ffffff'
+              }}
             >
-              <option value="todas">Todas as categorias</option>
-              <option value="alimentacao">Alimentação</option>
-              <option value="transporte">Transporte</option>
-              <option value="saude">Saúde</option>
-              <option value="lazer">Lazer</option>
+              <option value="todas" style={{ color: '#1f2937', fontWeight: '500' }}>Todas as categorias</option>
+              <option value="alimentacao" style={{ color: '#1f2937', fontWeight: '500' }}>Alimentação</option>
+              <option value="transporte" style={{ color: '#1f2937', fontWeight: '500' }}>Transporte</option>
+              <option value="saude" style={{ color: '#1f2937', fontWeight: '500' }}>Saúde</option>
+              <option value="lazer" style={{ color: '#1f2937', fontWeight: '500' }}>Lazer</option>
             </select>
           </div>
         </div>

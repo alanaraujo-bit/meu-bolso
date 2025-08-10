@@ -300,56 +300,67 @@ export default function MetasPage() {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 shadow-lg"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
           >
             + Nova Meta
           </button>
         </div>
 
         {mensagem && (
-          <div className="mb-6 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
+          <div className={`mb-6 p-4 rounded-xl text-sm font-medium ${mensagem.includes("sucesso") || mensagem.includes("!") 
+            ? "bg-green-50 text-green-800 border border-green-200"
+            : "bg-red-50 text-red-800 border border-red-200"
+          }`}>
             {mensagem}
             <button
               onClick={() => setMensagem('')}
-              className="float-right text-blue-700 hover:text-blue-900"
+              className="float-right text-current hover:opacity-70 font-bold"
             >
-              ×
+              ✕
             </button>
           </div>
         )}
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
             <div className="flex items-center">
-              <div className="text-3xl mr-4">🎯</div>
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mr-4">
+                <span className="text-2xl">🎯</span>
+              </div>
               <div>
                 <p className="text-sm text-gray-600">Total de Metas</p>
                 <p className="text-2xl font-bold text-gray-900">{estatisticas.total}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
             <div className="flex items-center">
-              <div className="text-3xl mr-4">🔥</div>
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
+                <span className="text-2xl">🔥</span>
+              </div>
               <div>
                 <p className="text-sm text-gray-600">Ativas</p>
                 <p className="text-2xl font-bold text-blue-600">{estatisticas.ativas}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
             <div className="flex items-center">
-              <div className="text-3xl mr-4">✅</div>
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mr-4">
+                <span className="text-2xl">✅</span>
+              </div>
               <div>
                 <p className="text-sm text-gray-600">Concluídas</p>
                 <p className="text-2xl font-bold text-green-600">{estatisticas.concluidas}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-lg">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
             <div className="flex items-center">
-              <div className="text-3xl mr-4">⏰</div>
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mr-4">
+                <span className="text-2xl">⏰</span>
+              </div>
               <div>
                 <p className="text-sm text-gray-600">Vencidas</p>
                 <p className="text-2xl font-bold text-red-600">{estatisticas.vencidas}</p>
@@ -360,43 +371,43 @@ export default function MetasPage() {
 
         {/* Filtros */}
         <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setFiltroStatus('')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 border ${
                 filtroStatus === '' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
+                  : 'bg-white text-gray-700 hover:bg-blue-50 border-gray-300 hover:border-blue-300'
               }`}
             >
               Todas
             </button>
             <button
               onClick={() => setFiltroStatus('ativas')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 border ${
                 filtroStatus === 'ativas' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
+                  : 'bg-white text-gray-700 hover:bg-blue-50 border-gray-300 hover:border-blue-300'
               }`}
             >
               Ativas
             </button>
             <button
               onClick={() => setFiltroStatus('concluidas')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 border ${
                 filtroStatus === 'concluidas' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
+                  : 'bg-white text-gray-700 hover:bg-blue-50 border-gray-300 hover:border-blue-300'
               }`}
             >
               Concluídas
             </button>
             <button
               onClick={() => setFiltroStatus('vencidas')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              className={`px-4 py-2.5 rounded-xl font-medium transition-all duration-200 border ${
                 filtroStatus === 'vencidas' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
+                  : 'bg-white text-gray-700 hover:bg-blue-50 border-gray-300 hover:border-blue-300'
               }`}
             >
               Vencidas
@@ -527,7 +538,7 @@ export default function MetasPage() {
             <p className="text-gray-600 mb-6">Comece criando sua primeira meta financeira!</p>
             <button
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
             >
               Criar Meta
             </button>
@@ -536,155 +547,243 @@ export default function MetasPage() {
 
         {/* Modal de Formulário */}
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                {editingId ? 'Editar Meta' : 'Nova Meta'}
-              </h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome da Meta
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                    placeholder="Ex: Viagem para Europa"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valor Alvo
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.valorAlvo}
-                    onChange={(e) => setFormData({ ...formData, valorAlvo: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                    placeholder="0,00"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data Alvo
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dataAlvo}
-                    onChange={(e) => setFormData({ ...formData, dataAlvo: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                    min={formatDataBrasil(getDataAtualBrasil())}
-                    required
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-hidden transform transition-all">
+              {/* Header com gradiente */}
+              <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-600 p-8 relative overflow-hidden">
+                {/* Decorações de fundo */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
+                <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+                      <span className="text-3xl">🎯</span>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white drop-shadow-sm">
+                        {editingId ? "Editar" : "Nova"} Meta
+                      </h2>
+                      <p className="text-white/90 text-sm font-medium">
+                        {editingId ? "Atualize os dados" : "Configure uma nova meta financeira"}
+                      </p>
+                    </div>
+                  </div>
                   <button
-                    type="button"
                     onClick={resetForm}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors duration-200"
+                    className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30 font-bold text-lg"
                   >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {loading && <LoadingSpinner size="xs" color="white" />}
-                    {loading ? 'Salvando...' : (editingId ? 'Atualizar' : 'Criar')}
+                    ✕
                   </button>
                 </div>
-              </form>
+              </div>
+
+              {/* Conteúdo do formulário */}
+              <div className="p-8 overflow-y-auto max-h-[calc(95vh-180px)]">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  {/* Nome da Meta */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                      Nome da Meta *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-medium text-gray-900 placeholder-gray-600"
+                      placeholder="Ex: Viagem para Europa"
+                      required
+                    />
+                  </div>
+
+                  {/* Valor Alvo */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-green-600 rounded-full shadow-sm"></span>
+                      Valor Alvo *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 font-bold text-lg">
+                        R$
+                      </div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={formData.valorAlvo}
+                        onChange={(e) => setFormData({ ...formData, valorAlvo: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-lg font-semibold text-gray-900 placeholder-gray-600"
+                        placeholder="0,00"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Data Alvo */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-purple-600 rounded-full shadow-sm"></span>
+                      Data Alvo *
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dataAlvo}
+                      onChange={(e) => setFormData({ ...formData, dataAlvo: e.target.value })}
+                      className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
+                      min={formatDataBrasil(getDataAtualBrasil())}
+                      required
+                    />
+                  </div>
+
+                  {/* Botões de Ação */}
+                  <div className="flex gap-4 pt-8 border-t-2 border-gray-100">
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-4 px-6 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-bold text-lg flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-gray-300"
+                    >
+                      <span className="text-xl">✕</span>
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 hover:scale-105 transform disabled:opacity-50"
+                    >
+                      {loading && <LoadingSpinner size="xs" color="white" />}
+                      <span className="text-xl">{editingId ? "💾" : "✨"}</span>
+                      {loading ? 'Salvando...' : (editingId ? 'Atualizar' : 'Criar')}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}
 
         {/* Modal de Contribuição */}
         {showContribuicaoModal && metaSelecionada && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Contribuir para: {metaSelecionada.nome}
-              </h2>
-              
-              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span>Valor atual:</span>
-                  <span className="font-medium">{formatarValor(metaSelecionada.currentAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Meta:</span>
-                  <span className="font-medium">{formatarValor(metaSelecionada.valorAlvo)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Restante:</span>
-                  <span className="font-medium text-blue-600">
-                    {formatarValor(metaSelecionada.valorAlvo - metaSelecionada.currentAmount)}
-                  </span>
-                </div>
-              </div>
-              
-              <form onSubmit={handleContribuir} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valor da Contribuição
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={contribuicaoData.valor}
-                    onChange={(e) => setContribuicaoData({ ...contribuicaoData, valor: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0,00"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição (opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={contribuicaoData.descricao}
-                    onChange={(e) => setContribuicaoData({ ...contribuicaoData, descricao: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ex: Economia do mês"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-hidden transform transition-all">
+              {/* Header com gradiente */}
+              <div className="bg-gradient-to-br from-green-600 via-green-600 to-emerald-600 p-8 relative overflow-hidden">
+                {/* Decorações de fundo */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-20 translate-x-20"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
+                
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+                      <span className="text-3xl">💰</span>
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white drop-shadow-sm">
+                        Contribuir para Meta
+                      </h2>
+                      <p className="text-white/90 text-sm font-medium truncate max-w-[200px]">
+                        {metaSelecionada.nome}
+                      </p>
+                    </div>
+                  </div>
                   <button
-                    type="button"
                     onClick={() => {
                       setShowContribuicaoModal(false);
                       setContribuicaoData({ valor: '', descricao: '' });
                     }}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors duration-200"
+                    className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30 font-bold text-lg"
                   >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {loading && <LoadingSpinner size="xs" color="white" />}
-                    {loading ? 'Contribuindo...' : 'Contribuir'}
+                    ✕
                   </button>
                 </div>
-              </form>
+              </div>
+
+              {/* Conteúdo do formulário */}
+              <div className="p-8 overflow-y-auto max-h-[calc(95vh-180px)]">
+                <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl border-2 border-blue-100">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Valor Atual</p>
+                      <p className="text-lg font-bold text-blue-600">{formatarValor(metaSelecionada.currentAmount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Meta</p>
+                      <p className="text-lg font-bold text-gray-900">{formatarValor(metaSelecionada.valorAlvo)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Restante</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {formatarValor(metaSelecionada.valorAlvo - metaSelecionada.currentAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <form onSubmit={handleContribuir} className="space-y-8">
+                  {/* Valor da Contribuição */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-green-600 rounded-full shadow-sm"></span>
+                      Valor da Contribuição *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-green-600 font-bold text-lg">
+                        R$
+                      </div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={contribuicaoData.valor}
+                        onChange={(e) => setContribuicaoData({ ...contribuicaoData, valor: e.target.value })}
+                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white text-lg font-semibold text-gray-900 placeholder-gray-600"
+                        placeholder="0,00"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Descrição */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                      <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                      Descrição <span className="text-sm font-normal text-gray-500">(opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={contribuicaoData.descricao}
+                      onChange={(e) => setContribuicaoData({ ...contribuicaoData, descricao: e.target.value })}
+                      className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all bg-white font-medium text-gray-900 placeholder-gray-600"
+                      placeholder="Ex: Economia do mês"
+                    />
+                  </div>
+
+                  {/* Botões de Ação */}
+                  <div className="flex gap-4 pt-8 border-t-2 border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowContribuicaoModal(false);
+                        setContribuicaoData({ valor: '', descricao: '' });
+                      }}
+                      className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-4 px-6 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-bold text-lg flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-gray-300"
+                    >
+                      <span className="text-xl">✕</span>
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-6 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-bold text-lg shadow-xl shadow-green-600/30 flex items-center justify-center gap-3 hover:scale-105 transform disabled:opacity-50"
+                    >
+                      {loading && <LoadingSpinner size="xs" color="white" />}
+                      <span className="text-xl">💰</span>
+                      {loading ? 'Contribuindo...' : 'Contribuir'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

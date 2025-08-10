@@ -111,15 +111,22 @@ export function formatDataHoraBrasileiraExibicao(data: Date): string {
 export function prepararDataParaBanco(data: Date | string): Date {
   try {
     if (typeof data === 'string') {
-      // Se a string estiver vazia, usar data atual
+      // Se a string estiver vazia, usar data atual com hora atual
       if (!data.trim()) {
         return getDataAtualBrasil();
       }
       
-      // Se recebeu só a data (YYYY-MM-DD), usar exatamente essa data
+      // Se recebeu só a data (YYYY-MM-DD), combinar com hora atual
       if (data.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // CORREÇÃO: usar parseDataBrasil que já trata timezone corretamente
-        return parseDataBrasil(data);
+        const agora = new Date();
+        const partes = data.split('-');
+        const ano = parseInt(partes[0]);
+        const mes = parseInt(partes[1]) - 1; // JavaScript usa 0-11 para meses
+        const dia = parseInt(partes[2]);
+        
+        // Criar data com a hora atual
+        const dataComHoraAtual = new Date(ano, mes, dia, agora.getHours(), agora.getMinutes(), agora.getSeconds());
+        return dataComHoraAtual;
       }
       
       return parseDataBrasil(data);
