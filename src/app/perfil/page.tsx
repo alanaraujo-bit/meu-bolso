@@ -69,10 +69,26 @@ export default function PerfilPage() {
     try {
       console.log('🔄 Salvando configurações:', configuracoes);
       
+      // Validar dados antes de enviar
+      const dadosParaEnviar = {
+        tema: configuracoes.tema,
+        formatoMoeda: configuracoes.formatoMoeda,
+        confirmarExclusoes: configuracoes.confirmarExclusoes,
+        timeoutSessao: configuracoes.timeoutSessao,
+        paginaInicial: configuracoes.paginaInicial,
+        mostrarTooltips: configuracoes.mostrarTooltips
+      };
+      
+      console.log('📋 Dados para enviar:', dadosParaEnviar);
+      console.log('📋 JSON stringified:', JSON.stringify(dadosParaEnviar));
+      
       const response = await fetch('/api/usuario/configuracoes', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(configuracoes)
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(dadosParaEnviar)
       });
 
       console.log('📡 Status da resposta:', response.status);
