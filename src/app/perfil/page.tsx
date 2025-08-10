@@ -200,26 +200,53 @@ export default function PerfilPage() {
 
     setUploadingFoto(true);
     try {
+      // 1. Fazer upload da imagem
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/upload/avatar', {
+      const uploadResponse = await fetch('/api/upload/avatar', {
         method: 'POST',
         body: formData
       });
 
-      const data = await response.json();
+      const uploadData = await uploadResponse.json();
 
-      if (response.ok) {
-        alert('✅ Foto atualizada com sucesso!');
+      if (!uploadResponse.ok) {
+        console.error('Erro do servidor no upload:', uploadData);
+        alert('❌ Erro ao fazer upload da foto: ' + (uploadData.error || 'Erro desconhecido'));
+        return;
+      }
+
+      // 2. Salvar o avatar automaticamente no banco de dados
+      const saveResponse = await fetch('/api/usuario/avatar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ avatarUrl: uploadData.url })
+      });
+
+      const saveData = await saveResponse.json();
+
+      if (saveResponse.ok) {
+        alert('✅ Foto atualizada e salva automaticamente!');
         // Atualizar o perfil com a nova foto
         if (perfil) {
-          setPerfil({ ...perfil, avatarUrl: data.url });
+          setPerfil({ ...perfil, avatarUrl: uploadData.url });
         }
+        
+        // Remover do localStorage já que foi salvo no banco
+        localStorage.removeItem(`avatar_${session?.user?.email}`);
+        
         setMostrarEditarFoto(false);
       } else {
-        console.error('Erro do servidor:', data);
-        alert('❌ Erro ao fazer upload da foto: ' + (data.error || 'Erro desconhecido'));
+        console.error('Erro ao salvar avatar no banco:', saveData);
+        alert('❌ Foto foi enviada mas não foi salva automaticamente: ' + (saveData.error || 'Erro desconhecido'));
+        
+        // Como fallback, manter no localStorage
+        if (perfil) {
+          setPerfil({ ...perfil, avatarUrl: uploadData.url });
+        }
       }
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
