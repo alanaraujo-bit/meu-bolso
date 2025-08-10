@@ -16,14 +16,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
   },
   
-  // Configurações de API routes
-  api: {
-    bodyParser: {
-      sizeLimit: '4mb', // Limite de 4MB para requisições
-    },
-    responseLimit: '8mb', // Limite de 8MB para respostas
-  },
-  
   // Configurações de timezone para produção
   env: {
     TZ: 'America/Sao_Paulo',
