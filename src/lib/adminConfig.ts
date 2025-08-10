@@ -18,3 +18,35 @@ export function getInitialRoute(email: string | null | undefined): string {
   }
   return '/dashboard';
 }
+
+// Função para obter a rota inicial baseada nas configurações do usuário
+export async function getInitialRouteWithConfig(email: string | null | undefined): Promise<string> {
+  if (isAdminEmail(email)) {
+    return '/admin';
+  }
+  
+  try {
+    // Buscar configurações do usuário
+    const response = await fetch('/api/usuario/configuracoes');
+    if (response.ok) {
+      const data = await response.json();
+      const paginaInicial = data.configuracoes?.paginaInicial || 'dashboard';
+      
+      // Mapear página inicial para rota
+      const rotaMap: { [key: string]: string } = {
+        'dashboard': '/dashboard',
+        'transacoes': '/transacoes',
+        'categorias': '/categorias', 
+        'metas': '/metas',
+        'relatorios': '/dashboard' // Relatórios ainda não implementados, vai para dashboard
+      };
+      
+      return rotaMap[paginaInicial] || '/dashboard';
+    }
+  } catch (error) {
+    console.error('Erro ao buscar configurações do usuário:', error);
+  }
+  
+  // Fallback para dashboard se houver erro
+  return '/dashboard';
+}

@@ -658,8 +658,9 @@ export default function PerfilPage() {
                   >
                     <option value="dashboard">📊 Dashboard</option>
                     <option value="transacoes">💳 Transações</option>
-                    <option value="relatorios">📈 Relatórios</option>
+                    <option value="categorias">🏷️ Categorias</option>
                     <option value="metas">🎯 Metas</option>
+                    <option value="relatorios">📈 Relatórios</option>
                   </select>
                 </div>
               </div>
