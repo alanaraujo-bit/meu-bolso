@@ -70,7 +70,7 @@ export default function PerfilPage() {
       console.log('🔄 Salvando configurações:', configuracoes);
       
       const response = await fetch('/api/usuario/configuracoes', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(configuracoes)
       });
