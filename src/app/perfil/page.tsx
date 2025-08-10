@@ -67,6 +67,8 @@ export default function PerfilPage() {
   const salvarConfiguracoes = async () => {
     setSalvando(true);
     try {
+      console.log('🔄 Salvando configurações:', configuracoes);
+      
       const response = await fetch('/api/usuario/configuracoes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -74,16 +76,18 @@ export default function PerfilPage() {
       });
 
       const data = await response.json();
+      console.log('📦 Resposta da API:', data);
 
       if (response.ok) {
+        console.log('✅ Configurações salvas com sucesso!');
         alert('✅ Configurações salvas com sucesso!');
         carregarPerfil(); // Recarrega os dados
       } else {
-        console.error('Erro do servidor:', data);
+        console.error('❌ Erro do servidor:', data);
         alert('❌ Erro ao salvar configurações: ' + (data.error || 'Erro desconhecido'));
       }
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('❌ Erro ao salvar:', error);
       alert('❌ Erro de conexão ao salvar configurações');
     } finally {
       setSalvando(false);
