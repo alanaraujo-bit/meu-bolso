@@ -248,6 +248,7 @@ export default function Dashboard() {
   const { loading, setLoading } = useCleanLoading();
   const [error, setError] = useState<string | null>(null);
   const [modoAvancado, setModoAvancado] = useState(false);
+  const [mostrarInsights, setMostrarInsights] = useState(false);
   const [mesAtual, setMesAtual] = useState(new Date().getMonth() + 1);
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
 
@@ -269,12 +270,23 @@ export default function Dashboard() {
     if (preferencia === 'avancado') {
       setModoAvancado(true);
     }
+    
+    const preferenciaInsights = localStorage.getItem('dashboard-insights');
+    if (preferenciaInsights === 'visivel') {
+      setMostrarInsights(true);
+    }
   }, []);
 
   const toggleModo = () => {
     const novoModo = !modoAvancado;
     setModoAvancado(novoModo);
     localStorage.setItem('dashboard-modo', novoModo ? 'avancado' : 'simples');
+  };
+
+  const toggleInsights = () => {
+    const novoEstado = !mostrarInsights;
+    setMostrarInsights(novoEstado);
+    localStorage.setItem('dashboard-insights', novoEstado ? 'visivel' : 'oculto');
   };
 
   const fetchDashboardData = async () => {
@@ -517,6 +529,27 @@ export default function Dashboard() {
                   }`}
                 />
               </button>
+              
+              {/* Botão para mostrar/ocultar insights */}
+              {dashboardData?.insights && dashboardData.insights.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600 hidden sm:block">Insights</span>
+                  <button
+                    onClick={toggleInsights}
+                    className={`flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      mostrarInsights 
+                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                    title={mostrarInsights ? 'Ocultar Insights' : 'Mostrar Insights'}
+                  >
+                    <span className="mr-1">💡</span>
+                    <span className="hidden sm:inline">
+                      {mostrarInsights ? 'Ocultar' : 'Mostrar'}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -676,7 +709,7 @@ export default function Dashboard() {
         </div>
 
         {/* Insights Profissionais */}
-        {modoAvancado && dashboardData.insights.length > 0 && (
+        {mostrarInsights && dashboardData.insights.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
