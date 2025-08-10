@@ -192,32 +192,62 @@ export default function PerfilPage() {
       return;
     }
 
-    // Validar tamanho (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('❌ A imagem deve ter no máximo 5MB');
+    // Validar tamanho (máximo 2MB para produção)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      alert(`❌ A imagem deve ter no máximo 2MB. Tamanho atual: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
       return;
     }
 
     setUploadingFoto(true);
+    
+    console.log('🔄 Iniciando upload...', {
+      nome: file.name,
+      tipo: file.type,
+      tamanho: file.size
+    });
+    
     try {
       // 1. Fazer upload da imagem
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('📤 Enviando para /api/upload/avatar...');
+      
       const uploadResponse = await fetch('/api/upload/avatar', {
         method: 'POST',
-        body: formData
+        body: formData,
+        // Não definir Content-Type para FormData - deixar o browser fazer
       });
 
-      const uploadData = await uploadResponse.json();
+      console.log('📥 Resposta recebida:', {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        ok: uploadResponse.ok
+      });
 
-      if (!uploadResponse.ok) {
-        console.error('Erro do servidor no upload:', uploadData);
-        alert('❌ Erro ao fazer upload da foto: ' + (uploadData.error || 'Erro desconhecido'));
+      let uploadData;
+      try {
+        const responseText = await uploadResponse.text();
+        console.log('📋 Resposta bruta:', responseText);
+        uploadData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ Erro ao fazer parse da resposta:', parseError);
+        alert('❌ Erro: Resposta inválida do servidor');
         return;
       }
 
+      if (!uploadResponse.ok) {
+        console.error('❌ Erro do servidor no upload:', uploadData);
+        alert(`❌ Erro ao fazer upload da foto: ${uploadData.error || 'Erro desconhecido'}\n${uploadData.details ? `Detalhes: ${uploadData.details}` : ''}`);
+        return;
+      }
+
+      console.log('✅ Upload bem-sucedido:', uploadData);
+
       // 2. Salvar o avatar automaticamente no banco de dados
+      console.log('💾 Salvando no banco de dados...');
+      
       const saveResponse = await fetch('/api/usuario/avatar', {
         method: 'POST',
         headers: {
@@ -226,7 +256,14 @@ export default function PerfilPage() {
         body: JSON.stringify({ avatarUrl: uploadData.url })
       });
 
-      const saveData = await saveResponse.json();
+      let saveData;
+      try {
+        saveData = await saveResponse.json();
+      } catch (parseError) {
+        console.error('❌ Erro ao fazer parse da resposta de salvamento:', parseError);
+        alert('❌ Foto foi enviada mas não foi possível salvar');
+        return;
+      }
 
       if (saveResponse.ok) {
         alert('✅ Foto atualizada e salva automaticamente!');
@@ -240,8 +277,8 @@ export default function PerfilPage() {
         
         setMostrarEditarFoto(false);
       } else {
-        console.error('Erro ao salvar avatar no banco:', saveData);
-        alert('❌ Foto foi enviada mas não foi salva automaticamente: ' + (saveData.error || 'Erro desconhecido'));
+        console.error('❌ Erro ao salvar avatar no banco:', saveData);
+        alert(`❌ Foto foi enviada mas não foi salva automaticamente: ${saveData.error || 'Erro desconhecido'}`);
         
         // Como fallback, manter no localStorage
         if (perfil) {
@@ -249,8 +286,13 @@ export default function PerfilPage() {
         }
       }
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      alert('❌ Erro de conexão ao fazer upload da foto');
+      console.error('💥 Erro ao fazer upload:', error);
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        alert('❌ Erro de conexão: Verifique sua internet e tente novamente');
+      } else {
+        alert(`❌ Erro inesperado ao fazer upload da foto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      }
     } finally {
       setUploadingFoto(false);
     }

@@ -10,13 +10,49 @@ const nextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  
+  // Configurações para upload de arquivos
+  experimental: {
+    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
+  },
+  
+  // Configurações de API routes
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb', // Limite de 4MB para requisições
+    },
+    responseLimit: '8mb', // Limite de 8MB para respostas
+  },
+  
   // Configurações de timezone para produção
   env: {
     TZ: 'America/Sao_Paulo',
   },
-  // Headers para timezone
+  
+  // Headers para timezone e CORS
   async headers() {
     return [
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+          {
+            key: 'x-timezone',
+            value: 'America/Sao_Paulo',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
