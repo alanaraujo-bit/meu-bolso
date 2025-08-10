@@ -236,13 +236,7 @@ export default function PerfilPage() {
 
     setUploadingFoto(true);
     try {
-      // Extrair nome do arquivo da URL atual
-      let fileName = '';
-      if (perfil?.avatarUrl) {
-        fileName = perfil.avatarUrl.split('/').pop() || '';
-      }
-
-      const response = await fetch(`/api/upload/avatar/delete?file=${fileName}`, {
+      const response = await fetch(`/api/upload/avatar/delete`, {
         method: 'DELETE'
       });
 

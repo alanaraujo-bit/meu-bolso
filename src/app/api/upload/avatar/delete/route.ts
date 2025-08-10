@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { unlink } from 'fs/promises';
-import path from 'path';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -12,47 +10,23 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const fileName = searchParams.get('file');
+    console.log('✅ Remoção de foto solicitada:', {
+      usuario: session.user.email
+    });
 
-    if (!fileName) {
-      return NextResponse.json({ error: 'Nome do arquivo não fornecido' }, { status: 400 });
-    }
-
-    // Validar que o arquivo está no diretório correto
-    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
-      return NextResponse.json({ error: 'Nome de arquivo inválido' }, { status: 400 });
-    }
-
-    try {
-      const filePath = path.join(process.cwd(), 'public', 'uploads', 'avatars', fileName);
-      await unlink(filePath);
-      
-      console.log('✅ Arquivo removido:', {
-        usuario: session.user.email,
-        arquivo: fileName
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: 'Arquivo removido com sucesso'
-      });
-
-    } catch (error) {
-      // Arquivo pode não existir
-      console.log('⚠️ Arquivo não encontrado:', fileName);
-      return NextResponse.json({
-        success: true,
-        message: 'Arquivo não encontrado ou já removido'
-      });
-    }
+    // Como estamos usando base64/dataURL temporariamente, 
+    // apenas confirmar a remoção
+    return NextResponse.json({
+      success: true,
+      message: 'Foto removida com sucesso!'
+    });
 
   } catch (error) {
-    console.error('❌ Erro ao remover arquivo:', error);
+    console.error('❌ Erro ao remover foto:', error);
     return NextResponse.json(
       { 
         error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
       },
       { status: 500 }
     );

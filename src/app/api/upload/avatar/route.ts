@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,42 +33,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Converter para base64 e armazenar no localStorage (temporário)
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const base64 = Buffer.from(bytes).toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    // Criar nome único para o arquivo
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `${timestamp}_${originalName}`;
-    
-    // Garantir que o diretório existe
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      // Diretório já existe
-    }
-
-    // Salvar arquivo
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    // URL pública do arquivo
-    const fileUrl = `/uploads/avatars/${fileName}`;
-
-    console.log('✅ Upload realizado:', {
+    console.log('✅ Upload processado:', {
       usuario: session.user.email,
-      arquivo: fileName,
       tamanho: file.size,
       tipo: file.type
     });
 
+    // Por enquanto, retornar o data URL para uso direto
     return NextResponse.json({
       success: true,
-      url: fileUrl,
-      fileName: fileName,
+      url: dataUrl,
+      fileName: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
+      message: 'Foto processada com sucesso!'
     });
 
   } catch (error) {
@@ -78,7 +59,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
       },
       { status: 500 }
     );
