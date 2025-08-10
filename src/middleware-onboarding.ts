@@ -1,11 +1,6 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
-
-// Lista de emails de administradores
-const ADMIN_EMAILS = [
-  'alanvitoraraujo1a@outlook.com',
-  'admin@meubolso.com',
-];
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 // Rotas que requerem onboarding completo
 const rotasProtegidas = [
@@ -28,14 +23,14 @@ const rotasLivres = [
 
 export default withAuth(
   async function middleware(req) {
-    const { pathname } = req.nextUrl;
-    const token = req.nextauth.token;
-    
-    // Se não está logado, redirecionar para login (exceto rotas livres)
+    const token = req.nextauth?.token;
+    const pathname = req.nextUrl.pathname;
+
+    // Se não está logado, redirecionar para login
     if (!token && !rotasLivres.some(rota => pathname.startsWith(rota))) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
-    
+
     // Se está logado, verificar onboarding apenas para rotas protegidas
     if (token && rotasProtegidas.some(rota => pathname.startsWith(rota))) {
       try {
@@ -65,33 +60,20 @@ export default withAuth(
         // Em caso de erro, permitir acesso (fail-safe)
       }
     }
-    
-    // Lógica de admin
-    if (token?.email && ADMIN_EMAILS.includes(token.email)) {
-      // Se está tentando acessar o dashboard normal, redirecionar para admin
-      if (pathname === '/dashboard') {
-        return NextResponse.redirect(new URL('/admin', req.url));
-      }
-    }
-    
-    // Para usuários normais, não permitir acesso ao admin
-    if (pathname.startsWith('/admin') && token?.email && !ADMIN_EMAILS.includes(token.email)) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-    
+
     return NextResponse.next();
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl;
+        const pathname = req.nextUrl.pathname;
         
-        // Páginas públicas
-        if (pathname === '/' || rotasLivres.some(rota => pathname.startsWith(rota))) {
+        // Permitir acesso a rotas livres
+        if (rotasLivres.some(rota => pathname.startsWith(rota))) {
           return true;
         }
         
-        // Páginas protegidas requerem token
+        // Para outras rotas, verificar se tem token
         return !!token;
       },
     },
