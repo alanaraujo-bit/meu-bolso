@@ -89,7 +89,42 @@ export async function POST(request: NextRequest) {
       }, { status: 400, headers });
     }
 
-    console.log('📋 Passo 3: Salvando arquivo no servidor...');
+    console.log('📋 Passo 3: Processando arquivo...');
+    
+    // Em produção (Vercel), não podemos salvar arquivos físicos
+    // Vamos usar base64 otimizado para imagens pequenas
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+    
+    if (isProduction) {
+      console.log('🌐 Ambiente de produção detectado - usando base64 otimizado');
+      
+      // Converter para base64
+      const bytes = await file.arrayBuffer();
+      const base64 = Buffer.from(bytes).toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
+
+      console.log('✅ Upload processado (produção):', {
+        usuario: session.user.email,
+        tamanho: file.size,
+        tipo: file.type,
+        urlLength: dataUrl.length
+      });
+
+      const response = {
+        success: true,
+        url: dataUrl,
+        fileName: file.name,
+        size: file.size,
+        type: file.type,
+        message: 'Foto processada com sucesso!'
+      };
+      
+      console.log('🎉 === UPLOAD COMPLETO (PRODUÇÃO) ===');
+      return NextResponse.json(response, { headers });
+    }
+    
+    // Em desenvolvimento, salvar arquivo físico
+    console.log('🏠 Ambiente de desenvolvimento - salvando arquivo físico');
     
     try {
       // Criar diretório de uploads se não existir
@@ -124,19 +159,29 @@ export async function POST(request: NextRequest) {
         message: 'Foto salva com sucesso!'
       };
       
-      console.log('🎉 === UPLOAD COMPLETO ===');
+      console.log('🎉 === UPLOAD COMPLETO (DEV) ===');
       return NextResponse.json(response, { headers });
 
     } catch (fileError) {
       console.log('❌ Erro ao salvar arquivo:', fileError);
       console.error('💥 Erro completo:', fileError);
       
-      // Em produção, não usar fallback base64 - retornar erro
-      return NextResponse.json({ 
-        error: 'Erro ao salvar arquivo no servidor',
-        details: fileError instanceof Error ? fileError.message : 'Erro desconhecido ao salvar arquivo',
-        suggestion: 'Tente novamente ou use uma imagem menor'
-      }, { status: 500, headers });
+      // Fallback para base64 se não conseguir salvar arquivo
+      const bytes = await file.arrayBuffer();
+      const base64 = Buffer.from(bytes).toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
+
+      const response = {
+        success: true,
+        url: dataUrl,
+        fileName: file.name,
+        size: file.size,
+        type: file.type,
+        message: 'Foto processada com sucesso (fallback)!'
+      };
+      
+      console.log('🎉 === UPLOAD COMPLETO (FALLBACK) ===');
+      return NextResponse.json(response, { headers });
     }
 
   } catch (error) {

@@ -245,16 +245,19 @@ export default function PerfilPage() {
 
       console.log('✅ Upload bem-sucedido:', uploadData);
 
-      // Validar se recebemos uma URL válida (não base64)
-      if (!uploadData.url || uploadData.url.startsWith('data:')) {
-        console.error('❌ URL inválida recebida:', uploadData.url);
-        alert('❌ Erro: Servidor retornou formato inválido de imagem');
+      // Validar se recebemos uma URL ou base64 válidos
+      if (!uploadData.url) {
+        console.error('❌ Nenhuma URL recebida:', uploadData);
+        alert('❌ Erro: Servidor não retornou imagem válida');
         return;
       }
 
       // 2. Salvar o avatar automaticamente no banco de dados
       console.log('💾 Salvando no banco de dados...');
-      console.log('📋 URL a ser salva:', uploadData.url);
+      console.log('📋 Tipo de dados:', uploadData.url.startsWith('data:') ? 'base64' : 'URL');
+      console.log('📋 Tamanho:', uploadData.url.startsWith('data:') ? 
+        Math.round(uploadData.url.length / 1024) + 'KB' : 
+        uploadData.url.length + ' chars');
       
       const saveResponse = await fetch('/api/usuario/avatar', {
         method: 'POST',

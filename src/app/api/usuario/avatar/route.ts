@@ -23,26 +23,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'URL do avatar é obrigatória' }, { status: 400 });
     }
     
-    // Validar que é uma URL válida e não base64
+    // Validar tamanho se for base64
     if (avatarUrl.startsWith('data:')) {
-      console.log('❌ Base64 não é permitido - deve ser URL de arquivo');
-      return NextResponse.json({ 
-        error: 'Base64 não suportado. Use a API de upload para gerar uma URL de arquivo.',
-        receivedUrlType: 'base64'
-      }, { status: 400 });
+      const base64Data = avatarUrl.split(',')[1];
+      if (base64Data) {
+        const sizeInBytes = (base64Data.length * 3) / 4;
+        const maxSize = 1 * 1024 * 1024; // 1MB em base64
+        
+        if (sizeInBytes > maxSize) {
+          console.log('❌ Avatar base64 muito grande:', sizeInBytes);
+          return NextResponse.json({ 
+            error: 'Imagem muito grande para o banco de dados',
+            currentSize: Math.round(sizeInBytes / 1024) + 'KB',
+            maxSize: Math.round(maxSize / 1024) + 'KB'
+          }, { status: 400 });
+        }
+      }
+      console.log('✅ Base64 aceito (produção) - tamanho:', Math.round((base64Data?.length || 0) * 3 / 4 / 1024) + 'KB');
     }
-    
-    // Validar que é uma URL do nosso sistema ou externa válida
-    if (!avatarUrl.startsWith('/uploads/') && !avatarUrl.startsWith('http')) {
+    // Validar que é uma URL válida se não for base64
+    else if (!avatarUrl.startsWith('/uploads/') && !avatarUrl.startsWith('http')) {
       console.log('❌ URL inválida:', avatarUrl);
       return NextResponse.json({ 
-        error: 'URL inválida. Deve começar com /uploads/ ou http',
+        error: 'URL inválida. Deve começar com /uploads/, http ou ser base64',
         receivedUrl: avatarUrl.substring(0, 100)
       }, { status: 400 });
     }
     
     console.log('📋 Salvando avatar para usuário:', session.user.email);
-    console.log('📋 URL do avatar:', avatarUrl);
+    console.log('📋 Tipo do avatar:', avatarUrl.startsWith('data:') ? 'base64' : 'URL');
 
     // Buscar usuário
     const usuario = await prisma.usuario.findUnique({
