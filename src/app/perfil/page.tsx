@@ -75,8 +75,22 @@ export default function PerfilPage() {
         body: JSON.stringify(configuracoes)
       });
 
-      const data = await response.json();
-      console.log('📦 Resposta da API:', data);
+      console.log('📡 Status da resposta:', response.status);
+      console.log('📡 Headers da resposta:', response.headers);
+
+      let data;
+      const responseText = await response.text();
+      console.log('📦 Resposta bruta:', responseText);
+
+      try {
+        data = JSON.parse(responseText);
+        console.log('📦 Resposta parseada:', data);
+      } catch (parseError) {
+        console.error('❌ Erro ao fazer parse da resposta:', parseError);
+        console.error('❌ Resposta recebida:', responseText);
+        alert('❌ Erro: Resposta inválida do servidor');
+        return;
+      }
 
       if (response.ok) {
         console.log('✅ Configurações salvas com sucesso!');
@@ -88,7 +102,7 @@ export default function PerfilPage() {
       }
     } catch (error) {
       console.error('❌ Erro ao salvar:', error);
-      alert('❌ Erro de conexão ao salvar configurações');
+      alert('❌ Erro de conexão ao salvar configurações: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
     } finally {
       setSalvando(false);
     }
