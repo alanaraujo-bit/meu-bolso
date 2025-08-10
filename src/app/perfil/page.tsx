@@ -73,10 +73,10 @@ export default function PerfilPage() {
       const dadosParaEnviar = {
         tema: configuracoes.tema,
         formatoMoeda: configuracoes.formatoMoeda,
-        confirmarExclusoes: configuracoes.confirmarExclusoes,
-        timeoutSessao: configuracoes.timeoutSessao,
+        confirmarExclusoes: Boolean(configuracoes.confirmarExclusoes),
+        timeoutSessao: Number(configuracoes.timeoutSessao),
         paginaInicial: configuracoes.paginaInicial,
-        mostrarTooltips: configuracoes.mostrarTooltips
+        mostrarTooltips: Boolean(configuracoes.mostrarTooltips)
       };
       
       console.log('📋 Dados para enviar:', dadosParaEnviar);
@@ -86,9 +86,11 @@ export default function PerfilPage() {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
         },
-        body: JSON.stringify(dadosParaEnviar)
+        body: JSON.stringify(dadosParaEnviar),
+        cache: 'no-store'
       });
 
       console.log('📡 Status da resposta:', response.status);
