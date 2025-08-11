@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, ChevronLeft, User, DollarSign, Target, TrendingUp, Check, Sparkles } from 'lucide-react';
+import { ChevronRight, ChevronLeft, User, DollarSign, Target, TrendingUp, Check, Sparkles, Sun, Moon } from 'lucide-react';
 
 interface OnboardingData {
   fonteRenda: string;
@@ -23,6 +23,8 @@ export default function OnboardingPage() {
   const [etapaAtual, setEtapaAtual] = useState(0);
   const [carregando, setCarregando] = useState(false);
   const [protegido, setProtegido] = useState(false); // Proteção contra redirecionamentos
+  const [darkMode, setDarkMode] = useState(false);
+  const [animandoTransicao, setAnimandoTransicao] = useState(false);
   const [dados, setDados] = useState<OnboardingData>({
     fonteRenda: '',
     rendaMensal: '',
@@ -34,6 +36,35 @@ export default function OnboardingPage() {
     experienciaFinanceira: '',
     categoriasPrioritarias: []
   });
+
+  // Hook para gerenciar tema
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    if (darkMode) {
+      // Ir para light mode
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+      setDarkMode(false);
+    } else {
+      // Ir para dark mode
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      setDarkMode(true);
+    }
+  };
 
   // Marcar como protegido após carregar
   useEffect(() => {
@@ -174,14 +205,36 @@ export default function OnboardingPage() {
 
   const selecionarOpcao = (valor: string) => {
     console.log('🎯 Onboarding: Opção selecionada:', valor, 'para campo:', etapaAtualData.campo);
+    
+    // Atualizar dados imediatamente
     setDados(prev => ({
       ...prev,
       [etapaAtualData.campo]: valor
     }));
+    
     console.log('📝 Onboarding: Dados atualizados');
+    
+    // Iniciar animação de transição mais suave
+    setAnimandoTransicao(true);
+    
+    // Avançar automaticamente após um delay mais curto e suave
+    setTimeout(() => {
+      if (etapaAtual < totalEtapas - 1) {
+        setEtapaAtual(etapaAtual + 1);
+      } else {
+        finalizarOnboarding();
+      }
+    }, 800); // Reduzido para 0.8s para ser mais responsivo
+    
+    // Reset da animação imediatamente após o avanço
+    setTimeout(() => {
+      setAnimandoTransicao(false);
+    }, 900);
   };
 
   const proximaEtapa = () => {
+    if (animandoTransicao) return; // Prevenir múltiplos cliques durante animação
+    
     if (etapaAtual < totalEtapas - 1) {
       setEtapaAtual(etapaAtual + 1);
     } else {
@@ -190,6 +243,8 @@ export default function OnboardingPage() {
   };
 
   const etapaAnterior = () => {
+    if (animandoTransicao) return; // Prevenir múltiplos cliques durante animação
+    
     if (etapaAtual > 0) {
       setEtapaAtual(etapaAtual - 1);
     }
@@ -310,57 +365,123 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className={`min-h-screen relative overflow-hidden transition-all duration-300 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+        : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
+    }`}>
+      {/* Botão Dark Mode */}
+      <button
+        onClick={toggleDarkMode}
+        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800/80 hover:bg-gray-700/80 text-amber-400 hover:text-amber-300' 
+            : 'bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900'
+        } backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:scale-110`}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
+        ) : (
+          <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
+        )}
+      </button>
+
+      {/* Background decorativo */}
+      <div className="absolute inset-0">
+        <div className={`absolute top-0 left-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse ${
+          darkMode ? 'bg-emerald-900/30' : 'bg-emerald-200'
+        }`}></div>
+        <div className={`absolute top-0 right-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000 ${
+          darkMode ? 'bg-teal-900/30' : 'bg-teal-200'
+        }`}></div>
+        <div className={`absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000 ${
+          darkMode ? 'bg-cyan-900/30' : 'bg-cyan-200'
+        }`}></div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
         {/* Header com progresso */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                darkMode ? 'bg-emerald-600' : 'bg-emerald-600'
+              }`}>
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Meu Bolso</h1>
-                <p className="text-gray-600">Configuração inicial</p>
+                <h1 className={`text-2xl font-bold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>Meu Bolso</h1>
+                <p className={`transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>Configuração inicial</p>
               </div>
             </div>
             
             <div className="text-right">
-              <p className="text-sm text-gray-500">Etapa {etapaAtual + 1} de {totalEtapas}</p>
-              <p className="text-xs text-gray-400">Olá, {session?.user?.name}!</p>
+              <p className={`text-sm transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>Etapa {etapaAtual + 1} de {totalEtapas}</p>
+              <p className={`text-xs transition-colors duration-300 ${
+                darkMode ? 'text-gray-500' : 'text-gray-400'
+              }`}>Olá, {session?.user?.name}!</p>
             </div>
           </div>
 
           {/* Barra de progresso */}
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className={`w-full rounded-full h-2 transition-colors duration-300 ${
+            darkMode ? 'bg-slate-700' : 'bg-gray-200'
+          }`}>
             <div 
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2 rounded-full transition-all duration-500 ease-out"
+              className={`h-2 rounded-full transition-all duration-700 ease-out ${
+                darkMode 
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600' 
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600'
+              }`}
               style={{ width: `${progresso}%` }}
             ></div>
           </div>
         </div>
 
         {/* Conteúdo principal */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className={`backdrop-blur-sm rounded-xl shadow-lg border overflow-hidden transition-all duration-700 ease-out ${
+          darkMode 
+            ? 'bg-slate-800/80 border-slate-600/30' 
+            : 'bg-white/80 border-white/20'
+        }`}>
           <div className="p-8 sm:p-12">
             {/* Título da etapa */}
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className={`text-center mb-8 transition-all duration-500 ease-out ${
+              animandoTransicao ? 'opacity-80 transform translate-y-1' : 'opacity-100 transform translate-y-0'
+            }`}>
+              <h2 className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
                 {etapaAtualData.titulo}
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className={`text-lg transition-colors duration-300 ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 {etapaAtualData.subtitulo}
               </p>
             </div>
 
             {/* Pergunta */}
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-gray-800 text-center mb-8">
+            <div className={`mb-8 transition-all duration-500 ease-out ${
+              animandoTransicao ? 'opacity-80' : 'opacity-100'
+            }`}>
+              <h3 className={`text-xl font-semibold text-center mb-8 transition-colors duration-300 ${
+                darkMode ? 'text-gray-200' : 'text-gray-800'
+              }`}>
                 {etapaAtualData.pergunta}
               </h3>
 
               {/* Opções */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto transition-all duration-500 ease-out ${
+                animandoTransicao ? 'opacity-60' : 'opacity-100'
+              }`}>
                 {etapaAtualData.opcoes?.map((opcao, index) => (
                   <button
                     key={opcao.valor}
@@ -370,27 +491,42 @@ export default function OnboardingPage() {
                       console.log('🖱️ Onboarding: Botão clicado:', opcao.valor);
                       selecionarOpcao(opcao.valor);
                     }}
-                    className={`p-6 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
+                    disabled={animandoTransicao}
+                    className={`p-6 rounded-xl border-2 text-left transition-all duration-500 ease-out transform ${
                       opcaoSelecionada === opcao.valor
-                        ? 'border-blue-500 bg-blue-50 shadow-md transform scale-105'
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                        ? darkMode
+                          ? 'border-emerald-400 bg-emerald-900/30 shadow-xl scale-105 ring-4 ring-emerald-400/30'
+                          : 'border-emerald-500 bg-emerald-50 shadow-xl scale-105 ring-4 ring-emerald-500/30'
+                        : darkMode
+                          ? 'border-slate-600 hover:border-emerald-500 hover:bg-slate-700/50 hover:scale-102 hover:shadow-lg'
+                          : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50 hover:scale-102 hover:shadow-lg'
                     }`}
                   >
                     <div className="flex items-start space-x-4">
-                      <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 ${
+                      <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 transition-all duration-500 ease-out ${
                         opcaoSelecionada === opcao.valor
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300'
+                          ? darkMode
+                            ? 'border-emerald-400 bg-emerald-400 shadow-lg shadow-emerald-400/40 scale-110'
+                            : 'border-emerald-500 bg-emerald-500 shadow-lg shadow-emerald-500/40 scale-110'
+                          : darkMode
+                            ? 'border-slate-500'
+                            : 'border-gray-300'
                       }`}>
-                        {opcaoSelecionada === opcao.valor && (
+                        <div className={`transition-all duration-300 ${
+                          opcaoSelecionada === opcao.valor ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                        }`}>
                           <Check className="w-4 h-4 text-white" />
-                        )}
+                        </div>
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">
+                        <h4 className={`font-semibold mb-1 transition-colors duration-300 ${
+                          darkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
                           {opcao.label}
                         </h4>
-                        <p className="text-sm text-gray-600">
+                        <p className={`text-sm transition-colors duration-300 ${
+                          darkMode ? 'text-gray-300' : 'text-gray-600'
+                        }`}>
                           {opcao.descricao}
                         </p>
                       </div>
@@ -402,15 +538,19 @@ export default function OnboardingPage() {
           </div>
 
           {/* Footer com navegação */}
-          <div className="bg-gray-50 px-8 py-6 sm:px-12">
+          <div className={`px-8 py-6 sm:px-12 transition-colors duration-300 ${
+            darkMode ? 'bg-slate-700/50' : 'bg-gray-50'
+          }`}>
             <div className="flex justify-between items-center">
               <button
                 onClick={etapaAnterior}
                 disabled={etapaAtual === 0}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
                   etapaAtual === 0
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+                    ? darkMode ? 'text-gray-500 cursor-not-allowed' : 'text-gray-400 cursor-not-allowed'
+                    : darkMode 
+                      ? 'text-gray-300 hover:text-white hover:bg-slate-600' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white'
                 }`}
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -422,7 +562,9 @@ export default function OnboardingPage() {
                   <div
                     key={i}
                     className={`w-3 h-3 rounded-full transition-colors ${
-                      i <= etapaAtual ? 'bg-blue-600' : 'bg-gray-300'
+                      i <= etapaAtual 
+                        ? darkMode ? 'bg-emerald-500' : 'bg-emerald-600' 
+                        : darkMode ? 'bg-slate-600' : 'bg-gray-300'
                     }`}
                   />
                 ))}
@@ -430,11 +572,15 @@ export default function OnboardingPage() {
 
               <button
                 onClick={proximaEtapa}
-                disabled={!podeAvancar || carregando}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                  podeAvancar && !carregando
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                disabled={!podeAvancar || carregando || animandoTransicao}
+                className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  (podeAvancar && !carregando && !animandoTransicao)
+                    ? darkMode
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg'
+                    : darkMode
+                      ? 'bg-slate-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 {carregando ? (
@@ -454,8 +600,10 @@ export default function OnboardingPage() {
         </div>
 
         {/* Informação adicional */}
-        <div className="text-center mt-8 text-gray-500">
-          <p className="text-sm">
+        <div className="text-center mt-8 transition-colors duration-300">
+          <p className={`text-sm ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             ✨ Suas informações são seguras e nos ajudam a personalizar sua experiência
           </p>
         </div>
@@ -463,3 +611,7 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
+// Adicione essas classes CSS customizadas ao globals.css se necessário
+// .scale-98 { transform: scale(0.98); }
+// .scale-102 { transform: scale(1.02); }

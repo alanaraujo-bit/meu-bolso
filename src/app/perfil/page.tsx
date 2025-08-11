@@ -7,10 +7,12 @@ import {
   User, Settings, Shield, Trash2, Download, Calendar, 
   BarChart3, Target, CreditCard, TrendingUp, Clock,
   AlertTriangle, CheckCircle, Save, Loader, Camera,
-  Upload, X, Edit3
+  Upload, X, Edit3, Sun, Moon, Eye, EyeOff, 
+  Palette, Bell, Lock, Globe, Smartphone
 } from 'lucide-react';
 import { PerfilUsuario, ConfiguracoesUsuario, OpcoesLimpeza, CONFIGURACOES_PADRAO } from '@/types/perfil';
 import { formatDataBrasileiraExibicao, formatDataHoraBrasileiraExibicao } from '@/lib/dateUtils';
+import HelpButton from '@/components/HelpButton';
 
 export default function PerfilPage() {
   const { data: session } = useSession();
@@ -24,6 +26,10 @@ export default function PerfilPage() {
   const [mostrarExclusao, setMostrarExclusao] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [mostrarEditarFoto, setMostrarEditarFoto] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [mensagem, setMensagem] = useState('');
+  const [tipoMensagem, setTipoMensagem] = useState<'success' | 'error' | 'info'>('info');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [opcoes, setOpcoes] = useState<OpcoesLimpeza>({
     transacoes: false,
@@ -32,6 +38,45 @@ export default function PerfilPage() {
     dividas: false,
     todosOsDados: false
   });
+
+  // Detectar tema do sistema
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+
+    const checkDarkMode = () => {
+      setDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    
+    // Observer para mudanças de tema
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   useEffect(() => {
     if (!session) {
@@ -43,846 +88,819 @@ export default function PerfilPage() {
 
   const carregarPerfil = async () => {
     try {
-      console.log('🔄 Carregando perfil do usuário...');
+      setLoading(true);
       const response = await fetch('/api/usuario/perfil');
       
       if (response.ok) {
         const dados = await response.json();
-        console.log('✅ Perfil carregado:', dados);
         setPerfil(dados.perfil);
-        setConfiguracoes({ ...CONFIGURACOES_PADRAO, ...dados.perfil.configuracoes });
+        setConfiguracoes(dados.configuracoes || CONFIGURACOES_PADRAO);
       } else {
-        const errorData = await response.json();
-        console.error('❌ Erro ao carregar perfil:', errorData);
-        alert('Erro ao carregar perfil: ' + (errorData.error || 'Erro desconhecido'));
+        setMensagem('Erro ao carregar dados do perfil');
+        setTipoMensagem('error');
       }
     } catch (error) {
-      console.error('❌ Erro de conexão:', error);
-      alert('Erro de conexão ao carregar perfil');
+      console.error('Erro ao carregar perfil:', error);
+      setMensagem('Erro ao carregar perfil');
+      setTipoMensagem('error');
     } finally {
       setLoading(false);
     }
   };
 
   const salvarConfiguracoes = async () => {
-    setSalvando(true);
     try {
-      console.log('🔄 Salvando configurações:', configuracoes);
-      
-      // Validar dados antes de enviar
-      const dadosParaEnviar = {
-        tema: configuracoes.tema,
-        formatoMoeda: configuracoes.formatoMoeda,
-        confirmarExclusoes: Boolean(configuracoes.confirmarExclusoes),
-        timeoutSessao: Number(configuracoes.timeoutSessao),
-        paginaInicial: configuracoes.paginaInicial,
-        mostrarTooltips: Boolean(configuracoes.mostrarTooltips)
-      };
-      
-      console.log('📋 Dados para enviar:', dadosParaEnviar);
-      console.log('📋 JSON stringified:', JSON.stringify(dadosParaEnviar));
-      
+      setSalvando(true);
       const response = await fetch('/api/usuario/configuracoes', {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify(dadosParaEnviar),
-        cache: 'no-store'
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configuracoes)
       });
 
-      console.log('📡 Status da resposta:', response.status);
-
-      let data;
-      const responseText = await response.text();
-      console.log('📦 Resposta bruta:', responseText);
-
-      try {
-        data = JSON.parse(responseText);
-        console.log('📦 Resposta parseada:', data);
-      } catch (parseError) {
-        console.error('❌ Erro ao fazer parse da resposta:', parseError);
-        alert('❌ Erro: Resposta inválida do servidor');
-        return;
-      }
-
       if (response.ok) {
-        console.log('✅ Configurações salvas com sucesso!');
-        alert('✅ Configurações salvas com sucesso!');
-        carregarPerfil(); // Recarrega os dados
+        setMensagem('Configurações salvas com sucesso!');
+        setTipoMensagem('success');
+        setTimeout(() => setMensagem(''), 3000);
       } else {
-        console.error('❌ Erro do servidor:', data);
-        alert('❌ Erro ao salvar configurações: ' + (data.error || 'Erro desconhecido'));
+        setMensagem('Erro ao salvar configurações');
+        setTipoMensagem('error');
       }
     } catch (error) {
-      console.error('❌ Erro ao salvar:', error);
-      alert('❌ Erro de conexão ao salvar configurações: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      console.error('Erro ao salvar configurações:', error);
+      setMensagem('Erro ao salvar configurações');
+      setTipoMensagem('error');
     } finally {
       setSalvando(false);
     }
-  };
-
-  const executarLimpeza = async () => {
-    if (!Object.values(opcoes).some(Boolean)) {
-      alert('⚠️ Selecione pelo menos uma opção para limpar');
-      return;
-    }
-
-    const confirmacao = prompt(
-      '⚠️ ATENÇÃO: Esta ação NÃO PODE ser desfeita!\n\nDigite "CONFIRMAR" para prosseguir:'
-    );
-
-    if (confirmacao !== 'CONFIRMAR') {
-      alert('❌ Operação cancelada');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/usuario/limpar-dados', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(opcoes)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('✅ Dados limpos com sucesso!\n\n' + data.resultados.join('\n'));
-        setMostrarLimpeza(false);
-        setOpcoes({
-          transacoes: false,
-          categorias: false,
-          metas: false,
-          dividas: false,
-          todosOsDados: false
-        });
-        carregarPerfil(); // Recarrega estatísticas
-      } else {
-        console.error('Erro do servidor:', data);
-        alert('❌ Erro ao limpar dados: ' + (data.error || 'Erro desconhecido'));
-      }
-    } catch (error) {
-      console.error('Erro ao limpar dados:', error);
-      alert('❌ Erro de conexão ao limpar dados');
-    }
-  };
-
-  const excluirConta = async () => {
-    const confirmacao1 = prompt(
-      '🚨 ATENÇÃO MÁXIMA! 🚨\n\nEsta ação irá EXCLUIR PERMANENTEMENTE sua conta e TODOS os dados.\n\n❌ NÃO HÁ COMO DESFAZER!\n\nDigite "EXCLUIR CONTA" para confirmar:'
-    );
-
-    if (confirmacao1 !== 'EXCLUIR CONTA') {
-      alert('❌ Operação cancelada');
-      return;
-    }
-
-    const confirmacao2 = prompt(
-      '🔐 Última confirmação de segurança.\n\nDigite seu email EXATO para confirmar a exclusão:'
-    );
-
-    if (confirmacao2 !== session?.user?.email) {
-      alert('❌ Email incorreto. Operação cancelada por segurança.');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/usuario/excluir-conta', {
-        method: 'DELETE'
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('✅ Conta excluída com sucesso.\n\n👋 Você será redirecionado para a página inicial.');
-        // Limpar sessão e redirecionar
-        window.location.href = '/';
-      } else {
-        console.error('Erro do servidor:', data);
-        alert('❌ Erro ao excluir conta: ' + (data.error || 'Erro desconhecido'));
-      }
-    } catch (error) {
-      console.error('Erro ao excluir conta:', error);
-      alert('❌ Erro de conexão ao excluir conta');
-    }
-  };
-
-  const formatarMoeda = (valor: number): string => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: configuracoes.formatoMoeda,
-    }).format(valor);
   };
 
   const handleFotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de arquivo
-    if (!file.type.startsWith('image/')) {
-      alert('❌ Por favor, selecione apenas arquivos de imagem (JPG, PNG, etc.)');
+    if (file.size > 5 * 1024 * 1024) {
+      setMensagem('Arquivo muito grande. Máximo 5MB.');
+      setTipoMensagem('error');
       return;
     }
 
-    // Validar tamanho (máximo 2MB para produção)
-    const maxSize = 2 * 1024 * 1024; // 2MB
-    if (file.size > maxSize) {
-      alert(`❌ A imagem deve ter no máximo 2MB. Tamanho atual: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
-      return;
-    }
-
-    setUploadingFoto(true);
-    
-    console.log('🔄 Iniciando upload...', {
-      nome: file.name,
-      tipo: file.type,
-      tamanho: file.size
-    });
-    
     try {
-      // 1. Fazer upload da imagem
+      setUploadingFoto(true);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('avatar', file);
 
-      console.log('📤 Enviando para /api/upload/avatar...');
-      
-      const uploadResponse = await fetch('/api/upload/avatar', {
+      const response = await fetch('/api/usuario/avatar', {
         method: 'POST',
-        body: formData,
-        // Não definir Content-Type para FormData - deixar o browser fazer
+        body: formData
       });
 
-      console.log('📥 Resposta recebida:', {
-        status: uploadResponse.status,
-        statusText: uploadResponse.statusText,
-        ok: uploadResponse.ok
-      });
-
-      let uploadData;
-      try {
-        const responseText = await uploadResponse.text();
-        console.log('📋 Resposta bruta:', responseText);
-        uploadData = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('❌ Erro ao fazer parse da resposta:', parseError);
-        alert('❌ Erro: Resposta inválida do servidor');
-        return;
-      }
-
-      if (!uploadResponse.ok) {
-        console.error('❌ Erro do servidor no upload:', uploadData);
-        alert(`❌ Erro ao fazer upload da foto: ${uploadData.error || 'Erro desconhecido'}\n${uploadData.details ? `Detalhes: ${uploadData.details}` : ''}`);
-        return;
-      }
-
-      console.log('✅ Upload bem-sucedido:', uploadData);
-
-      // Validar se recebemos uma URL ou base64 válidos
-      if (!uploadData.url) {
-        console.error('❌ Nenhuma URL recebida:', uploadData);
-        alert('❌ Erro: Servidor não retornou imagem válida');
-        return;
-      }
-
-      // 2. Salvar o avatar automaticamente no banco de dados
-      console.log('💾 Salvando no banco de dados...');
-      console.log('📋 Tipo de dados:', uploadData.url.startsWith('data:') ? 'base64' : 'URL');
-      console.log('📋 Tamanho:', uploadData.url.startsWith('data:') ? 
-        Math.round(uploadData.url.length / 1024) + 'KB' : 
-        uploadData.url.length + ' chars');
-      
-      const saveResponse = await fetch('/api/usuario/avatar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ avatarUrl: uploadData.url })
-      });
-
-      let saveData;
-      try {
-        saveData = await saveResponse.json();
-      } catch (parseError) {
-        console.error('❌ Erro ao fazer parse da resposta de salvamento:', parseError);
-        alert('❌ Foto foi enviada mas não foi possível salvar');
-        return;
-      }
-
-      if (saveResponse.ok) {
-        alert('✅ Foto atualizada e salva automaticamente!');
-        // Atualizar o perfil com a nova foto
-        if (perfil) {
-          setPerfil({ ...perfil, avatarUrl: uploadData.url });
-        }
-        
-        // Remover do localStorage já que foi salvo no banco
-        localStorage.removeItem(`avatar_${session?.user?.email}`);
-        
+      if (response.ok) {
+        const data = await response.json();
+        setPerfil(prev => prev ? { ...prev, avatarUrl: data.avatarUrl } : null);
+        setMensagem('Foto atualizada com sucesso!');
+        setTipoMensagem('success');
         setMostrarEditarFoto(false);
+        setTimeout(() => setMensagem(''), 3000);
       } else {
-        console.error('❌ Erro ao salvar avatar no banco:', saveData);
-        alert(`❌ Foto foi enviada mas não foi salva automaticamente: ${saveData.error || 'Erro desconhecido'}`);
-        
-        // Como fallback, manter no localStorage
-        if (perfil) {
-          setPerfil({ ...perfil, avatarUrl: uploadData.url });
-        }
+        setMensagem('Erro ao fazer upload da foto');
+        setTipoMensagem('error');
       }
     } catch (error) {
-      console.error('💥 Erro ao fazer upload:', error);
-      
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        alert('❌ Erro de conexão: Verifique sua internet e tente novamente');
-      } else {
-        alert(`❌ Erro inesperado ao fazer upload da foto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-      }
+      console.error('Erro no upload:', error);
+      setMensagem('Erro ao fazer upload da foto');
+      setTipoMensagem('error');
     } finally {
       setUploadingFoto(false);
     }
   };
 
   const removerFoto = async () => {
-    if (!confirm('🗑️ Tem certeza que deseja remover sua foto do perfil?')) {
-      return;
-    }
-
-    setUploadingFoto(true);
     try {
-      const response = await fetch(`/api/upload/avatar/delete`, {
+      setUploadingFoto(true);
+      const response = await fetch('/api/usuario/avatar', {
         method: 'DELETE'
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        alert('✅ Foto removida com sucesso!');
-        // Remover a foto do perfil
-        if (perfil) {
-          setPerfil({ ...perfil, avatarUrl: undefined });
-        }
+        setPerfil(prev => prev ? { ...prev, avatarUrl: undefined } : null);
+        setMensagem('Foto removida com sucesso!');
+        setTipoMensagem('success');
         setMostrarEditarFoto(false);
+        setTimeout(() => setMensagem(''), 3000);
       } else {
-        console.error('Erro do servidor:', data);
-        alert('❌ Erro ao remover foto: ' + (data.error || 'Erro desconhecido'));
+        setMensagem('Erro ao remover foto');
+        setTipoMensagem('error');
       }
     } catch (error) {
       console.error('Erro ao remover foto:', error);
-      alert('❌ Erro de conexão ao remover foto');
+      setMensagem('Erro ao remover foto');
+      setTipoMensagem('error');
     } finally {
       setUploadingFoto(false);
     }
   };
 
-  const atualizarNome = async (novoNome: string) => {
+  const exportarDados = async () => {
     try {
-      const response = await fetch('/api/usuario/atualizar-nome', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: novoNome })
-      });
-
-      const data = await response.json();
-
+      const response = await fetch('/api/usuario/exportar');
       if (response.ok) {
-        alert('✅ Nome atualizado com sucesso!');
-        // Atualizar o perfil com o novo nome
-        if (perfil) {
-          setPerfil({ ...perfil, nome: novoNome });
-        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `meu-bolso-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        setMensagem('Dados exportados com sucesso!');
+        setTipoMensagem('success');
+        setTimeout(() => setMensagem(''), 3000);
       } else {
-        console.error('Erro do servidor:', data);
-        alert('❌ Erro ao atualizar nome: ' + (data.error || 'Erro desconhecido'));
+        setMensagem('Erro ao exportar dados');
+        setTipoMensagem('error');
       }
     } catch (error) {
-      console.error('Erro ao atualizar nome:', error);
-      alert('❌ Erro de conexão ao atualizar nome');
+      console.error('Erro ao exportar dados:', error);
+      setMensagem('Erro ao exportar dados');
+      setTipoMensagem('error');
+    }
+  };
+
+  const excluirConta = async () => {
+    if (!confirm('Tem certeza que deseja excluir sua conta permanentemente? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/usuario/excluir', {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        router.push('/login');
+      } else {
+        setMensagem('Erro ao excluir conta');
+        setTipoMensagem('error');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir conta:', error);
+      setMensagem('Erro ao excluir conta');
+      setTipoMensagem('error');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${
+        darkMode 
+          ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+          : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
+      }`}>
         <div className="text-center">
-          <Loader className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Carregando perfil...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!perfil) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-lg text-gray-600">Erro ao carregar perfil</p>
+          <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Carregando perfil...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className={`min-h-screen transition-colors duration-500 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+        : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
+    } relative overflow-hidden`}>
+      
+      {/* Elementos decorativos de fundo */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className={`absolute top-1/4 -left-20 w-80 h-80 rounded-full blur-3xl opacity-20 ${
+          darkMode ? 'bg-emerald-500' : 'bg-emerald-300'
+        }`}></div>
+        <div className={`absolute bottom-1/4 -right-20 w-96 h-96 rounded-full blur-3xl opacity-20 ${
+          darkMode ? 'bg-cyan-500' : 'bg-cyan-300'
+        }`}></div>
+        <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-10 ${
+          darkMode ? 'bg-teal-500' : 'bg-teal-300'
+        }`}></div>
+      </div>
+
+      {/* Botão Dark Mode */}
+      <button
+        onClick={toggleDarkMode}
+        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800/80 hover:bg-gray-700/80 text-amber-400 hover:text-amber-300' 
+            : 'bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900'
+        } backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:scale-110`}
+        aria-label="Toggle dark mode"
+      >
+        <span className="text-xl">{darkMode ? '☀️' : '🌙'}</span>
+      </button>
+
+      {/* Help Button */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <HelpButton 
+          title="Perfil"
+          steps={[
+            {
+              title: "👤 Perfil",
+              content: "Gerencie suas informações pessoais, configurações e dados da conta."
+            },
+            {
+              title: "⚙️ Como usar",
+              content: "• Altere foto do perfil\n• Configure preferências\n• Exporte seus dados\n• Gerencie segurança da conta"
+            }
+          ]}
+        />
+      </div>
+
+      {/* Container principal */}
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
+        
         {/* Header do Perfil */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center space-x-4">
-            {/* Avatar com funcionalidade de edição */}
-            <div className="relative group">
-              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg border-4 border-blue-100 bg-gray-100">
-                {perfil.avatarUrl ? (
-                  <img 
-                    src={perfil.avatarUrl} 
-                    alt="Foto do perfil" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Se a imagem falhar ao carregar, mostrar fallback
-                      console.error('Erro ao carregar avatar:', perfil.avatarUrl);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {perfil.nome?.charAt(0).toUpperCase() || '👤'}
-                  </div>
-                )}
-              </div>
-              
-              {/* Overlay de edição */}
-              <button
-                onClick={() => setMostrarEditarFoto(true)}
-                className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
-              >
-                <Camera className="w-6 h-6 text-white" />
-              </button>
-              
-              {/* Indicador de edição */}
-              <button
-                onClick={() => setMostrarEditarFoto(true)}
-                className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
-              >
-                <Edit3 className="w-3 h-3" />
-              </button>
-            </div>
+        <div className={`backdrop-blur-xl rounded-3xl shadow-2xl border mb-8 overflow-hidden ${
+          darkMode 
+            ? 'bg-gray-800/40 border-gray-700/50' 
+            : 'bg-white/40 border-white/50'
+        }`}>
+          <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-8 relative overflow-hidden">
+            {/* Decorações de fundo */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/15 rounded-full translate-y-16 -translate-x-16"></div>
             
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-bold text-gray-900">{perfil.nome || 'Usuário'}</h1>
+            <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-white/20 border-4 border-white/30 backdrop-blur-sm">
+                  {perfil?.avatarUrl ? (
+                    <img 
+                      src={perfil.avatarUrl} 
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                      <User size={48} />
+                    </div>
+                  )}
+                </div>
                 <button
-                  onClick={() => {
-                    const novoNome = prompt('✏️ Digite seu novo nome:', perfil.nome || '');
-                    if (novoNome && novoNome.trim() && novoNome !== perfil.nome) {
-                      atualizarNome(novoNome.trim());
-                    }
-                  }}
-                  className="text-blue-600 hover:text-blue-800 p-1 rounded"
-                  title="Editar nome"
+                  onClick={() => setMostrarEditarFoto(true)}
+                  className="absolute bottom-2 right-2 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30"
                 >
-                  <Edit3 className="w-4 h-4" />
+                  <Camera size={16} />
                 </button>
               </div>
-              <p className="text-gray-600">{perfil.email}</p>
-              <p className="text-sm text-gray-500 flex items-center mt-1">
-                <Calendar className="w-4 h-4 mr-1" />
-                Membro desde {formatDataBrasileiraExibicao(new Date(perfil.criadoEm))}
-              </p>
-              <p className="text-sm text-gray-500 flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
-                Último acesso: {formatDataHoraBrasileiraExibicao(new Date(perfil.ultimaAtividade))}
-              </p>
+
+              {/* Informações do usuário */}
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="text-3xl font-bold text-white drop-shadow-sm mb-2">
+                  {perfil?.nome || session?.user?.name || 'Usuário'}
+                </h1>
+                <p className="text-white/90 text-lg font-medium mb-1">
+                  {session?.user?.email}
+                </p>
+                <div className="flex items-center justify-center md:justify-start gap-4 text-white/80 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Calendar size={14} />
+                    Membro desde {perfil?.criadoEm ? formatDataBrasileiraExibicao(perfil.criadoEm) : 'hoje'}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock size={14} />
+                    Último acesso: {perfil?.ultimaAtividade ? formatDataHoraBrasileiraExibicao(perfil.ultimaAtividade) : 'agora'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Estatísticas */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="text-2xl font-bold text-white">{perfil?.estatisticas?.totalTransacoes || 0}</div>
+                  <div className="text-white/90 text-sm font-medium">Transações</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="text-2xl font-bold text-white">{perfil?.estatisticas?.totalCategorias || 0}</div>
+                  <div className="text-white/90 text-sm font-medium">Categorias</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="text-2xl font-bold text-white">{perfil?.estatisticas?.totalMetas || 0}</div>
+                  <div className="text-white/90 text-sm font-medium">Metas</div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="text-2xl font-bold text-white">{perfil?.estatisticas?.totalDividas || 0}</div>
+                  <div className="text-white/90 text-sm font-medium">Dívidas</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Modal de Edição de Foto */}
-        {mostrarEditarFoto && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">📸 Editar Foto do Perfil</h3>
-                <button
-                  onClick={() => setMostrarEditarFoto(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {/* Preview da foto atual */}
-                <div className="flex justify-center">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-200">
-                    {perfil.avatarUrl ? (
-                      <img 
-                        src={perfil.avatarUrl} 
-                        alt="Foto atual" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
-                        {perfil.nome?.charAt(0).toUpperCase() || '👤'}
-                      </div>
-                    )}
+        {/* Mensagem de feedback */}
+        {mensagem && (
+          <div className={`mb-6 p-4 rounded-xl border transition-all duration-300 ${
+            tipoMensagem === 'error'
+              ? darkMode
+                ? 'bg-red-900/20 border-red-500/30 text-red-400'
+                : 'bg-red-50 border-red-200 text-red-700'
+              : tipoMensagem === 'success'
+                ? darkMode
+                  ? 'bg-green-900/20 border-green-500/30 text-green-400'
+                  : 'bg-green-50 border-green-200 text-green-700'
+                : darkMode
+                  ? 'bg-blue-900/20 border-blue-500/30 text-blue-400'
+                  : 'bg-blue-50 border-blue-200 text-blue-700'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">{mensagem}</span>
+              <button 
+                onClick={() => setMensagem('')}
+                className="text-lg hover:scale-110 transition-transform"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Grid de Configurações */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          
+          {/* Seção Configurações */}
+          <div className={`backdrop-blur-xl rounded-2xl shadow-xl border p-6 ${
+            darkMode 
+              ? 'bg-gray-800/40 border-gray-700/50' 
+              : 'bg-white/40 border-white/50'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-6 flex items-center gap-3 ${
+              darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              <Settings className="text-emerald-500" />
+              ⚙️ Configurações
+            </h2>
+
+            <div className="space-y-6">
+              {/* Exibição */}
+              <div>
+                <h3 className={`text-lg font-semibold mb-4 ${
+                  darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  🎨 Exibição
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Tema */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className={`font-medium ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Tema
+                      </label>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Escolha entre claro/escuro ou automático
+                      </p>
+                    </div>
+                    <select
+                      value={configuracoes.tema}
+                      onChange={(e) => setConfiguracoes(prev => ({ ...prev, tema: e.target.value as any }))}
+                      className={`px-3 py-2 border rounded-lg transition-all ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      } focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500`}
+                    >
+                      <option value="automatico">🔄 Automático</option>
+                      <option value="claro">☀️ Claro</option>
+                      <option value="escuro">🌙 Escuro</option>
+                    </select>
+                  </div>
+
+                  {/* Moeda */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className={`font-medium ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Moeda Padrão
+                      </label>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Formato de exibição dos valores
+                      </p>
+                    </div>
+                    <select
+                      value={configuracoes.formatoMoeda || 'BRL'}
+                      onChange={(e) => setConfiguracoes(prev => ({ ...prev, formatoMoeda: e.target.value as any }))}
+                      className={`px-3 py-2 border rounded-lg transition-all ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      } focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500`}
+                    >
+                      <option value="BRL">💰 Real (R$)</option>
+                      <option value="USD">💵 Dólar ($)</option>
+                      <option value="EUR">💶 Euro (€)</option>
+                    </select>
+                  </div>
+
+                  {/* Página Inicial */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className={`font-medium ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Página Inicial
+                      </label>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Para onde ir após o login
+                      </p>
+                    </div>
+                    <select
+                      value={configuracoes.paginaInicial}
+                      onChange={(e) => setConfiguracoes(prev => ({ ...prev, paginaInicial: e.target.value as any }))}
+                      className={`px-3 py-2 border rounded-lg transition-all ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      } focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500`}
+                    >
+                      <option value="dashboard">🏠 Dashboard</option>
+                      <option value="transacoes">💰 Transações</option>
+                      <option value="relatorios">📊 Relatórios</option>
+                    </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Segurança */}
+              <div>
+                <h3 className={`text-lg font-semibold mb-4 ${
+                  darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  🔒 Segurança
+                </h3>
                 
-                {/* Botões de ação */}
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  {/* Confirmar Exclusões */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className={`font-medium ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Confirmar Exclusões
+                      </label>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Pedir confirmação ao excluir dados
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setConfiguracoes(prev => ({ 
+                        ...prev, 
+                        confirmarExclusoes: !prev.confirmarExclusoes 
+                      }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        configuracoes.confirmarExclusoes 
+                          ? 'bg-emerald-600' 
+                          : darkMode ? 'bg-gray-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          configuracoes.confirmarExclusoes ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Mostrar Tooltips */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className={`font-medium ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Mostrar Tooltips
+                      </label>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Exibir dicas de ajuda na interface
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setConfiguracoes(prev => ({ 
+                        ...prev, 
+                        mostrarTooltips: !prev.mostrarTooltips 
+                      }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        configuracoes.mostrarTooltips 
+                          ? 'bg-emerald-600' 
+                          : darkMode ? 'bg-gray-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          configuracoes.mostrarTooltips ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Timeout de Sessão */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className={`font-medium ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Timeout de Sessão
+                      </label>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Tempo para logout automático
+                      </p>
+                    </div>
+                    <select
+                      value={configuracoes.timeoutSessao}
+                      onChange={(e) => setConfiguracoes(prev => ({ ...prev, timeoutSessao: parseInt(e.target.value) }))}
+                      className={`px-3 py-2 border rounded-lg transition-all ${
+                        darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      } focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500`}
+                    >
+                      <option value={30}>⏰ 30 minutos</option>
+                      <option value={60}>🕐 1 hora</option>
+                      <option value={120}>🕑 2 horas</option>
+                      <option value={240}>🕓 4 horas</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botão Salvar */}
+              <div className="pt-4">
+                <button
+                  onClick={salvarConfiguracoes}
+                  disabled={salvando}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                >
+                  {salvando ? (
+                    <>
+                      <Loader className="animate-spin" size={20} />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={20} />
+                      💾 Salvar Configurações
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção Zona de Perigo */}
+          <div className={`backdrop-blur-xl rounded-2xl shadow-xl border p-6 ${
+            darkMode 
+              ? 'bg-gray-800/40 border-gray-700/50' 
+              : 'bg-white/40 border-white/50'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-6 flex items-center gap-3 ${
+              darkMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              <Shield className="text-red-500" />
+              ⚠️ Zona de Perigo
+            </h2>
+
+            <div className="space-y-6">
+              {/* Exportar Dados */}
+              <div className={`p-4 rounded-lg border ${
+                darkMode 
+                  ? 'bg-blue-900/20 border-blue-500/30' 
+                  : 'bg-blue-50 border-blue-200'
+              }`}>
+                <h3 className={`font-semibold mb-2 ${
+                  darkMode ? 'text-blue-300' : 'text-blue-800'
+                }`}>
+                  📦 Exportar Dados
+                </h3>
+                <p className={`text-sm mb-4 ${
+                  darkMode ? 'text-blue-400' : 'text-blue-600'
+                }`}>
+                  Baixe um backup completo de todos os seus dados
+                </p>
+                <button
+                  onClick={exportarDados}
+                  className={`w-full py-2 px-4 rounded-lg font-medium transition-all hover:scale-105 ${
+                    darkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  } flex items-center justify-center gap-2`}
+                >
+                  <Download size={16} />
+                  Exportar Dados
+                </button>
+              </div>
+
+              {/* Limpar Dados */}
+              <div className={`p-4 rounded-lg border ${
+                darkMode 
+                  ? 'bg-orange-900/20 border-orange-500/30' 
+                  : 'bg-orange-50 border-orange-200'
+              }`}>
+                <h3 className={`font-semibold mb-2 ${
+                  darkMode ? 'text-orange-300' : 'text-orange-800'
+                }`}>
+                  🗑️ Limpar Dados
+                </h3>
+                <p className={`text-sm mb-4 ${
+                  darkMode ? 'text-orange-400' : 'text-orange-600'
+                }`}>
+                  Remove dados específicos do seu histórico. Esta ação não pode ser desfeita.
+                </p>
+                <button
+                  onClick={() => setMostrarLimpeza(true)}
+                  className={`w-full py-2 px-4 rounded-lg font-medium transition-all hover:scale-105 ${
+                    darkMode 
+                      ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                      : 'bg-orange-600 hover:bg-orange-700 text-white'
+                  } flex items-center justify-center gap-2`}
+                >
+                  <Trash2 size={16} />
+                  Selecionar Dados para Limpar
+                </button>
+              </div>
+
+              {/* Excluir Conta */}
+              <div className={`p-4 rounded-lg border ${
+                darkMode 
+                  ? 'bg-red-900/20 border-red-500/30' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <h3 className={`font-semibold mb-2 ${
+                  darkMode ? 'text-red-300' : 'text-red-800'
+                }`}>
+                  🚨 Excluir Conta
+                </h3>
+                <p className={`text-sm mb-4 ${
+                  darkMode ? 'text-red-400' : 'text-red-600'
+                }`}>
+                  Remove permanentemente sua conta e todos os dados associados
+                </p>
+                <button
+                  onClick={() => setMostrarExclusao(true)}
+                  className={`w-full py-2 px-4 rounded-lg font-medium transition-all hover:scale-105 ${
+                    darkMode 
+                      ? 'bg-red-600 hover:bg-red-700 text-white' 
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  } flex items-center justify-center gap-2`}
+                >
+                  <AlertTriangle size={16} />
+                  Excluir Conta Permanentemente
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal de Editar Foto */}
+        {mostrarEditarFoto && (
+          <div className={`fixed inset-0 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300 ${
+            darkMode ? 'bg-black/80' : 'bg-black/70'
+          }`}>
+            <div className={`rounded-3xl shadow-2xl max-w-md w-full transform transition-all ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className={`text-xl font-bold ${
+                    darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    📸 Editar Foto do Perfil
+                  </h3>
+                  <button
+                    onClick={() => setMostrarEditarFoto(false)}
+                    className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFotoUpload}
+                    className="hidden"
+                  />
+                  
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingFoto}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {uploadingFoto ? (
-                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      <>
+                        <Loader className="animate-spin" size={20} />
+                        Enviando...
+                      </>
                     ) : (
-                      <Upload className="w-4 h-4 mr-2" />
+                      <>
+                        <Upload size={20} />
+                        Escolher Nova Foto
+                      </>
                     )}
-                    {uploadingFoto ? 'Fazendo Upload...' : '📁 Escolher Nova Foto'}
                   </button>
-                  
-                  {perfil.avatarUrl && (
+
+                  {perfil?.avatarUrl && (
                     <button
                       onClick={removerFoto}
                       disabled={uploadingFoto}
-                      className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                        darkMode 
+                          ? 'bg-red-600 hover:bg-red-700 text-white' 
+                          : 'bg-red-600 hover:bg-red-700 text-white'
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      🗑️ Remover Foto
+                      <Trash2 size={20} />
+                      Remover Foto
                     </button>
                   )}
-                  
-                  <button
-                    onClick={() => setMostrarEditarFoto(false)}
-                    className="w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-                
-                {/* Input de arquivo oculto */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFotoUpload}
-                  className="hidden"
-                />
-                
-                {/* Informações sobre upload */}
-                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
-                  <p className="font-medium mb-1">ℹ️ Informações sobre a foto:</p>
-                  <ul className="space-y-1">
-                    <li>• Formatos aceitos: JPG, PNG, GIF, WebP</li>
-                    <li>• Tamanho máximo: 5MB</li>
-                    <li>• Recomendado: imagem quadrada (1:1)</li>
-                  </ul>
+
+                  <p className={`text-sm text-center ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Formatos aceitos: JPG, PNG, GIF<br />
+                    Tamanho máximo: 5MB
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <CreditCard className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Transações</p>
-                <p className="text-2xl font-bold text-gray-900">{perfil.estatisticas.totalTransacoes}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Valor Total</p>
-                <p className="text-xl font-bold text-green-600">
-                  {formatarMoeda(perfil.estatisticas.valorTotalMovimentado)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Target className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Metas</p>
-                <p className="text-2xl font-bold text-gray-900">{perfil.estatisticas.totalMetas}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Categorias</p>
-                <p className="text-2xl font-bold text-gray-900">{perfil.estatisticas.totalCategorias}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Configurações */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-            <Settings className="w-6 h-6 mr-2" />
-            Configurações
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Configurações de Exibição */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Exibição</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tema
-                  </label>
-                  <select 
-                    value={configuracoes.tema}
-                    onChange={(e) => setConfiguracoes({...configuracoes, tema: e.target.value as any})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  >
-                    <option value="claro">🌞 Claro</option>
-                    <option value="escuro">🌙 Escuro</option>
-                    <option value="automatico">🔄 Automático</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Moeda Padrão
-                  </label>
-                  <select 
-                    value={configuracoes.formatoMoeda}
-                    onChange={(e) => setConfiguracoes({...configuracoes, formatoMoeda: e.target.value as any})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  >
-                    <option value="BRL">🇧🇷 Real (R$)</option>
-                    <option value="USD">🇺🇸 Dólar ($)</option>
-                    <option value="EUR">🇪🇺 Euro (€)</option>
-                  </select>
+        {/* Modal de Confirmação de Exclusão */}
+        {mostrarExclusao && (
+          <div className={`fixed inset-0 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300 ${
+            darkMode ? 'bg-black/80' : 'bg-black/70'
+          }`}>
+            <div className={`rounded-3xl shadow-2xl max-w-md w-full transform transition-all ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-6xl mb-4">⚠️</div>
+                  <h3 className={`text-xl font-bold mb-2 ${
+                    darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    Excluir Conta Permanentemente
+                  </h3>
+                  <p className={`text-sm ${
+                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    Esta ação é irreversível. Todos os seus dados serão perdidos permanentemente.
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Página Inicial
-                  </label>
-                  <select 
-                    value={configuracoes.paginaInicial}
-                    onChange={(e) => setConfiguracoes({...configuracoes, paginaInicial: e.target.value as any})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  >
-                    <option value="dashboard">📊 Dashboard</option>
-                    <option value="transacoes">💳 Transações</option>
-                    <option value="categorias">🏷️ Categorias</option>
-                    <option value="metas">🎯 Metas</option>
-                    <option value="relatorios">📈 Relatórios</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Configurações de Segurança */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Segurança</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Confirmar Exclusões
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      Exibir confirmação ao excluir dados
-                    </p>
-                  </div>
+                <div className="space-y-4">
                   <button
-                    onClick={() => setConfiguracoes({...configuracoes, confirmarExclusoes: !configuracoes.confirmarExclusoes})}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      configuracoes.confirmarExclusoes ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
+                    onClick={excluirConta}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2"
                   >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        configuracoes.confirmarExclusoes ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
+                    <AlertTriangle size={20} />
+                    Sim, Excluir Permanentemente
                   </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Mostrar Tooltips
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      Exibir dicas de ajuda na interface
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setConfiguracoes({...configuracoes, mostrarTooltips: !configuracoes.mostrarTooltips})}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      configuracoes.mostrarTooltips ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        configuracoes.mostrarTooltips ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Timeout de Sessão (minutos)
-                  </label>
-                  <select 
-                    value={configuracoes.timeoutSessao}
-                    onChange={(e) => setConfiguracoes({...configuracoes, timeoutSessao: Number(e.target.value)})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                  >
-                    <option value={0}>🔓 Nunca</option>
-                    <option value={15}>⏱️ 15 minutos</option>
-                    <option value={30}>⏱️ 30 minutos</option>
-                    <option value={60}>⏰ 1 hora</option>
-                    <option value={120}>⏰ 2 horas</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Botão Salvar */}
-          <div className="mt-6 pt-6 border-t border-gray-200 flex space-x-3">
-            <button
-              onClick={salvarConfiguracoes}
-              disabled={salvando}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            >
-              {salvando ? (
-                <Loader className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              {salvando ? 'Salvando...' : 'Salvar Configurações'}
-            </button>
-            
-            <button
-              onClick={carregarPerfil}
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 flex items-center"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              🔄 Recarregar
-            </button>
-          </div>
-        </div>
-
-        {/* Zona de Perigo */}
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-red-800 mb-4 flex items-center">
-            <Shield className="w-6 h-6 mr-2" />
-            Zona de Perigo
-          </h2>
-          
-          <div className="space-y-6">
-            {/* Limpeza de Dados */}
-            <div>
-              <h3 className="text-lg font-medium text-red-700 mb-2">Limpar Dados</h3>
-              <p className="text-sm text-red-600 mb-4">
-                Remova dados específicos do seu histórico. Esta ação não pode ser desfeita.
-              </p>
-              
-              {mostrarLimpeza ? (
-                <div className="bg-white p-4 rounded border border-red-200 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {Object.entries(opcoes).map(([key, value]) => {
-                      const labels = {
-                        transacoes: '💳 Todas as Transações',
-                        categorias: '🏷️ Todas as Categorias', 
-                        metas: '🎯 Todas as Metas',
-                        dividas: '👛 Todas as Dívidas',
-                        todosOsDados: '⚠️ TODOS OS DADOS'
-                      };
-                      
-                      return (
-                        <label key={key} className="flex items-center space-x-2 p-2 hover:bg-red-50 rounded">
-                          <input
-                            type="checkbox"
-                            checked={value}
-                            onChange={(e) => setOpcoes({...opcoes, [key]: e.target.checked})}
-                            className="rounded border-red-300 text-red-600 focus:ring-red-500"
-                          />
-                          <span className="text-sm text-gray-700 font-medium">
-                            {labels[key as keyof typeof labels]}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
                   
-                  <div className="flex space-x-2 pt-3 border-t border-red-200">
-                    <button
-                      onClick={executarLimpeza}
-                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={!Object.values(opcoes).some(Boolean)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      ⚠️ Confirmar Limpeza
-                    </button>
-                    <button
-                      onClick={() => setMostrarLimpeza(false)}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setMostrarExclusao(false)}
+                    className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Cancelar
+                  </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setMostrarLimpeza(true)}
-                  className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 flex items-center transition-colors"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  🗑️ Selecionar Dados para Limpar
-                </button>
-              )}
-            </div>
-            
-            {/* Excluir Conta */}
-            <div>
-              <h3 className="text-lg font-medium text-red-700 mb-2">Excluir Conta</h3>
-              <p className="text-sm text-red-600 mb-4">
-                Remove permanentemente sua conta e todos os dados associados.
-              </p>
-              <button
-                onClick={excluirConta}
-                className="bg-red-700 text-white px-4 py-2 rounded hover:bg-red-800 flex items-center"
-              >
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Excluir Conta Permanentemente
-              </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

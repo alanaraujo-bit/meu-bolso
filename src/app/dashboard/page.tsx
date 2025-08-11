@@ -36,7 +36,10 @@ import {
   Wallet,
   BarChart3,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sun,
+  Moon,
+  Sparkles
 } from 'lucide-react';
 
 interface DashboardData {
@@ -253,6 +256,33 @@ export default function Dashboard() {
   const [mesAtual, setMesAtual] = useState(new Date().getMonth() + 1);
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
   const [mostrarBoasVindas, setMostrarBoasVindas] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Hook para gerenciar tema
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -501,7 +531,11 @@ export default function Dashboard() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border rounded shadow">
+        <div className={`p-3 border rounded shadow transition-all duration-300 ${
+          darkMode 
+            ? 'bg-slate-800 border-slate-600 text-white' 
+            : 'bg-white border-gray-200 text-gray-900'
+        }`}>
           <p className="font-medium">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }}>
@@ -515,26 +549,70 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={`min-h-screen relative overflow-hidden transition-all duration-300 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+        : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
+    }`}>
+      {/* Botão Dark Mode */}
+      <button
+        onClick={toggleDarkMode}
+        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800/80 hover:bg-gray-700/80 text-amber-400 hover:text-amber-300' 
+            : 'bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900'
+        } backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:scale-110`}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
+        ) : (
+          <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
+        )}
+      </button>
+
+      {/* Background decorativo */}
+      <div className="absolute inset-0">
+        <div className={`absolute top-0 left-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse ${
+          darkMode ? 'bg-emerald-900/30' : 'bg-emerald-200'
+        }`}></div>
+        <div className={`absolute top-0 right-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000 ${
+          darkMode ? 'bg-teal-900/30' : 'bg-teal-200'
+        }`}></div>
+        <div className={`absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000 ${
+          darkMode ? 'bg-cyan-900/30' : 'bg-cyan-200'
+        }`}></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Mensagem de Boas-vindas */}
         {mostrarBoasVindas && (
-          <div className="mb-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+          <div className={`mb-6 rounded-xl p-6 shadow-lg backdrop-blur-sm border transition-all duration-300 ${
+            darkMode 
+              ? 'bg-gradient-to-r from-emerald-800/80 to-teal-800/80 text-white border-emerald-600/30' 
+              : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-white/20'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <CheckCircle className="h-8 w-8" />
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  darkMode ? 'bg-emerald-600/50' : 'bg-white/20'
+                }`}>
+                  <Sparkles className="h-6 w-6" />
+                </div>
                 <div>
                   <h2 className="text-xl font-bold">
                     🎉 Bem-vindo ao Meu Bolso, {session?.user?.name?.split(' ')[0]}!
                   </h2>
-                  <p className="text-blue-100">
+                  <p className={`${darkMode ? 'text-emerald-100' : 'text-emerald-100'}`}>
                     Configuração concluída! Agora você pode começar a controlar suas finanças de forma inteligente.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setMostrarBoasVindas(false)}
-                className="text-blue-100 hover:text-white transition-colors"
+                className={`p-2 rounded-full transition-colors ${
+                  darkMode ? 'text-emerald-200 hover:text-white hover:bg-white/10' : 'text-emerald-100 hover:text-white hover:bg-white/10'
+                }`}
               >
                 ✕
               </button>
@@ -546,7 +624,19 @@ export default function Dashboard() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                darkMode ? 'bg-emerald-600' : 'bg-emerald-600'
+              }`}>
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className={`text-3xl font-bold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>Dashboard</h1>
+                <p className={`transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>Visão geral das suas finanças</p>
+              </div>
               <HelpButton 
                 title="Como usar o Dashboard"
                 steps={helpContents.dashboard}
@@ -556,13 +646,17 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600">
+              <span className={`text-sm transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 {modoAvancado ? 'Avançado' : 'Simples'}
               </span>
               <button
                 onClick={toggleModo}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  modoAvancado ? 'bg-blue-600' : 'bg-gray-300'
+                  modoAvancado 
+                    ? darkMode ? 'bg-emerald-600' : 'bg-emerald-600' 
+                    : darkMode ? 'bg-gray-600' : 'bg-gray-300'
                 }`}
               >
                 <span
@@ -575,13 +669,19 @@ export default function Dashboard() {
               {/* Botão para mostrar/ocultar insights */}
               {dashboardData?.insights && dashboardData.insights.length > 0 && (
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600 hidden sm:block">Insights</span>
+                  <span className={`text-sm hidden sm:block transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Insights</span>
                   <button
                     onClick={toggleInsights}
-                    className={`flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    className={`flex items-center px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
                       mostrarInsights 
-                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? darkMode 
+                          ? 'bg-purple-900/50 text-purple-300 hover:bg-purple-800/50 border border-purple-600/30' 
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
+                        : darkMode
+                          ? 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 border border-gray-600/30'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                     title={mostrarInsights ? 'Ocultar Insights' : 'Mostrar Insights'}
                   >
@@ -596,25 +696,41 @@ export default function Dashboard() {
           </div>
 
           {/* Navegação de Mês/Ano */}
-          <div className="flex items-center justify-between bg-white rounded-lg shadow p-4">
+          <div className={`flex items-center justify-between backdrop-blur-sm rounded-xl shadow-lg border p-4 transition-all duration-300 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
             <button
               onClick={() => navegarMes('anterior')}
-              className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
+                darkMode 
+                  ? 'text-gray-300 hover:text-white hover:bg-slate-700/50' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
             >
               <ChevronLeft className="h-5 w-5 mr-1" />
               Anterior
             </button>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center text-lg font-semibold text-gray-900">
-                <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+              <div className={`flex items-center text-lg font-semibold transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                <Calendar className={`h-5 w-5 mr-2 ${
+                  darkMode ? 'text-emerald-400' : 'text-emerald-600'
+                }`} />
                 {formatarMesAno(mesAtual, anoAtual)}
               </div>
               
               {!isHoje() && (
                 <button
                   onClick={voltarParaHoje}
-                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                  className={`px-3 py-1 text-sm rounded-lg transition-all duration-300 ${
+                    darkMode 
+                      ? 'bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-600/30' 
+                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                  }`}
                 >
                   Hoje
                 </button>
@@ -623,7 +739,11 @@ export default function Dashboard() {
 
             <button
               onClick={() => navegarMes('proximo')}
-              className="flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
+                darkMode 
+                  ? 'text-gray-300 hover:text-white hover:bg-slate-700/50' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
             >
               Próximo
               <ChevronRight className="h-5 w-5 ml-1" />
@@ -633,23 +753,35 @@ export default function Dashboard() {
 
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-green-600" />
+              <div className={`p-2 rounded-lg ${
+                darkMode ? 'bg-emerald-900/50' : 'bg-emerald-100'
+              }`}>
+                <DollarSign className={`h-6 w-6 ${
+                  darkMode ? 'text-emerald-400' : 'text-emerald-600'
+                }`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Receitas</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className={`text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>Receitas</p>
+                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   {formatCurrency(dashboardData.resumo.totalReceitas)}
                 </p>
                 {modoAvancado && (
                   <div className="flex items-center mt-1">
                     {dashboardData.resumo.variacaoReceitas >= 0 ? 
-                      <TrendingUp className="h-4 w-4 text-green-500 mr-1" /> : 
+                      <TrendingUp className="h-4 w-4 text-emerald-500 mr-1" /> : 
                       <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
                     }
-                    <span className={`text-sm ${dashboardData.resumo.variacaoReceitas >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`text-sm ${dashboardData.resumo.variacaoReceitas >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {formatPercent(dashboardData.resumo.variacaoReceitas)}
                     </span>
                   </div>
@@ -658,23 +790,35 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
             <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <CreditCard className="h-6 w-6 text-red-600" />
+              <div className={`p-2 rounded-lg ${
+                darkMode ? 'bg-red-900/50' : 'bg-red-100'
+              }`}>
+                <CreditCard className={`h-6 w-6 ${
+                  darkMode ? 'text-red-400' : 'text-red-600'
+                }`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Despesas</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className={`text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>Despesas</p>
+                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   {formatCurrency(dashboardData.resumo.totalDespesas)}
                 </p>
                 {modoAvancado && (
                   <div className="flex items-center mt-1">
                     {dashboardData.resumo.variacaoDespesas >= 0 ? 
                       <TrendingUp className="h-4 w-4 text-red-500 mr-1" /> : 
-                      <TrendingDown className="h-4 w-4 text-green-500 mr-1" />
+                      <TrendingDown className="h-4 w-4 text-emerald-500 mr-1" />
                     }
-                    <span className={`text-sm ${dashboardData.resumo.variacaoDespesas >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <span className={`text-sm ${dashboardData.resumo.variacaoDespesas >= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                       {formatPercent(dashboardData.resumo.variacaoDespesas)}
                     </span>
                   </div>
@@ -683,18 +827,38 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${dashboardData.resumo.saldo >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
-                <Wallet className={`h-6 w-6 ${dashboardData.resumo.saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+              <div className={`p-2 rounded-lg ${
+                dashboardData.resumo.saldo >= 0 
+                  ? darkMode ? 'bg-cyan-900/50' : 'bg-cyan-100'
+                  : darkMode ? 'bg-orange-900/50' : 'bg-orange-100'
+              }`}>
+                <Wallet className={`h-6 w-6 ${
+                  dashboardData.resumo.saldo >= 0 
+                    ? darkMode ? 'text-cyan-400' : 'text-cyan-600'
+                    : darkMode ? 'text-orange-400' : 'text-orange-600'
+                }`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Saldo</p>
-                <p className={`text-2xl font-semibold ${dashboardData.resumo.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>Saldo</p>
+                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                  dashboardData.resumo.saldo >= 0 
+                    ? darkMode ? 'text-emerald-400' : 'text-emerald-600' 
+                    : 'text-red-600'
+                }`}>
                   {formatCurrency(dashboardData.resumo.saldo)}
                 </p>
                 {modoAvancado && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     Taxa: {dashboardData.resumo.taxaEconomia.toFixed(1)}%
                   </p>
                 )}
@@ -702,22 +866,38 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-purple-600" />
+              <div className={`p-2 rounded-lg ${
+                darkMode ? 'bg-purple-900/50' : 'bg-purple-100'
+              }`}>
+                <BarChart3 className={`h-6 w-6 ${
+                  darkMode ? 'text-purple-400' : 'text-purple-600'
+                }`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Transações</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className={`text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>Transações</p>
+                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   {dashboardData.resumo.transacoesCount}
                 </p>
                 {modoAvancado ? (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     Média: {formatCurrency(dashboardData.resumo.mediaGastoDiario)}/dia
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     {dashboardData.resumo.receitasCount} receitas, {dashboardData.resumo.despesasCount} despesas
                   </p>
                 )}
@@ -725,23 +905,39 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
             <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <CreditCard className="h-6 w-6 text-orange-600" />
+              <div className={`p-2 rounded-lg ${
+                darkMode ? 'bg-orange-900/50' : 'bg-orange-100'
+              }`}>
+                <CreditCard className={`h-6 w-6 ${
+                  darkMode ? 'text-orange-400' : 'text-orange-600'
+                }`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Dívidas</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className={`text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>Dívidas</p>
+                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   {dashboardData.resumo.dividasAtivas || 0}
                 </p>
                 {modoAvancado ? (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     {dashboardData.resumo.valorTotalRestanteDividas ? 
                       formatCurrency(dashboardData.resumo.valorTotalRestanteDividas) : 'R$ 0,00'} restante
                   </p>
                 ) : (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                     {dashboardData.resumo.parcelasVencidas || 0} vencidas
                   </p>
                 )}
@@ -755,21 +951,31 @@ export default function Dashboard() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Insights Financeiros</h2>
-                <p className="text-gray-600 mt-1 text-sm sm:text-base">Análises inteligentes para otimizar sua gestão financeira</p>
+                <h2 className={`text-xl sm:text-2xl font-bold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>Insights Financeiros</h2>
+                <p className={`mt-1 text-sm sm:text-base transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>Análises inteligentes para otimizar sua gestão financeira</p>
               </div>
               <div className="hidden sm:flex items-center space-x-2">
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-xs text-gray-500">Crítico</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>Crítico</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-xs text-gray-500">Alto</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>Alto</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-xs text-gray-500">Médio</span>
+                  <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>Médio</span>
                 </div>
               </div>
             </div>
@@ -793,12 +999,20 @@ export default function Dashboard() {
         {dashboardData.dividas && dashboardData.dividas.proximasParcelas.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Próximas Parcelas</h2>
-              <span className="text-sm text-gray-500">
+              <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>Próximas Parcelas</h2>
+              <span className={`text-sm transition-colors duration-300 ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {dashboardData.dividas.totalProximas} parcela(s) nos próximos 30 dias
               </span>
             </div>
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border overflow-hidden transition-all duration-300 ${
+              darkMode 
+                ? 'bg-slate-800/80 border-slate-600/30' 
+                : 'bg-white/80 border-white/20'
+            }`}>
               <div className="max-h-96 overflow-y-auto">
                 {dashboardData.dividas.proximasParcelas.map((parcela, index) => (
                   <div key={parcela.id} className={`p-4 border-l-4 ${index !== dashboardData.dividas!.proximasParcelas.length - 1 ? 'border-b border-gray-100' : ''}`} 
@@ -862,8 +1076,14 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Gráfico de Pizza - Despesas */}
           {dadosGraficoPizza.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Despesas por Categoria</h2>
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-slate-800/80 border-slate-600/30' 
+                : 'bg-white/80 border-white/20'
+            }`}>
+              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>Despesas por Categoria</h2>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -880,7 +1100,15 @@ export default function Dashboard() {
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Tooltip 
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={{
+                        backgroundColor: darkMode ? '#1e293b' : '#ffffff',
+                        border: darkMode ? '1px solid #475569' : '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: darkMode ? '#f1f5f9' : '#111827'
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -889,8 +1117,14 @@ export default function Dashboard() {
 
           {/* Gráfico de Pizza - Receitas (Modo Avançado) */}
           {modoAvancado && dadosReceitasPizza.length > 0 ? (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Receitas por Categoria</h2>
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-slate-800/80 border-slate-600/30' 
+                : 'bg-white/80 border-white/20'
+            }`}>
+              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>Receitas por Categoria</h2>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -907,21 +1141,44 @@ export default function Dashboard() {
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Tooltip 
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={{
+                        backgroundColor: darkMode ? '#1e293b' : '#ffffff',
+                        border: darkMode ? '1px solid #475569' : '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: darkMode ? '#f1f5f9' : '#111827'
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
           ) : (
             /* Gráfico de Barras - Comparação */
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Comparação Mensal</h2>
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-slate-800/80 border-slate-600/30' 
+                : 'bg-white/80 border-white/20'
+            }`}>
+              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>Comparação Mensal</h2>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dadosComparacao}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="periodo" />
-                    <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke={darkMode ? '#475569' : '#e5e7eb'}
+                    />
+                    <XAxis 
+                      dataKey="periodo" 
+                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => formatCurrency(value)}
+                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="receitas" fill="#10B981" name="Receitas" />
                     <Bar dataKey="despesas" fill="#EF4444" name="Despesas" />
@@ -934,14 +1191,29 @@ export default function Dashboard() {
 
         {/* Evolução Mensal (Modo Avançado) */}
         {modoAvancado && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Evolução dos Últimos 6 Meses</h2>
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 mb-8 transition-all duration-300 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
+            <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+              darkMode ? 'text-white' : 'text-gray-900'
+            }`}>Evolução dos Últimos 6 Meses</h2>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dashboardData.graficos.evolucaoMensal}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke={darkMode ? '#475569' : '#e5e7eb'}
+                  />
+                  <XAxis 
+                    dataKey="mes" 
+                    tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => formatCurrency(value)}
+                    tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                  />
                   <Tooltip content={<CustomTooltip />} />
                   <Area 
                     type="monotone" 
@@ -969,29 +1241,45 @@ export default function Dashboard() {
 
         {/* Lista de Categorias */}
         {dashboardData.graficos.gastosPorCategoria.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Gastos por Categoria</h2>
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 mb-8 transition-all duration-300 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
+            <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+              darkMode ? 'text-white' : 'text-gray-900'
+            }`}>Gastos por Categoria</h2>
             <div className="space-y-3">
               {dashboardData.graficos.gastosPorCategoria.slice(0, modoAvancado ? 10 : 6).map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={index} className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+                  darkMode ? 'bg-slate-700/50' : 'bg-gray-50'
+                }`}>
                   <div className="flex items-center">
                     <div 
                       className="w-4 h-4 rounded-full mr-3" 
                       style={{ backgroundColor: item.cor }}
                     ></div>
                     <div>
-                      <span className="text-gray-900 font-medium">{item.categoria}</span>
+                      <span className={`font-medium transition-colors duration-300 ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>{item.categoria}</span>
                       {modoAvancado && (
-                        <p className="text-xs text-gray-500">{item.transacoes} transações</p>
+                        <p className={`text-xs transition-colors duration-300 ${
+                          darkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>{item.transacoes} transações</p>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold text-gray-900">
+                    <span className={`font-semibold transition-colors duration-300 ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
                       {formatCurrency(item.valor)}
                     </span>
                     {modoAvancado && (
-                      <p className="text-xs text-gray-500">
+                      <p className={`text-xs transition-colors duration-300 ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
                         {((item.valor / dashboardData.resumo.totalDespesas) * 100).toFixed(1)}%
                       </p>
                     )}
@@ -1004,35 +1292,55 @@ export default function Dashboard() {
 
         {/* Metas */}
         {dashboardData.metas.ativas.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Metas Financeiras</h2>
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 mb-8 transition-all duration-300 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
+            <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+              darkMode ? 'text-white' : 'text-gray-900'
+            }`}>Metas Financeiras</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {dashboardData.metas.ativas.slice(0, modoAvancado ? 9 : 6).map((meta) => (
-                <div key={meta.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={meta.id} className={`border rounded-lg p-4 transition-all duration-300 ${
+                  darkMode ? 'border-slate-600 bg-slate-700/30' : 'border-gray-200 bg-white/50'
+                }`}>
                   <div className="flex items-center mb-3">
-                    <PiggyBank className="h-5 w-5 text-blue-600 mr-2" />
-                    <h3 className="font-medium text-gray-900">{meta.nome}</h3>
+                    <PiggyBank className={`h-5 w-5 mr-2 ${
+                      darkMode ? 'text-emerald-400' : 'text-emerald-600'
+                    }`} />
+                    <h3 className={`font-medium transition-colors duration-300 ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{meta.nome}</h3>
                   </div>
                   
                   <div className="mb-3">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <div className={`flex justify-between text-sm mb-2 transition-colors duration-300 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
                       <span>{formatCurrency(meta.currentAmount)}</span>
                       <span>{formatCurrency(meta.valorAlvo)}</span>
                     </div>
                     
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className={`w-full rounded-full h-2 transition-colors duration-300 ${
+                      darkMode ? 'bg-slate-600' : 'bg-gray-200'
+                    }`}>
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all" 
+                        className="bg-emerald-600 h-2 rounded-full transition-all" 
                         style={{ width: `${Math.min(meta.progresso, 100)}%` }}
                       ></div>
                     </div>
                     
                     <div className="flex justify-between items-center mt-2">
-                      <span className="text-sm font-medium text-blue-600">
+                      <span className={`text-sm font-medium ${
+                        darkMode ? 'text-emerald-400' : 'text-emerald-600'
+                      }`}>
                         {meta.progresso.toFixed(1)}%
                       </span>
                       {modoAvancado && (
-                        <span className="text-xs text-gray-500">
+                        <span className={`text-xs transition-colors duration-300 ${
+                          darkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
                           {new Date(meta.dataAlvo).toLocaleDateString('pt-BR')}
                         </span>
                       )}
@@ -1046,27 +1354,63 @@ export default function Dashboard() {
 
         {/* Resumo Final */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <BarChart3 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <h3 className="font-semibold text-gray-900 mb-1">Categorias</h3>
-            <p className="text-2xl font-bold text-blue-600 mb-1">{dashboardData.resumo.categoriasCount}</p>
-            <p className="text-sm text-gray-600">organizadas</p>
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
+            <BarChart3 className={`h-8 w-8 mx-auto mb-2 ${
+              darkMode ? 'text-emerald-400' : 'text-emerald-600'
+            }`} />
+            <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
+              darkMode ? 'text-white' : 'text-gray-900'
+            }`}>Categorias</h3>
+            <p className={`text-2xl font-bold mb-1 ${
+              darkMode ? 'text-emerald-400' : 'text-emerald-600'
+            }`}>{dashboardData.resumo.categoriasCount}</p>
+            <p className={`text-sm transition-colors duration-300 ${
+              darkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>organizadas</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <Target className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-            <h3 className="font-semibold text-gray-900 mb-1">Metas</h3>
-            <p className="text-2xl font-bold text-purple-600 mb-1">{dashboardData.metas.resumo.total}</p>
-            <p className="text-sm text-gray-600">{dashboardData.metas.resumo.ativas} em andamento</p>
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
+            <Target className={`h-8 w-8 mx-auto mb-2 ${
+              darkMode ? 'text-teal-400' : 'text-teal-600'
+            }`} />
+            <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
+              darkMode ? 'text-white' : 'text-gray-900'
+            }`}>Metas</h3>
+            <p className={`text-2xl font-bold mb-1 ${
+              darkMode ? 'text-teal-400' : 'text-teal-600'
+            }`}>{dashboardData.metas.resumo.total}</p>
+            <p className={`text-sm transition-colors duration-300 ${
+              darkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>{dashboardData.metas.resumo.ativas} em andamento</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <PiggyBank className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <h3 className="font-semibold text-gray-900 mb-1">Economizado</h3>
-            <p className="text-2xl font-bold text-green-600 mb-1">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+            darkMode 
+              ? 'bg-slate-800/80 border-slate-600/30' 
+              : 'bg-white/80 border-white/20'
+          }`}>
+            <PiggyBank className={`h-8 w-8 mx-auto mb-2 ${
+              darkMode ? 'text-cyan-400' : 'text-cyan-600'
+            }`} />
+            <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
+              darkMode ? 'text-white' : 'text-gray-900'
+            }`}>Economizado</h3>
+            <p className={`text-2xl font-bold mb-1 ${
+              darkMode ? 'text-cyan-400' : 'text-cyan-600'
+            }`}>
               {formatCurrency(dashboardData.resumo.totalEconomizado)}
             </p>
-            <p className="text-sm text-gray-600">em metas concluídas</p>
+            <p className={`text-sm transition-colors duration-300 ${
+              darkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>em metas concluídas</p>
           </div>
         </div>
       </div>

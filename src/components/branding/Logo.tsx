@@ -22,8 +22,8 @@ export default function Logo({ size = 'md', className = '', showText = true, ani
     xs: 'text-sm',
     sm: 'text-base',
     md: 'text-lg',
-    lg: 'text-xl',
-    xl: 'text-2xl'
+    lg: 'text-2xl',
+    xl: 'text-3xl'
   };
 
   return (
@@ -77,7 +77,7 @@ export default function Logo({ size = 'md', className = '', showText = true, ani
       </div>
       
       {showText && (
-        <span className={`font-bold text-primary ${textSizes[size]} ${animated ? 'animate-fade-in' : ''}`}>
+        <span className={`font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent dark:from-emerald-400 dark:to-teal-400 ${textSizes[size]} ${animated ? 'animate-fade-in' : ''}`}>
           Meu Bolso
         </span>
       )}

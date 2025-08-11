@@ -119,15 +119,6 @@ export default function RecorrentesPage() {
     return () => observer.disconnect();
   }, []);
 
-  // Carregar dados
-  useEffect(() => {
-    if (session) {
-      fetchCategorias();
-      fetchRecorrentes();
-      fetchPendentes();
-    }
-  }, [session, filtroStatus, filtroTipo]);
-
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
@@ -141,8 +132,16 @@ export default function RecorrentesPage() {
     }
   };
 
-  // Funções existentes (manteremos as mesmas do arquivo original)
-  const fetchCategorias = async () => {
+  // Carregar dados
+  useEffect(() => {
+    if (session) {
+      fetchCategorias();
+      fetchRecorrentes();
+      fetchPendentes();
+    }
+  }, [session, filtroStatus, filtroTipo]);
+
+  async function fetchCategorias() {
     try {
       const res = await fetch("/api/categorias");
       if (res.ok) {
@@ -152,9 +151,9 @@ export default function RecorrentesPage() {
     } catch (error) {
       console.error("Erro ao carregar categorias:", error);
     }
-  };
+  }
 
-  const fetchRecorrentes = async () => {
+  async function fetchRecorrentes() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -173,9 +172,9 @@ export default function RecorrentesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const fetchPendentes = async () => {
+  async function fetchPendentes() {
     try {
       const res = await fetch("/api/recorrentes/executar");
       if (res.ok) {
@@ -185,9 +184,9 @@ export default function RecorrentesPage() {
     } catch (error) {
       console.error("Erro ao carregar pendentes:", error);
     }
-  };
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
     if (!formData.categoriaId || !formData.valor || !formData.dataInicio) {
@@ -223,9 +222,9 @@ export default function RecorrentesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const resetForm = () => {
+  function resetForm() {
     setFormData({
       categoriaId: "",
       tipo: "despesa",
@@ -239,9 +238,9 @@ export default function RecorrentesPage() {
     setEditingId(null);
     setShowForm(false);
     setMensagem("");
-  };
+  }
 
-  const editRecorrente = (recorrente: TransacaoRecorrente) => {
+  function editRecorrente(recorrente: TransacaoRecorrente) {
     setFormData({
       categoriaId: recorrente.categoriaId,
       tipo: recorrente.tipo,
@@ -254,9 +253,9 @@ export default function RecorrentesPage() {
     });
     setEditingId(recorrente.id);
     setShowForm(true);
-  };
+  }
 
-  const deleteRecorrente = async (id: string) => {
+  async function deleteRecorrente(id: string) {
     if (!confirm("Tem certeza que deseja excluir esta transação recorrente?")) return;
 
     try {
@@ -275,9 +274,9 @@ export default function RecorrentesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const toggleRecorrente = async (id: string, isActive: boolean) => {
+  async function toggleRecorrente(id: string, isActive: boolean) {
     try {
       const res = await fetch(`/api/recorrentes/${id}`, {
         method: "PUT",
@@ -295,9 +294,9 @@ export default function RecorrentesPage() {
     } catch (error) {
       setMensagem("Erro ao alterar status");
     }
-  };
+  }
 
-  const executarRecorrentes = async () => {
+  async function executarRecorrentes() {
     if (!confirm("Executar todas as transações recorrentes pendentes?")) return;
 
     try {
@@ -317,13 +316,12 @@ export default function RecorrentesPage() {
     } finally {
       setExecutandoRecorrentes(false);
     }
-  };
+  }
 
-  // Filtrar recorrentes
-  const recorrentesFiltrados = recorrentes.filter(recorrente => {
+  const recorrentesFiltrados = recorrentes.filter((recorrente) => {
     const statusMatch = filtroStatus === "todos" || 
-                       (filtroStatus === "ativo" && recorrente.isActive) ||
-                       (filtroStatus === "inativo" && !recorrente.isActive);
+      (filtroStatus === "ativo" && recorrente.isActive) ||
+      (filtroStatus === "inativo" && !recorrente.isActive);
     
     const tipoMatch = filtroTipo === "todos" || recorrente.tipo === filtroTipo;
     
@@ -404,7 +402,6 @@ export default function RecorrentesPage() {
               size="lg"
               variant="inline"
             />
-          </div>
         </div>
 
         {/* Botões de Ação */}
@@ -459,6 +456,72 @@ export default function RecorrentesPage() {
               : 'bg-blue-50 border-blue-200 text-blue-800'
           }`}>
             {mensagem}
+          </div>
+        )}
+
+        {/* Informações dos Pendentes */}
+        {pendentesInfo && pendentesInfo.totalPendentes > 0 && (
+          <div className={`mb-6 p-6 rounded-2xl border shadow-xl transition-all duration-300 ${
+            darkMode 
+              ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500/30 backdrop-blur-sm' 
+              : 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-200'
+          }`}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                darkMode ? 'bg-orange-500/20' : 'bg-orange-100'
+              }`}>
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <div>
+                <h3 className={`font-bold text-lg transition-colors duration-300 ${
+                  darkMode ? 'text-orange-200' : 'text-orange-900'
+                }`}>
+                  Transações Pendentes
+                </h3>
+                <p className={`text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-orange-300' : 'text-orange-700'
+                }`}>
+                  Existem {pendentesInfo.totalPendentes} transações com {pendentesInfo.totalExecucoesPendentes} execuções pendentes
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {pendentesInfo.pendentes.slice(0, 3).map((pendente) => (
+                <div key={pendente.id} className={`p-4 rounded-xl border shadow-lg transition-all duration-300 hover:scale-105 ${
+                  darkMode 
+                    ? 'bg-gray-800/70 border-gray-600/50 backdrop-blur-sm' 
+                    : 'bg-white/90 border-gray-200 backdrop-blur-sm'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`w-3 h-3 rounded-full ${pendente.tipo === 'receita' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <span className={`font-semibold text-sm transition-colors duration-300 ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {pendente.categoria.icone} {pendente.categoria.nome}
+                    </span>
+                  </div>
+                  <p className={`text-xs mb-2 transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {pendente.descricao}
+                  </p>
+                  <p className={`text-lg font-bold transition-colors duration-300 ${
+                    pendente.tipo === 'receita' 
+                      ? 'text-green-500' 
+                      : 'text-red-500'
+                  }`}>
+                    R$ {pendente.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              ))}
+            </div>
+            
+            {pendentesInfo.pendentes.length > 3 && (
+              <p className="text-sm text-orange-600">
+                E mais {pendentesInfo.pendentes.length - 3} transações...
+              </p>
+            )}
           </div>
         )}
 
@@ -616,6 +679,47 @@ export default function RecorrentesPage() {
                         {new Date(recorrente.dataInicio).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
+                    
+                    {recorrente.dataFim && (
+                      <div className="flex justify-between items-center">
+                        <span className={`text-sm font-medium transition-colors duration-300 ${
+                          darkMode ? 'text-gray-300' : 'text-gray-600'
+                        }`}>
+                          🏁 Fim:
+                        </span>
+                        <span className={`font-semibold transition-colors duration-300 ${
+                          darkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {new Date(recorrente.dataFim).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center">
+                      <span className={`text-sm font-medium transition-colors duration-300 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
+                        📊 Execuções:
+                      </span>
+                      <span className={`font-semibold transition-colors duration-300 ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {recorrente._count.transacoes}
+                      </span>
+                    </div>
+
+                    {recorrente.proximaExecucao && (
+                      <div className="flex justify-between items-center">
+                        <span className={`text-sm font-medium transition-colors duration-300 ${
+                          darkMode ? 'text-gray-300' : 'text-gray-600'
+                        }`}>
+                          ⏰ Próxima:
+                        </span>
+                        <span className="font-semibold text-emerald-500">
+                          {new Date(recorrente.proximaExecucao).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-3">
@@ -629,6 +733,21 @@ export default function RecorrentesPage() {
                     >
                       <span className="mr-1">✏️</span>
                       Editar
+                    </button>
+                    <button
+                      onClick={() => toggleRecorrente(recorrente.id, recorrente.isActive)}
+                      className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 border ${
+                        recorrente.isActive 
+                          ? darkMode 
+                            ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30' 
+                            : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200'
+                          : darkMode 
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30' 
+                            : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
+                      }`}
+                    >
+                      <span className="mr-1">{recorrente.isActive ? '⏸️' : '▶️'}</span>
+                      {recorrente.isActive ? 'Pausar' : 'Ativar'}
                     </button>
                     <button
                       onClick={() => deleteRecorrente(recorrente.id)}
@@ -648,7 +767,7 @@ export default function RecorrentesPage() {
           )}
         </div>
 
-        {/* Modal de Formulário */}
+        {/* Modal do Formulário */}
         {showForm && (
           <div className={`fixed inset-0 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300 ${
             darkMode ? 'bg-black/80' : 'bg-black/70'
@@ -656,10 +775,12 @@ export default function RecorrentesPage() {
             <div className={`rounded-3xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-hidden transform transition-all ${
               darkMode ? 'bg-gray-800' : 'bg-white'
             }`}>
-              {/* Header do formulário */}
+              {/* Header com gradiente modernizado */}
               <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-8 relative overflow-hidden">
+                {/* Decorações de fundo */}
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/15 rounded-full translate-y-16 -translate-x-16"></div>
+                <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
                 
                 <div className="flex justify-between items-center relative z-10">
                   <div className="flex items-center gap-4">
@@ -697,23 +818,22 @@ export default function RecorrentesPage() {
                       <span className="w-3 h-3 bg-emerald-600 rounded-full shadow-sm"></span>
                       💼 Categoria *
                     </label>
-                    <select
-                      value={formData.categoriaId}
-                      onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
-                      className={`w-full px-4 py-4 border-2 rounded-xl transition-all font-medium ${
-                        darkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white focus:border-emerald-500' 
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500'
-                      } focus:ring-4 focus:ring-emerald-500/20`}
-                      required
-                    >
-                      <option value="">Selecione uma categoria</option>
-                      {categorias.map((categoria) => (
-                        <option key={categoria.id} value={categoria.id}>
-                          {categoria.icone} {categoria.nome}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <SeletorCategoria
+                        categorias={categorias}
+                        categoriaSelecionada={formData.categoriaId}
+                        onChange={(categoriaId) => setFormData({ ...formData, categoriaId })}
+                        tipo={formData.tipo}
+                        placeholder="Selecione uma categoria"
+                        onCategoriasCriadas={(novasCategorias) => {
+                          setCategorias(novasCategorias.map(cat => ({
+                            ...cat,
+                            cor: cat.cor || '#199C90',
+                            icone: cat.icone || '📊'
+                          })));
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* Tipo */}
@@ -727,26 +847,46 @@ export default function RecorrentesPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, tipo: "receita" })}
+                        onClick={() => {
+                          const novoTipo = "receita";
+                          const categoriaAtual = categorias.find(cat => cat.id === formData.categoriaId);
+                          const categoriaTipoCompativel = categoriaAtual && (categoriaAtual.tipo === novoTipo || categoriaAtual.tipo === 'ambos');
+                          
+                          setFormData({ 
+                            ...formData, 
+                            tipo: novoTipo,
+                            categoriaId: categoriaTipoCompativel ? formData.categoriaId : ""
+                          });
+                        }}
                         className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all font-semibold ${
                           formData.tipo === "receita" 
                             ? "border-green-500 bg-green-500 text-white shadow-lg shadow-green-500/25 scale-105" 
-                            : `border-gray-300 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-white text-gray-700'} hover:border-green-400`
+                            : "border-gray-300 bg-white text-gray-700 hover:border-green-400 hover:bg-green-50"
                         }`}
                       >
-                        <span>📈</span>
+                        <TrendingUp className="w-5 h-5" />
                         <span>Receita</span>
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, tipo: "despesa" })}
+                        onClick={() => {
+                          const novoTipo = "despesa";
+                          const categoriaAtual = categorias.find(cat => cat.id === formData.categoriaId);
+                          const categoriaTipoCompativel = categoriaAtual && (categoriaAtual.tipo === novoTipo || categoriaAtual.tipo === 'ambos');
+                          
+                          setFormData({ 
+                            ...formData, 
+                            tipo: novoTipo,
+                            categoriaId: categoriaTipoCompativel ? formData.categoriaId : ""
+                          });
+                        }}
                         className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all font-semibold ${
                           formData.tipo === "despesa" 
                             ? "border-red-500 bg-red-500 text-white shadow-lg shadow-red-500/25 scale-105" 
-                            : `border-gray-300 ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-white text-gray-700'} hover:border-red-400`
+                            : "border-gray-300 bg-white text-gray-700 hover:border-red-400 hover:bg-red-50"
                         }`}
                       >
-                        <span>📉</span>
+                        <TrendingDown className="w-5 h-5" />
                         <span>Despesa</span>
                       </button>
                     </div>
@@ -754,11 +894,9 @@ export default function RecorrentesPage() {
 
                   {/* Valor */}
                   <div className="space-y-3">
-                    <label className={`flex items-center gap-2 text-base font-bold transition-colors duration-300 ${
-                      darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
                       <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
-                      💰 Valor *
+                      Valor *
                     </label>
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 font-bold text-lg">
@@ -770,11 +908,7 @@ export default function RecorrentesPage() {
                         min="0"
                         value={formData.valor}
                         onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                        className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl transition-all text-lg font-semibold ${
-                          darkMode 
-                            ? 'bg-gray-700 border-gray-600 text-white focus:border-blue-500' 
-                            : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
-                        } focus:ring-4 focus:ring-blue-500/20 placeholder-gray-500`}
+                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-lg font-semibold text-gray-900 placeholder-gray-600"
                         placeholder="100,00"
                         required
                       />
@@ -783,134 +917,119 @@ export default function RecorrentesPage() {
 
                   {/* Descrição */}
                   <div className="space-y-3">
-                    <label className={`flex items-center gap-2 text-base font-bold transition-colors duration-300 ${
-                      darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
                       <span className="w-3 h-3 bg-orange-500 rounded-full shadow-sm"></span>
-                      📝 Descrição
+                      Descrição
                     </label>
                     <input
                       type="text"
                       value={formData.descricao}
                       onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                      className={`w-full px-4 py-4 border-2 rounded-xl transition-all font-medium ${
-                        darkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white focus:border-blue-500' 
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
-                      } focus:ring-4 focus:ring-blue-500/20 placeholder-gray-500`}
+                      className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-medium text-gray-900 placeholder-gray-600"
                       placeholder="Ex: Salário, Aluguel, Internet..."
                     />
                   </div>
 
                   {/* Frequência */}
                   <div className="space-y-3">
-                    <label className={`flex items-center gap-2 text-base font-bold transition-colors duration-300 ${
-                      darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
+                    <label className="flex items-center gap-2 text-base font-bold text-gray-800">
                       <span className="w-3 h-3 bg-purple-500 rounded-full shadow-sm"></span>
-                      🔄 Frequência *
+                      Frequência *
                     </label>
-                    <select
-                      value={formData.frequencia}
-                      onChange={(e) => setFormData({ ...formData, frequencia: e.target.value as any })}
-                      className={`w-full px-4 py-4 border-2 rounded-xl transition-all font-medium ${
-                        darkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white focus:border-purple-500' 
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-purple-500'
-                      } focus:ring-4 focus:ring-purple-500/20`}
-                      required
-                    >
-                      <option value="diario">📅 Diário</option>
-                      <option value="semanal">📆 Semanal</option>
-                      <option value="mensal">🗓️ Mensal</option>
-                      <option value="anual">📋 Anual</option>
-                    </select>
-                  </div>
-
-                  {/* Data de Início */}
-                  <div className="space-y-3">
-                    <label className={`flex items-center gap-2 text-base font-bold transition-colors duration-300 ${
-                      darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
-                      <span className="w-3 h-3 bg-pink-500 rounded-full shadow-sm"></span>
-                      📅 Data de Início *
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.dataInicio}
-                      onChange={(e) => setFormData({ ...formData, dataInicio: e.target.value })}
-                      className={`w-full px-4 py-4 border-2 rounded-xl transition-all font-medium ${
-                        darkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white focus:border-pink-500' 
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-pink-500'
-                      } focus:ring-4 focus:ring-pink-500/20`}
-                      required
-                    />
-                  </div>
-
-                  {/* Data de Fim */}
-                  <div className="space-y-3">
-                    <label className={`flex items-center gap-2 text-base font-bold transition-colors duration-300 ${
-                      darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
-                      <span className="w-3 h-3 bg-red-500 rounded-full shadow-sm"></span>
-                      🛑 Data de Fim (opcional)
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.dataFim}
-                      onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
-                      className={`w-full px-4 py-4 border-2 rounded-xl transition-all font-medium ${
-                        darkMode 
-                          ? 'bg-gray-700 border-gray-600 text-white focus:border-red-500' 
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-red-500'
-                      } focus:ring-4 focus:ring-red-500/20`}
-                    />
-                  </div>
-
-                  {/* Status */}
-                  <div className="space-y-3">
-                    <label className={`flex items-center gap-2 text-base font-bold transition-colors duration-300 ${
-                      darkMode ? 'text-white' : 'text-gray-800'
-                    }`}>
-                      <span className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></span>
-                      ⚡ Status
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="isActive"
-                        checked={formData.isActive}
-                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                        className="w-5 h-5 text-emerald-600 border-2 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
-                      />
-                      <label htmlFor="isActive" className={`font-medium transition-colors duration-300 ${
-                        darkMode ? 'text-white' : 'text-gray-700'
-                      }`}>
-                        Transação ativa (executar automaticamente)
-                      </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { value: "diario", label: "Diário", icon: "📅", color: "from-blue-500 to-blue-600" },
+                        { value: "semanal", label: "Semanal", icon: "📆", color: "from-green-500 to-green-600" },
+                        { value: "mensal", label: "Mensal", icon: "🗓️", color: "from-purple-500 to-purple-600" },
+                        { value: "anual", label: "Anual", icon: "📋", color: "from-orange-500 to-orange-600" }
+                      ].map((freq) => (
+                        <button
+                          key={freq.value}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, frequencia: freq.value as any })}
+                          className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all font-semibold ${
+                            formData.frequencia === freq.value
+                              ? `bg-gradient-to-r ${freq.color} text-white border-transparent shadow-lg scale-105`
+                              : "border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50"
+                          }`}
+                        >
+                          <span className="text-lg">{freq.icon}</span>
+                          <span>{freq.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Botões */}
-                  <div className="flex gap-4 pt-6">
+                  {/* Datas */}
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span className="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span>
+                        Data de Início *
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataInicio}
+                        onChange={(e) => setFormData({ ...formData, dataInicio: e.target.value })}
+                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 text-base font-bold text-gray-800">
+                        <span className="w-3 h-3 bg-orange-500 rounded-full shadow-sm"></span>
+                        Data de Fim <span className="text-sm font-normal text-gray-500">(opcional)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataFim}
+                        onChange={(e) => setFormData({ ...formData, dataFim: e.target.value })}
+                        className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white font-semibold text-gray-900 placeholder-gray-600"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Status Ativo (apenas em edição) */}
+                  {editingId && (
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-2xl border-2 border-gray-200">
+                      <label className="flex items-center gap-4 cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            id="isActive"
+                            checked={formData.isActive}
+                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                            className="sr-only"
+                          />
+                          <div className={`w-14 h-7 rounded-full transition-all duration-300 shadow-inner ${formData.isActive ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gray-400'}`}>
+                            <div className={`w-5 h-5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${formData.isActive ? 'translate-x-7' : 'translate-x-1'} mt-1`}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-lg font-bold text-gray-800">Transação ativa</span>
+                          <p className="text-sm text-gray-600 leading-relaxed">Quando desativada, não será executada automaticamente</p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Botões de Ação */}
+                  <div className="flex gap-4 pt-8 border-t-2 border-gray-100">
                     <button
                       type="button"
                       onClick={resetForm}
-                      className={`flex-1 py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${
-                        darkMode 
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-4 px-6 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-bold text-lg flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-gray-300"
                     >
+                      <span className="text-xl">✕</span>
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      disabled={loading}
-                      className="flex-1 py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-bold text-lg shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 hover:scale-105 transform"
                     >
-                      {loading ? "Salvando..." : editingId ? "Atualizar" : "Criar"}
+                      <span className="text-xl">{editingId ? "💾" : "✨"}</span>
+                      {editingId ? "Atualizar" : "Criar"}
                     </button>
                   </div>
                 </form>
@@ -921,12 +1040,8 @@ export default function RecorrentesPage() {
 
         {/* Modal de Totais Recorrentes */}
         {mostrarTotais && (
-          <div className={`fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 ${
-            darkMode ? 'bg-black/80' : 'bg-black/60'
-          }`}>
-            <div className={`w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl ${
-              darkMode ? 'bg-gray-800' : 'bg-white'
-            }`}>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl">
               <TotaisRecorrentes onClose={() => setMostrarTotais(false)} />
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Sun, Moon } from "lucide-react";
 import CleanLoading from "@/components/CleanLoading";
 import { useCleanLoading } from "@/hooks/useCleanLoading";
 import SeletorCategoria from "@/components/SeletorCategoria";
@@ -49,9 +50,10 @@ export default function TransacoesPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const { loading, setLoading } = useCleanLoading(true);
   const [showForm, setShowForm] = useState(false);
-  const [showFilters, setShowFilters] = useState(false); // Novo estado para controlar filtros
+  const [showFilters, setShowFilters] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
 
   // Filtros
   const [filtroTipo, setFiltroTipo] = useState<"" | "receita" | "despesa">("");
@@ -93,6 +95,45 @@ export default function TransacoesPage() {
       return;
     }
   }, [session, status, router]);
+
+  // Detectar tema do sistema
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+
+    const checkDarkMode = () => {
+      setDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    
+    // Observer para mudanças de tema
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -420,80 +461,184 @@ export default function TransacoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
+    <div className={`min-h-screen transition-colors duration-500 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+        : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
+    } relative overflow-hidden`}>
+      
+      {/* Botão Dark Mode */}
+      <button
+        onClick={toggleDarkMode}
+        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800/80 hover:bg-gray-700/80 text-amber-400 hover:text-amber-300' 
+            : 'bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900'
+        } backdrop-blur-sm shadow-lg hover:shadow-xl transform hover:scale-110`}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
+        ) : (
+          <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
+        )}
+      </button>
+
+      {/* Background decorativo */}
+      <div className="absolute inset-0">
+        {darkMode ? (
+          <>
+            <div className="absolute top-0 left-0 w-72 h-72 bg-emerald-900/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+            <div className="absolute top-0 right-0 w-72 h-72 bg-teal-900/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-cyan-900/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
+          </>
+        ) : (
+          <>
+            <div className="absolute top-0 left-0 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+            <div className="absolute top-0 right-0 w-72 h-72 bg-teal-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-cyan-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
+          </>
+        )}
+      </div>
+
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-gray-900">
-              Gerenciar Transações
-            </h1>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+            <div className={`p-4 rounded-2xl shadow-lg ring-4 transition-all duration-300 ${
+              darkMode 
+                ? 'bg-gray-800/90 ring-emerald-500/20 backdrop-blur-sm' 
+                : 'bg-white/90 ring-emerald-100 backdrop-blur-sm'
+            }`}>
+              <span className="text-4xl">💰</span>
+            </div>
+            <div className="text-center sm:text-left">
+              <h1 className={`text-3xl sm:text-4xl font-bold transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Gerenciar Transações
+              </h1>
+              <p className={`text-base sm:text-lg mt-2 transition-colors duration-300 ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Controle suas receitas e despesas de forma inteligente
+              </p>
+            </div>
             <HelpButton 
               title="Como gerenciar suas transações"
               steps={helpContents.transacoes}
-              size="md"
+              size="lg"
               variant="inline"
             />
           </div>
-          <p className="text-gray-600">
-            Controle suas receitas e despesas de forma inteligente
-          </p>
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          {/* Card Total de Receitas */}
+          <div className={`rounded-2xl p-6 shadow-xl border transition-all duration-300 hover:scale-105 ${
+            darkMode 
+              ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+              : 'bg-white/90 backdrop-blur-sm border-white/20'
+          }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total de Receitas</p>
-                <p className="text-2xl font-bold text-green-600">
+              <div className="flex-1">
+                <p className={`text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Total de Receitas
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-500">
                   {formatarValor(totalReceitas)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <span className="text-green-600 text-xl">📈</span>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+              }`}>
+                <span className="text-emerald-500 text-xl">📈</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+          {/* Card Total de Despesas */}
+          <div className={`rounded-2xl p-6 shadow-xl border transition-all duration-300 hover:scale-105 ${
+            darkMode 
+              ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+              : 'bg-white/90 backdrop-blur-sm border-white/20'
+          }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total de Despesas</p>
-                <p className="text-2xl font-bold text-red-600">
+              <div className="flex-1">
+                <p className={`text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Total de Despesas
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-red-500">
                   {formatarValor(totalDespesas)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <span className="text-red-600 text-xl">📉</span>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                darkMode ? 'bg-red-500/20' : 'bg-red-100'
+              }`}>
+                <span className="text-red-500 text-xl">📉</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+          {/* Card Saldo */}
+          <div className={`rounded-2xl p-6 shadow-xl border transition-all duration-300 hover:scale-105 ${
+            darkMode 
+              ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+              : 'bg-white/90 backdrop-blur-sm border-white/20'
+          }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Saldo</p>
-                <p className={`text-2xl font-bold ${saldo >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <div className="flex-1">
+                <p className={`text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Saldo
+                </p>
+                <p className={`text-xl sm:text-2xl font-bold ${
+                  saldo >= 0 ? 'text-teal-500' : 'text-red-500'
+                }`}>
                   {formatarValor(saldo)}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="text-blue-600 text-xl">💰</span>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                saldo >= 0 
+                  ? darkMode ? 'bg-teal-500/20' : 'bg-teal-100'
+                  : darkMode ? 'bg-red-500/20' : 'bg-red-100'
+              }`}>
+                <span className={`text-xl ${saldo >= 0 ? 'text-teal-500' : 'text-red-500'}`}>
+                  {saldo >= 0 ? '💰' : '⚠️'}
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+          {/* Card Total de Transações */}
+          <div className={`rounded-2xl p-6 shadow-xl border transition-all duration-300 hover:scale-105 ${
+            darkMode 
+              ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+              : 'bg-white/90 backdrop-blur-sm border-white/20'
+          }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total de Transações</p>
-                <p className="text-2xl font-bold text-gray-900">
+              <div className="flex-1">
+                <p className={`text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Total de Transações
+                </p>
+                <p className={`text-xl sm:text-2xl font-bold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   {totalTransacoes}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                <span className="text-gray-600 text-xl">📊</span>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                darkMode ? 'bg-cyan-500/20' : 'bg-cyan-100'
+              }`}>
+                <span className="text-cyan-500 text-xl">📊</span>
               </div>
             </div>
           </div>
@@ -501,33 +646,55 @@ export default function TransacoesPage() {
 
         {/* Mensagem de Feedback */}
         {mensagem && (
-          <div className={`mb-6 p-4 rounded-xl text-sm font-medium ${mensagem.includes("sucesso")
-            ? "bg-green-50 text-green-800 border border-green-200"
-            : "bg-red-50 text-red-800 border border-red-200"
-            }`}>
-            {mensagem}
+          <div className={`mb-6 p-4 rounded-xl border-l-4 transition-all duration-300 animate-fade-in ${
+            mensagem.includes("sucesso")
+              ? darkMode
+                ? 'bg-emerald-900/30 border-emerald-400 text-emerald-300 backdrop-blur-sm'
+                : 'bg-emerald-50 border-emerald-400 text-emerald-700'
+              : darkMode
+                ? 'bg-red-900/30 border-red-400 text-red-300 backdrop-blur-sm'
+                : 'bg-red-50 border-red-400 text-red-700'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-xl">
+                {mensagem.includes("sucesso") ? '✅' : '❌'}
+              </span>
+              <span className="text-sm font-medium">{mensagem}</span>
+            </div>
           </div>
         )}
 
         {/* Ações e Filtros */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
+        <div className={`rounded-2xl shadow-xl border p-6 mb-8 transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+            : 'bg-white/90 backdrop-blur-sm border-white/20'
+        }`}>
           <div className="flex flex-col gap-6">
             {/* Primeira linha - Ações principais */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+                className={`px-6 py-3 rounded-xl font-medium shadow-lg transition-all duration-200 hover:scale-105 ${
+                  darkMode
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/25'
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                }`}
               >
-                {showForm ? "Cancelar" : "Nova Transação"}
+                {showForm ? "❌ Cancelar" : "➕ Nova Transação"}
               </button>
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 ${
                     showFilters 
-                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? darkMode
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/25' 
+                        : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg'
+                      : darkMode
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border border-gray-300'
                   }`}
                 >
                   🔍 Filtros
@@ -535,7 +702,15 @@ export default function TransacoesPage() {
 
                 <button
                   onClick={exportarCSV}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 ${
+                    transacoes.length === 0
+                      ? darkMode
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : darkMode
+                        ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-500/25'
+                        : 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg'
+                  }`}
                   disabled={transacoes.length === 0}
                 >
                   📊 Exportar CSV
@@ -544,9 +719,13 @@ export default function TransacoesPage() {
                 {(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax) && (
                   <button
                     onClick={limparFiltros}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 border ${
+                      darkMode 
+                        ? 'text-gray-300 hover:text-white border-gray-600 hover:bg-gray-700' 
+                        : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50'
+                    }`}
                   >
-                    Limpar Filtros
+                    🗑️ Limpar Filtros
                   </button>
                 )}
               </div>
@@ -554,97 +733,118 @@ export default function TransacoesPage() {
 
             {/* Segunda linha - Busca */}
             <div className="w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Buscar por descrição
+              <label className={`block text-sm font-medium mb-3 transition-colors duration-300 ${
+                darkMode ? 'text-gray-200' : 'text-gray-700'
+              }`}>
+                🔎 Buscar por descrição
               </label>
               <input
                 type="text"
                 placeholder="Digite para buscar nas descrições..."
                 value={filtroBusca}
                 onChange={(e) => setFiltroBusca(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium placeholder-gray-500 ${
+                  darkMode 
+                    ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                    : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                }`}
               />
             </div>
 
             {/* Terceira linha - Filtros */}
             {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Filtro Tipo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  📂 Tipo
                 </label>
                 <select
                   value={filtroTipo}
                   onChange={(e) => setFiltroTipo(e.target.value as "" | "receita" | "despesa")}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-                  style={{ 
-                    color: '#1f2937',
-                    backgroundColor: '#ffffff'
-                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 >
-                  <option value="" style={{ color: '#6b7280' }}>Todos</option>
-                  <option value="receita" style={{ color: '#1f2937', fontWeight: '500' }}>Receitas</option>
-                  <option value="despesa" style={{ color: '#1f2937', fontWeight: '500' }}>Despesas</option>
+                  <option value="">Todos</option>
+                  <option value="receita">📈 Receitas</option>
+                  <option value="despesa">📉 Despesas</option>
                 </select>
               </div>
 
+              {/* Filtro Categoria */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Categoria
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  🏷️ Categoria
                 </label>
                 <select
                   value={filtroCategoria}
                   onChange={(e) => setFiltroCategoria(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-                  style={{ 
-                    color: '#1f2937',
-                    backgroundColor: '#ffffff'
-                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 >
-                  <option value="" style={{ color: '#6b7280' }}>Todas</option>
+                  <option value="">Todas</option>
                   {categorias.map((categoria) => (
-                    <option 
-                      key={categoria.id} 
-                      value={categoria.id}
-                      style={{ 
-                        color: '#1f2937',
-                        backgroundColor: '#ffffff',
-                        fontWeight: '500'
-                      }}
-                    >
+                    <option key={categoria.id} value={categoria.id}>
                       {categoria.icone} {categoria.nome}
                     </option>
                   ))}
                 </select>
               </div>
 
+              {/* Data Início */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data Início
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  📅 Data Início
                 </label>
                 <input
                   type="date"
                   value={filtroDataInicio}
                   onChange={(e) => setFiltroDataInicio(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
 
+              {/* Data Fim */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data Fim
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  📅 Data Fim
                 </label>
                 <input
                   type="date"
                   value={filtroDataFim}
                   onChange={(e) => setFiltroDataFim(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
 
+              {/* Valor Mínimo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor Mín.
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  💰 Valor Mín.
                 </label>
                 <input
                   type="number"
@@ -653,13 +853,20 @@ export default function TransacoesPage() {
                   placeholder="0,00"
                   value={filtroValorMin}
                   onChange={(e) => setFiltroValorMin(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium placeholder-gray-500 ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
 
+              {/* Valor Máximo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor Máx.
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  💰 Valor Máx.
                 </label>
                 <input
                   type="number"
@@ -668,7 +875,11 @@ export default function TransacoesPage() {
                   placeholder="0,00"
                   value={filtroValorMax}
                   onChange={(e) => setFiltroValorMax(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium placeholder-gray-500 ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
             </div>
@@ -677,42 +888,48 @@ export default function TransacoesPage() {
             {/* Quarta linha - Ordenação */}
             {showFilters && (
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              {/* Ordenar por */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ordenar por
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  🔢 Ordenar por
                 </label>
                 <select
                   value={ordenacao.campo}
                   onChange={(e) => setOrdenacao({ ...ordenacao, campo: e.target.value as keyof Transacao })}
-                  className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-                  style={{ 
-                    color: '#1f2937',
-                    backgroundColor: '#ffffff'
-                  }}
+                  className={`px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 >
-                  <option value="data" style={{ color: '#1f2937', fontWeight: '500' }}>Data</option>
-                  <option value="valor" style={{ color: '#1f2937', fontWeight: '500' }}>Valor</option>
-                  <option value="categoria" style={{ color: '#1f2937', fontWeight: '500' }}>Categoria</option>
-                  <option value="tipo" style={{ color: '#1f2937', fontWeight: '500' }}>Tipo</option>
-                  <option value="criadoEm" style={{ color: '#1f2937', fontWeight: '500' }}>Data de Criação</option>
+                  <option value="data">📅 Data</option>
+                  <option value="valor">💰 Valor</option>
+                  <option value="categoria">🏷️ Categoria</option>
+                  <option value="tipo">📂 Tipo</option>
+                  <option value="criadoEm">🕐 Data de Criação</option>
                 </select>
               </div>
 
+              {/* Direção */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Direção
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  ↕️ Direção
                 </label>
                 <select
                   value={ordenacao.direcao}
                   onChange={(e) => setOrdenacao({ ...ordenacao, direcao: e.target.value as 'asc' | 'desc' })}
-                  className="px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-                  style={{ 
-                    color: '#1f2937',
-                    backgroundColor: '#ffffff'
-                  }}
+                  className={`px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 >
-                  <option value="desc" style={{ color: '#1f2937', fontWeight: '500' }}>Decrescente</option>
-                  <option value="asc" style={{ color: '#1f2937', fontWeight: '500' }}>Crescente</option>
+                  <option value="desc">⬇️ Decrescente</option>
+                  <option value="asc">⬆️ Crescente</option>
                 </select>
               </div>
             </div>
@@ -722,15 +939,33 @@ export default function TransacoesPage() {
 
         {/* Formulário de Nova/Editar Transação */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-              {editingId ? "Editar Transação" : "Nova Transação"}
-            </h2>
+          <div className={`rounded-2xl shadow-xl border p-6 mb-8 transition-all duration-300 ${
+            darkMode 
+              ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+              : 'bg-white/90 backdrop-blur-sm border-white/20'
+          }`}>
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`p-3 rounded-xl ${
+                darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+              }`}>
+                <span className="text-2xl">
+                  {editingId ? '✏️' : '➕'}
+                </span>
+              </div>
+              <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                {editingId ? "Editar Transação" : "Nova Transação"}
+              </h2>
+            </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Campo Valor */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Valor *
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  💰 Valor *
                 </label>
                 <input
                   type="number"
@@ -739,20 +974,26 @@ export default function TransacoesPage() {
                   placeholder="0,00"
                   value={formData.valor}
                   onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium placeholder-gray-500 ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                   required
                 />
               </div>
 
+              {/* Campo Tipo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo *
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  📂 Tipo *
                 </label>
                 <select
                   value={formData.tipo}
                   onChange={(e) => {
                     const novoTipo = e.target.value as "receita" | "despesa";
-                    // Verificar se a categoria atual é compatível com o novo tipo
                     const categoriaAtual = categorias.find(cat => cat.id === formData.categoriaId);
                     const categoriaTipoCompativel = categoriaAtual && (categoriaAtual.tipo === novoTipo || categoriaAtual.tipo === 'ambos');
                     
@@ -762,21 +1003,24 @@ export default function TransacoesPage() {
                       categoriaId: categoriaTipoCompativel ? formData.categoriaId : ""
                     });
                   }}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium"
-                  style={{ 
-                    color: '#1f2937',
-                    backgroundColor: '#ffffff'
-                  }}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                   required
                 >
-                  <option value="receita" style={{ color: '#1f2937', fontWeight: '500' }}>Receita</option>
-                  <option value="despesa" style={{ color: '#1f2937', fontWeight: '500' }}>Despesa</option>
+                  <option value="receita">📈 Receita</option>
+                  <option value="despesa">📉 Despesa</option>
                 </select>
               </div>
 
+              {/* Campo Categoria */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categoria *
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  🏷️ Categoria *
                 </label>
                 <SeletorCategoria
                   categorias={categorias}
@@ -794,57 +1038,87 @@ export default function TransacoesPage() {
                 />
               </div>
 
+              {/* Campo Data */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data (opcional - será usada a data atual se não preenchida)
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  📅 Data (opcional - será usada a data atual se não preenchida)
                 </label>
                 <input
                   type="date"
                   value={formData.data}
                   onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
 
+              {/* Campo Descrição */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descrição
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  📝 Descrição
                 </label>
                 <input
                   type="text"
                   placeholder="Descrição da transação"
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium placeholder-gray-500 ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
 
+              {/* Campo Tags */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  🏷️ Tags
                 </label>
                 <input
                   type="text"
                   placeholder="Separe as tags por vírgula (ex: alimentação, restaurante)"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium placeholder-gray-600"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 font-medium placeholder-gray-500 ${
+                    darkMode 
+                      ? 'bg-gray-700/70 border-gray-600 text-white hover:border-gray-500 hover:bg-gray-700' 
+                      : 'bg-white/70 border-gray-300 text-gray-900 hover:border-gray-400'
+                  }`}
                 />
               </div>
 
-              <div className="md:col-span-2 flex gap-4">
+              {/* Botões de Ação */}
+              <div className="md:col-span-2 flex flex-col sm:flex-row gap-4">
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
+                  className={`px-6 py-3 rounded-xl font-medium shadow-lg transition-all duration-200 hover:scale-105 ${
+                    darkMode
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/25'
+                      : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                  }`}
                 >
-                  {editingId ? "Atualizar Transação" : "Criar Transação"}
+                  {editingId ? "✅ Atualizar Transação" : "💾 Criar Transação"}
                 </button>
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-300 transition-all duration-200 font-medium"
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 border ${
+                    darkMode 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border-gray-600' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border-gray-300'
+                  }`}
                 >
-                  Cancelar
+                  ❌ Cancelar
                 </button>
               </div>
             </form>
@@ -852,16 +1126,33 @@ export default function TransacoesPage() {
         )}
 
         {/* Lista de Transações */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Histórico de Transações
-              </h2>
-              <div className="text-sm text-gray-600">
+        <div className={`rounded-2xl shadow-xl border overflow-hidden transition-all duration-300 ${
+          darkMode 
+            ? 'bg-gray-800/90 backdrop-blur-sm border-gray-700/50' 
+            : 'bg-white/90 backdrop-blur-sm border-white/20'
+        }`}>
+          <div className={`p-6 border-b transition-colors duration-300 ${
+            darkMode ? 'border-gray-700/50' : 'border-gray-200'
+          }`}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${
+                  darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                }`}>
+                  <span className="text-xl">📊</span>
+                </div>
+                <h2 className={`text-xl sm:text-2xl font-bold transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  Histórico de Transações
+                </h2>
+              </div>
+              <div className={`text-sm font-medium px-3 py-2 rounded-lg transition-colors duration-300 ${
+                darkMode ? 'text-gray-300 bg-gray-700/50' : 'text-gray-600 bg-gray-100'
+              }`}>
                 {totalTransacoes > 0 ? (
                   <>
-                    Mostrando {((paginaAtual - 1) * itensPorPagina) + 1} a {Math.min(paginaAtual * itensPorPagina, totalTransacoes)} de {totalTransacoes} transações
+                    📄 Mostrando {((paginaAtual - 1) * itensPorPagina) + 1} a {Math.min(paginaAtual * itensPorPagina, totalTransacoes)} de {totalTransacoes} transações
                   </>
                 ) : (
                   "Nenhuma transação encontrada"
@@ -871,73 +1162,117 @@ export default function TransacoesPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-4 h-4 relative mr-3">
-                <div className="absolute inset-0 border-2 border-blue-200 rounded-full"></div>
-                <div className="absolute inset-0 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-8 h-8 relative">
+                  <div className={`absolute inset-0 border-2 rounded-full ${
+                    darkMode ? 'border-gray-700' : 'border-gray-200'
+                  }`}></div>
+                  <div className="absolute inset-0 border-2 border-transparent border-t-emerald-500 rounded-full animate-spin"></div>
+                </div>
+                <span className={`text-sm font-medium transition-colors duration-300 ${
+                  darkMode ? 'text-gray-300' : 'text-gray-500'
+                }`}>
+                  🔄 Carregando transações...
+                </span>
               </div>
-              <span className="text-sm text-gray-500">Carregando transações...</span>
             </div>
           ) : transacoes.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Nenhuma transação encontrada
-              </h3>
-              <p className="text-gray-600 mb-6">
-                {(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax)
-                  ? "Tente ajustar os filtros para encontrar suas transações."
-                  : "Comece criando sua primeira transação financeira."
-                }
-              </p>
-              {!(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax) && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg"
-                >
-                  Criar Primeira Transação
-                </button>
-              )}
+            <div className="text-center py-16">
+              <div className="flex flex-col items-center gap-4">
+                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center ${
+                  darkMode ? 'bg-gray-700/50' : 'bg-gray-100'
+                }`}>
+                  <span className="text-4xl">📊</span>
+                </div>
+                <div className="space-y-2">
+                  <h3 className={`text-xl font-bold transition-colors duration-300 ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    Nenhuma transação encontrada
+                  </h3>
+                  <p className={`transition-colors duration-300 ${
+                    darkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax)
+                      ? "Tente ajustar os filtros para encontrar suas transações."
+                      : "Comece criando sua primeira transação financeira."
+                    }
+                  </p>
+                </div>
+                {!(filtroTipo || filtroCategoria || filtroDataInicio || filtroDataFim || filtroBusca || filtroValorMin || filtroValorMax) && (
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className={`px-6 py-3 rounded-xl font-medium shadow-lg transition-all duration-200 hover:scale-105 ${
+                      darkMode
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/25'
+                        : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                    }`}
+                  >
+                    ➕ Criar Primeira Transação
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <>
-              <div className="divide-y divide-gray-200">
+              <div className={`divide-y transition-colors duration-300 ${
+                darkMode ? 'divide-gray-700/50' : 'divide-gray-200'
+              }`}>
                 {transacoes.map((transacao) => (
-                  <div key={transacao.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div key={transacao.id} className={`p-6 transition-all duration-200 hover:scale-[1.01] ${
+                    darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'
+                  }`}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-2">
+                        <div className="flex items-center gap-4 mb-3">
                           {/* Ícone da categoria com cor */}
                           <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl shadow-lg"
+                            className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl shadow-lg transition-transform duration-200 hover:scale-110"
                             style={{ backgroundColor: transacao.categoria?.cor || "#6B7280" }}
                           >
                             {transacao.categoria?.icone || "📊"}
                           </div>
 
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-1">
-                              <span className={`text-2xl font-bold ${transacao.tipo === "receita" ? "text-green-600" : "text-red-600"}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                              <span className={`text-xl sm:text-2xl font-bold ${
+                                transacao.tipo === "receita" ? "text-emerald-500" : "text-red-500"
+                              }`}>
                                 {transacao.tipo === "receita" ? "+" : "-"}{formatarValor(transacao.valor)}
                               </span>
-                              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                                {transacao.categoria?.nome || "Sem categoria"}
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-300 ${
+                                darkMode 
+                                  ? 'bg-gray-700/50 text-gray-300' 
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                🏷️ {transacao.categoria?.nome || "Sem categoria"}
                               </span>
                             </div>
 
-                            <div className="text-gray-600 mb-2">
-                              <p className="font-medium">{transacao.descricao || "Sem descrição"}</p>
-                              <p className="text-sm">{formatarData(transacao.data)}</p>
+                            <div className={`mb-3 transition-colors duration-300 ${
+                              darkMode ? 'text-gray-300' : 'text-gray-600'
+                            }`}>
+                              <p className="font-medium text-base mb-1">
+                                📝 {transacao.descricao || "Sem descrição"}
+                              </p>
+                              <p className="text-sm flex items-center gap-1">
+                                📅 {formatarData(transacao.data)}
+                              </p>
                             </div>
 
                             {(transacao.tags?.length ?? 0) > 0 && (
-                              <div className="flex flex-wrap gap-2 mb-2">
+                              <div className="flex flex-wrap gap-2">
                                 {transacao.tags!.map((tag: any, index: number) => (
                                   <span
                                     key={index}
-                                    className="bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300"
+                                    className={`text-xs font-medium px-2.5 py-1 rounded-full transition-colors duration-300 ${
+                                      darkMode 
+                                        ? 'bg-teal-900/30 text-teal-300' 
+                                        : 'bg-teal-100 text-teal-700'
+                                    }`}
                                   >
-                                    {tag.nome || tag}
+                                    #{tag.nome || tag}
                                   </span>
                                 ))}
                               </div>
@@ -945,11 +1280,17 @@ export default function TransacoesPage() {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Botões de Ação */}
                       <div className="flex gap-2 ml-4">
                         <button
                           onClick={() => handleEdit(transacao.id)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                          title="Editar"
+                          className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
+                            darkMode 
+                              ? 'text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30' 
+                              : 'text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
+                          }`}
+                          title="Editar transação"
                         >
                           ✏️
                         </button>
@@ -959,8 +1300,12 @@ export default function TransacoesPage() {
                               handleDelete(transacao.id);
                             }
                           }}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Excluir"
+                          className={`p-3 rounded-xl transition-all duration-200 hover:scale-110 ${
+                            darkMode 
+                              ? 'text-red-400 hover:bg-red-500/20 border border-red-500/30' 
+                              : 'text-red-600 hover:bg-red-100 border border-red-200'
+                          }`}
+                          title="Excluir transação"
                         >
                           🗑️
                         </button>
@@ -972,27 +1317,41 @@ export default function TransacoesPage() {
 
               {/* Paginação */}
               {totalPaginas > 1 && (
-                <div className="p-6 border-t border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      Página {paginaAtual} de {totalPaginas}
+                <div className={`p-6 border-t transition-all duration-300 ${
+                  darkMode 
+                    ? 'border-gray-700/50 bg-gray-800/50' 
+                    : 'border-gray-200 bg-gray-50/50'
+                }`}>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className={`text-sm font-medium transition-colors duration-300 ${
+                      darkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
+                      📄 Página {paginaAtual} de {totalPaginas}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 justify-center">
                       <button
                         onClick={() => setPaginaAtual(1)}
                         disabled={paginaAtual === 1}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                          darkMode 
+                            ? 'border border-gray-600 text-gray-300 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                            : 'border border-gray-300 text-gray-700 hover:bg-white disabled:hover:bg-transparent'
+                        }`}
                       >
-                        Primeira
+                        ⏮️ Primeira
                       </button>
 
                       <button
                         onClick={() => setPaginaAtual(paginaAtual - 1)}
                         disabled={paginaAtual === 1}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                          darkMode 
+                            ? 'border border-gray-600 text-gray-300 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                            : 'border border-gray-300 text-gray-700 hover:bg-white disabled:hover:bg-transparent'
+                        }`}
                       >
-                        Anterior
+                        ⬅️ Anterior
                       </button>
 
                       {/* Páginas numeradas */}
@@ -1012,10 +1371,15 @@ export default function TransacoesPage() {
                           <button
                             key={pageNum}
                             onClick={() => setPaginaAtual(pageNum)}
-                            className={`px-3 py-2 text-sm border rounded-lg transition-colors ${pageNum === paginaAtual
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'border-gray-300 hover:bg-white'
-                              }`}
+                            className={`px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 hover:scale-105 ${
+                              pageNum === paginaAtual
+                                ? darkMode
+                                  ? 'bg-emerald-600 text-white border border-emerald-500 shadow-lg shadow-emerald-500/25'
+                                  : 'bg-emerald-600 text-white border border-emerald-500 shadow-lg'
+                                : darkMode
+                                  ? 'border border-gray-600 text-gray-300 hover:bg-gray-700'
+                                  : 'border border-gray-300 text-gray-700 hover:bg-white'
+                            }`}
                           >
                             {pageNum}
                           </button>
@@ -1025,17 +1389,25 @@ export default function TransacoesPage() {
                       <button
                         onClick={() => setPaginaAtual(paginaAtual + 1)}
                         disabled={paginaAtual === totalPaginas}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                          darkMode 
+                            ? 'border border-gray-600 text-gray-300 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                            : 'border border-gray-300 text-gray-700 hover:bg-white disabled:hover:bg-transparent'
+                        }`}
                       >
-                        Próxima
+                        Próxima ➡️
                       </button>
 
                       <button
                         onClick={() => setPaginaAtual(totalPaginas)}
                         disabled={paginaAtual === totalPaginas}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                          darkMode 
+                            ? 'border border-gray-600 text-gray-300 hover:bg-gray-700 disabled:hover:bg-transparent' 
+                            : 'border border-gray-300 text-gray-700 hover:bg-white disabled:hover:bg-transparent'
+                        }`}
                       >
-                        Última
+                        ⏭️ Última
                       </button>
                     </div>
                   </div>
