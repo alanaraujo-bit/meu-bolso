@@ -53,9 +53,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
       where: { id: params.parcelaId },
       data: { 
         status: 'PAGA',
-        // Adicionar data de pagamento se não existir no schema
       },
     });
+
+    // Criar transação automática para o pagamento da parcela
+    const descricaoTransacao = `Pagamento da parcela ${parcela.numero}/${divida.numeroParcelas} - ${divida.nome}`;
+    
+    await prisma.transacao.create({
+      data: {
+        userId: usuario.id,
+        categoriaId: divida.categoriaId, // Usar a mesma categoria da dívida
+        tipo: 'despesa', // Pagamento de dívida é sempre despesa
+        valor: parcela.valor,
+        descricao: descricaoTransacao,
+        data: new Date(), // Data e hora atual do pagamento
+        isRecorrente: false,
+      },
+    });
+
+    console.log(`💰 Transação criada automaticamente: ${descricaoTransacao} - ${parcela.valor}`);
 
     // Verificar se todas as parcelas estão pagas para atualizar status da dívida
     const todasParcelas = await prisma.parcelaDivida.findMany({
@@ -86,7 +102,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
 
     return NextResponse.json({
       success: true,
-      message: "Parcela marcada como paga com sucesso!",
+      message: "Parcela paga e transação criada com sucesso!",
+      transacaoCriada: {
+        descricao: descricaoTransacao,
+        valor: parcela.valor,
+        data: new Date(),
+        tipo: 'despesa'
+      },
+      dividaQuitada: parcelasRestantes === 0,
       divida: dividaAtualizada
     });
   } catch (error) {

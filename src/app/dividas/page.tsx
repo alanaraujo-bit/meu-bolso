@@ -124,6 +124,7 @@ export default function DividasPage() {
   const [editandoDivida, setEditandoDivida] = useState<string | null>(null);
   const [filtroStatus, setFiltroStatus] = useState<"TODAS" | "ATIVA" | "QUITADA">("ATIVA");
   const [dividaExpandida, setDividaExpandida] = useState<string | null>(null);
+  const [mensagemFeedback, setMensagemFeedback] = useState<{texto: string, tipo: 'success' | 'error'} | null>(null);
 
   const [formulario, setFormulario] = useState<FormularioDivida>({
     nome: "",
@@ -351,20 +352,42 @@ export default function DividasPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Parcela marcada como paga:", data.message);
+        
+        // Mostrar feedback detalhado sobre a transação criada
+        if (data.transacaoCriada) {
+          const valor = new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          }).format(data.transacaoCriada.valor);
+          
+          let mensagem = `💰 Parcela paga! Transação criada: ${valor}`;
+          if (data.dividaQuitada) {
+            mensagem += " 🎉 Dívida quitada completamente!";
+          }
+          
+          mostrarFeedback(mensagem, 'success');
+        }
+        
         carregarDados(); // Recarregar os dados para atualizar a interface
       } else {
         const error = await response.json();
-        console.error("❌ Erro ao marcar parcela como paga:", error.error);
+        mostrarFeedback(`Erro ao pagar parcela: ${error.error}`, 'error');
       }
     } catch (error) {
       console.error("Erro ao marcar parcela como paga:", error);
+      mostrarFeedback("Erro inesperado ao pagar parcela", 'error');
     }
   };
 
   // Função para alternar exibição das parcelas
   const toggleParcelas = (dividaId: string) => {
     setDividaExpandida(dividaExpandida === dividaId ? null : dividaId);
+  };
+
+  // Função para mostrar mensagem de feedback
+  const mostrarFeedback = (texto: string, tipo: 'success' | 'error' = 'success') => {
+    setMensagemFeedback({ texto, tipo });
+    setTimeout(() => setMensagemFeedback(null), 5000); // Remove após 5 segundos
   };
 
   // Função para formatar valores monetários
@@ -385,6 +408,28 @@ export default function DividasPage() {
         ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
         : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
     } relative overflow-hidden`}>
+      
+      {/* Notificação de Feedback */}
+      {mensagemFeedback && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md animate-in slide-in-from-right duration-300 ${
+          mensagemFeedback.tipo === 'success'
+            ? 'bg-emerald-600 text-white'
+            : 'bg-red-600 text-white'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className="text-lg">
+              {mensagemFeedback.tipo === 'success' ? '✅' : '❌'}
+            </span>
+            <p className="font-medium">{mensagemFeedback.texto}</p>
+            <button
+              onClick={() => setMensagemFeedback(null)}
+              className="ml-auto text-white/80 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Elementos decorativos de fundo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
