@@ -187,6 +187,32 @@ export default function DividasPage() {
     carregarCategorias();
   }, [session, status, router, filtroStatus]);
 
+  // Função para calcular estatísticas de uma dívida
+  const calcularEstatisticasDivida = (divida: any) => {
+    const parcelasPagas = divida.parcelas.filter((p: any) => p.status === 'PAGA').length;
+    const parcelasVencidas = divida.parcelas.filter((p: any) => {
+      const hoje = new Date();
+      return p.status === 'PENDENTE' && new Date(p.dataVencimento) < hoje;
+    }).length;
+    
+    const valorPago = parcelasPagas * divida.valorParcela;
+    const valorRestante = divida.valorTotal - valorPago;
+    const percentualQuitado = divida.valorTotal > 0 ? (valorPago / divida.valorTotal) * 100 : 0;
+    
+    const proximaParcelaVencimento = divida.parcelas
+      .filter((p: any) => p.status === 'PENDENTE')
+      .sort((a: any, b: any) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())[0];
+
+    return {
+      parcelasPagas,
+      parcelasVencidas,
+      valorPago,
+      valorRestante,
+      percentualQuitado: Math.round(percentualQuitado),
+      proximaParcelaVencimento,
+    };
+  };
+
   const carregarDados = async () => {
     try {
       setLoading(true);
@@ -196,11 +222,17 @@ export default function DividasPage() {
       const responseDividas = await fetch(`/api/dividas${filtro}`);
       const dividasData = await responseDividas.json();
       
-      // Carregar estatísticas
+      // Calcular estatísticas para cada dívida
+      const dividasComEstatisticas = dividasData.map((divida: any) => ({
+        ...divida,
+        estatisticas: calcularEstatisticasDivida(divida)
+      }));
+      
+      // Carregar estatísticas gerais
       const responseEstatisticas = await fetch("/api/dividas/estatisticas");
       const estatisticasData = await responseEstatisticas.json();
       
-      setDividas(dividasData);
+      setDividas(dividasComEstatisticas);
       setEstatisticas(estatisticasData);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
