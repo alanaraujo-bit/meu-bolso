@@ -429,31 +429,38 @@ export default function DividasPage() {
     setTimeout(() => setMensagemFeedback(null), 5000); // Remove após 5 segundos
   };
 
-  // Função para ordenar parcelas: pendentes primeiro, depois pagas
+  // Função para ordenar parcelas: próximas pendentes primeiro, depois pagas por último
   const ordenarParcelas = (parcelas: ParcelaDivida[]) => {
     return [...parcelas].sort((a, b) => {
-      // Primeiro critério: status (PENDENTE > VENCIDA > PAGA)
+      // Primeiro critério: status (PENDENTE e VENCIDA primeiro, PAGA por último)
       const statusOrder = { 'PENDENTE': 0, 'VENCIDA': 1, 'PAGA': 2 };
       if (statusOrder[a.status] !== statusOrder[b.status]) {
         return statusOrder[a.status] - statusOrder[b.status];
       }
       
-      // Segundo critério: número da parcela (crescente para pendentes, decrescente para pagas)
-      if (a.status === 'PAGA' && b.status === 'PAGA') {
-        return b.numero - a.numero; // Pagas mais recentes primeiro
+      // Para parcelas PENDENTES e VENCIDAS: ordem crescente (próximas primeiro)
+      if (a.status !== 'PAGA' && b.status !== 'PAGA') {
+        return a.numero - b.numero;
       }
       
-      return a.numero - b.numero; // Pendentes em ordem crescente
+      // Para parcelas PAGAS: ordem decrescente (mais recentes primeiro)
+      if (a.status === 'PAGA' && b.status === 'PAGA') {
+        return b.numero - a.numero;
+      }
+      
+      return a.numero - b.numero;
     });
   };
 
-  // Função para obter informações da próxima parcela
+  // Função para obter informações da próxima parcela a ser paga
   const obterProximaParcela = (divida: Divida) => {
-    const parcelasPendentes = divida.parcelas
-      .filter(p => p.status === 'PENDENTE')
-      .sort((a, b) => a.numero - b.numero);
+    // Buscar todas as parcelas pendentes e vencidas
+    const parcelasAPagar = divida.parcelas
+      .filter(p => p.status === 'PENDENTE' || p.status === 'VENCIDA')
+      .sort((a, b) => a.numero - b.numero); // Ordenar por número crescente
     
-    return parcelasPendentes[0] || null;
+    // Retornar a primeira da lista (menor número = próxima a ser paga)
+    return parcelasAPagar[0] || null;
   };
 
   // Função para formatar valores monetários
@@ -912,84 +919,103 @@ export default function DividasPage() {
                           darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
                           📋 Parcelas ({divida.parcelas.length})
+                          <span className={`text-xs font-normal ${
+                            darkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            • Próximas primeiro, pagas por último
+                          </span>
                         </h4>
                         
                         <div className="space-y-3 max-h-64 overflow-y-auto">
-                          {ordenarParcelas(divida.parcelas).map((parcela) => (
-                            <div key={parcela.id} className={`p-3 rounded-lg border transition-all ${
-                              parcela.status === 'PAGA'
-                                ? (darkMode 
-                                    ? 'bg-emerald-900/20 border-emerald-500/30 opacity-75' 
-                                    : 'bg-emerald-50 border-emerald-200 opacity-75')
-                                : parcela.status === 'VENCIDA'
+                          {ordenarParcelas(divida.parcelas).map((parcela, index) => {
+                            const isProxima = parcela.status === 'PENDENTE' && index === 0;
+                            return (
+                              <div key={parcela.id} className={`p-3 rounded-lg border transition-all ${
+                                parcela.status === 'PAGA'
                                   ? (darkMode 
-                                      ? 'bg-red-900/20 border-red-500/30' 
-                                      : 'bg-red-50 border-red-200')
-                                  : (darkMode 
-                                      ? 'bg-blue-900/20 border-blue-500/30' 
-                                      : 'bg-blue-50 border-blue-200')
-                            }`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    <span className={`font-bold text-lg ${
-                                      darkMode ? 'text-white' : 'text-gray-800'
-                                    }`}>
-                                      #{parcela.numero}
-                                    </span>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
-                                      parcela.status === 'PAGA'
-                                        ? 'bg-emerald-500/20 text-emerald-400'
-                                        : parcela.status === 'VENCIDA'
-                                          ? 'bg-red-500/20 text-red-400'
-                                          : 'bg-blue-500/20 text-blue-400'
-                                    }`}>
-                                      {parcela.status === 'PAGA' ? '✅ Paga' : 
-                                       parcela.status === 'VENCIDA' ? '⚠️ Vencida' : '⏳ Próxima'}
-                                    </span>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className={`text-sm ${
-                                      darkMode ? 'text-gray-300' : 'text-gray-600'
-                                    }`}>
-                                      <span className="font-medium">Valor:</span>
-                                      <div className={`font-bold text-lg ${
-                                        parcela.status === 'PAGA' 
-                                          ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
-                                          : (darkMode ? 'text-white' : 'text-gray-800')
+                                      ? 'bg-emerald-900/20 border-emerald-500/30 opacity-75' 
+                                      : 'bg-emerald-50 border-emerald-200 opacity-75')
+                                  : parcela.status === 'VENCIDA'
+                                    ? (darkMode 
+                                        ? 'bg-red-900/20 border-red-500/30' 
+                                        : 'bg-red-50 border-red-200')
+                                    : isProxima
+                                      ? (darkMode 
+                                          ? 'bg-blue-900/30 border-blue-400 ring-2 ring-blue-500/50' 
+                                          : 'bg-blue-100 border-blue-400 ring-2 ring-blue-500/50')
+                                      : (darkMode 
+                                          ? 'bg-blue-900/20 border-blue-500/30' 
+                                          : 'bg-blue-50 border-blue-200')
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span className={`font-bold text-lg ${
+                                        darkMode ? 'text-white' : 'text-gray-800'
                                       }`}>
-                                        {formatarValor(parcela.valor)}
-                                      </div>
+                                        #{parcela.numero}
+                                      </span>
+                                      {isProxima && (
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                                          darkMode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700'
+                                        }`}>
+                                          🎯 Próxima
+                                        </span>
+                                      )}
+                                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                                        parcela.status === 'PAGA'
+                                          ? 'bg-emerald-500/20 text-emerald-400'
+                                          : parcela.status === 'VENCIDA'
+                                            ? 'bg-red-500/20 text-red-400'
+                                            : 'bg-blue-500/20 text-blue-400'
+                                      }`}>
+                                        {parcela.status === 'PAGA' ? '✅ Paga' : 
+                                         parcela.status === 'VENCIDA' ? '⚠️ Vencida' : '⏳ Pendente'}
+                                      </span>
                                     </div>
                                     
-                                    <div className={`text-sm ${
-                                      darkMode ? 'text-gray-300' : 'text-gray-600'
-                                    }`}>
-                                      <span className="font-medium">Vencimento:</span>
-                                      <div className={`font-semibold ${
-                                        darkMode ? 'text-gray-200' : 'text-gray-700'
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className={`text-sm ${
+                                        darkMode ? 'text-gray-300' : 'text-gray-600'
                                       }`}>
-                                        {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                                        <span className="font-medium">Valor:</span>
+                                        <div className={`font-bold text-lg ${
+                                          parcela.status === 'PAGA' 
+                                            ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
+                                            : (darkMode ? 'text-white' : 'text-gray-800')
+                                        }`}>
+                                          {formatarValor(parcela.valor)}
+                                        </div>
+                                      </div>
+                                      
+                                      <div className={`text-sm ${
+                                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                                      }`}>
+                                        <span className="font-medium">Vencimento:</span>
+                                        <div className={`font-semibold ${
+                                          darkMode ? 'text-gray-200' : 'text-gray-700'
+                                        }`}>
+                                          {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
+                                  
+                                  {/* Botão de Pagar */}
+                                  {parcela.status === 'PENDENTE' && (
+                                    <button
+                                      onClick={() => marcarParcelaPaga(divida.id, parcela.id)}
+                                      className="ml-4 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center gap-2 shadow-lg"
+                                      title="Marcar como paga"
+                                    >
+                                      <Check size={16} />
+                                      Pagar
+                                    </button>
+                                  )}
                                 </div>
-                                
-                                {/* Botão de Pagar */}
-                                {parcela.status === 'PENDENTE' && (
-                                  <button
-                                    onClick={() => marcarParcelaPaga(divida.id, parcela.id)}
-                                    className="ml-4 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center gap-2 shadow-lg"
-                                    title="Marcar como paga"
-                                  >
-                                    <Check size={16} />
-                                    Pagar
-                                  </button>
-                                )}
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
