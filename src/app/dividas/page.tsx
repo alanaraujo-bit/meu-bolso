@@ -355,6 +355,14 @@ export default function DividasPage() {
     }
   };
 
+  // Função para formatar valores monetários
+  const formatarValor = (valor: number): string => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(valor);
+  };
+
   if (loading && !dividas.length) {
     return <CleanLoading />;
   }
@@ -452,7 +460,7 @@ export default function DividasPage() {
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
                     <div className="text-2xl font-bold text-white">
-                      R$ {(estatisticas.resumo.valorTotalRestante / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {formatarValor(estatisticas.resumo.valorTotalRestante)}
                     </div>
                     <div className="text-white/90 text-sm font-medium">Restante</div>
                   </div>
@@ -665,7 +673,7 @@ export default function DividasPage() {
                         <span className={`font-bold ${
                           darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          R$ {(divida.valorTotal / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {formatarValor(divida.valorTotal)}
                         </span>
                       </div>
 
@@ -691,7 +699,7 @@ export default function DividasPage() {
                         <span className={`font-bold ${
                           darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
-                          R$ {(divida.valorParcela / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {formatarValor(divida.valorParcela)}
                         </span>
                       </div>
 
