@@ -217,6 +217,17 @@ export default function DividasPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (editandoDivida) {
+      // Está editando uma dívida existente
+      await editarDivida();
+    } else {
+      // Está criando uma nova dívida
+      await criarDivida();
+    }
+  };
+
+  const criarDivida = async () => {
     try {
       // Calcular a data da primeira parcela baseado na próxima parcela e parcelas já pagas
       const dataProxima = new Date(formulario.dataProximaParcela);
@@ -238,16 +249,7 @@ export default function DividasPage() {
       });
 
       if (response.ok) {
-        setShowModal(false);
-        setFormulario({
-          nome: "",
-          valorParcela: "",
-          numeroParcelas: "",
-          valorTotal: "",
-          parcelasJaPagas: "0",
-          dataProximaParcela: new Date().toISOString().split('T')[0],
-          categoriaId: "",
-        });
+        fecharModal();
         carregarDados();
       }
     } catch (error) {
@@ -269,6 +271,74 @@ export default function DividasPage() {
     } catch (error) {
       console.error("Erro ao excluir dívida:", error);
     }
+  };
+
+  const prepararEdicaoDivida = (divida: Divida) => {
+    const proximaParcelaVencimento = divida.parcelas.find(p => p.status === 'PENDENTE');
+    
+    setFormulario({
+      nome: divida.nome,
+      valorParcela: divida.valorParcela.toString(),
+      numeroParcelas: divida.numeroParcelas.toString(),
+      valorTotal: divida.valorTotal.toString(),
+      parcelasJaPagas: divida.estatisticas?.parcelasPagas.toString() || "0",
+      dataProximaParcela: proximaParcelaVencimento 
+        ? new Date(proximaParcelaVencimento.dataVencimento).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+      categoriaId: divida.categoria?.id || "",
+    });
+    
+    setEditandoDivida(divida.id);
+    setShowModal(true);
+  };
+
+  const editarDivida = async () => {
+    if (!editandoDivida) return;
+
+    try {
+      const dadosAtualizados = {
+        nome: formulario.nome,
+        valorTotal: parseFloat(formulario.valorTotal),
+        valorParcela: parseFloat(formulario.valorParcela),
+        numeroParcelas: parseInt(formulario.numeroParcelas),
+        parcelasJaPagas: parseInt(formulario.parcelasJaPagas),
+        dataProximaParcela: formulario.dataProximaParcela,
+        categoriaId: formulario.categoriaId || null,
+      };
+
+      const response = await fetch(`/api/dividas/${editandoDivida}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dadosAtualizados),
+      });
+
+      if (response.ok) {
+        fecharModal();
+        carregarDados();
+      } else {
+        const errorData = await response.json();
+        alert(`Erro ao editar dívida: ${errorData.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error("Erro ao editar dívida:", error);
+      alert("Erro ao editar dívida. Tente novamente.");
+    }
+  };
+
+  const fecharModal = () => {
+    setShowModal(false);
+    setEditandoDivida(null);
+    setFormulario({
+      nome: "",
+      valorParcela: "",
+      numeroParcelas: "",
+      valorTotal: "",
+      parcelasJaPagas: "0",
+      dataProximaParcela: new Date().toISOString().split('T')[0],
+      categoriaId: "",
+    });
   };
 
   const marcarParcelaPaga = async (dividaId: string, parcelaId: string) => {
@@ -544,7 +614,6 @@ export default function DividasPage() {
                           </h3>
                           <StatusBadge 
                             status={divida.status} 
-                            className="text-xs"
                           />
                         </div>
                       </div>
@@ -556,8 +625,20 @@ export default function DividasPage() {
                               ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
                               : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                           }`}
+                          title="Ver detalhes"
                         >
                           <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => prepararEdicaoDivida(divida)}
+                          className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                            darkMode 
+                              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
+                              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                          }`}
+                          title="Editar dívida"
+                        >
+                          <Edit size={16} />
                         </button>
                         <button
                           onClick={() => excluirDivida(divida.id)}
@@ -566,6 +647,7 @@ export default function DividasPage() {
                               ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
                               : 'bg-red-50 text-red-600 hover:bg-red-100'
                           }`}
+                          title="Excluir dívida"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -680,15 +762,15 @@ export default function DividasPage() {
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-white drop-shadow-sm">
-                        ✨ Nova Dívida
+                        {editandoDivida ? '✏️ Editar Dívida' : '✨ Nova Dívida'}
                       </h2>
                       <p className="text-white/90 text-sm font-medium">
-                        Cadastre uma nova dívida parcelada
+                        {editandoDivida ? 'Edite os dados da dívida parcelada' : 'Cadastre uma nova dívida parcelada'}
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => setShowModal(false)}
+                    onClick={fecharModal}
                     className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/30 font-bold text-lg hover:scale-110"
                   >
                     ✕
@@ -842,7 +924,7 @@ export default function DividasPage() {
                   <div className="flex gap-4 pt-6">
                     <button
                       type="button"
-                      onClick={() => setShowModal(false)}
+                      onClick={fecharModal}
                       className={`flex-1 py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${
                         darkMode 
                           ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
@@ -855,7 +937,7 @@ export default function DividasPage() {
                       type="submit"
                       className="flex-1 py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                     >
-                      Criar Dívida
+                      {editandoDivida ? 'Salvar Alterações' : 'Criar Dívida'}
                     </button>
                   </div>
                 </form>

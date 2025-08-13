@@ -89,7 +89,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
-    const { nome, categoriaId, status } = await req.json();
+    const { 
+      nome, 
+      valorTotal, 
+      valorParcela, 
+      numeroParcelas,
+      parcelasJaPagas,
+      dataProximaParcela,
+      categoriaId, 
+      status 
+    } = await req.json();
 
     // Verificar se a dívida existe e pertence ao usuário
     const dividaExistente = await prisma.divida.findFirst({
@@ -97,6 +106,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         id: params.id,
         userId: usuario.id,
       },
+      include: {
+        parcelas: true
+      }
     });
 
     if (!dividaExistente) {
@@ -117,10 +129,60 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     }
 
+    // Se mudou o número de parcelas ou valores, recrear parcelas
+    const recalcularParcelas = 
+      (numeroParcelas && numeroParcelas !== dividaExistente.numeroParcelas) ||
+      (valorParcela && valorParcela !== dividaExistente.valorParcela.toNumber()) ||
+      (valorTotal && valorTotal !== dividaExistente.valorTotal.toNumber());
+
+    if (recalcularParcelas) {
+      // Deletar parcelas existentes pendentes
+      await prisma.parcelaDivida.deleteMany({
+        where: { 
+          dividaId: params.id,
+          status: 'PENDENTE'
+        },
+      });
+
+      // Calcular nova data da primeira parcela
+      const dataProxima = new Date(dataProximaParcela || new Date());
+      const parcelasJaFeitas = parcelasJaPagas || 0;
+      const dataPrimeira = new Date(dataProxima);
+      dataPrimeira.setMonth(dataPrimeira.getMonth() - parcelasJaFeitas);
+
+      // Criar novas parcelas
+      const parcelas = [];
+      const valorParcelaFinal = valorParcela || dividaExistente.valorParcela.toNumber();
+      const numParcelas = numeroParcelas || dividaExistente.numeroParcelas;
+
+      for (let i = 1; i <= numParcelas; i++) {
+        const dataVencimento = new Date(dataPrimeira);
+        dataVencimento.setMonth(dataVencimento.getMonth() + (i - 1));
+        
+        const isPaga = i <= parcelasJaFeitas;
+
+        parcelas.push({
+          numero: i,
+          valor: valorParcelaFinal,
+          dataVencimento: dataVencimento,
+          status: isPaga ? 'PAGA' as const : 'PENDENTE' as const,
+          dividaId: params.id,
+        });
+      }
+
+      await prisma.parcelaDivida.createMany({
+        data: parcelas,
+      });
+    }
+
+    // Atualizar a dívida
     const dividaAtualizada = await prisma.divida.update({
       where: { id: params.id },
       data: {
         nome: nome || dividaExistente.nome,
+        valorTotal: valorTotal || dividaExistente.valorTotal.toNumber(),
+        valorParcela: valorParcela || dividaExistente.valorParcela.toNumber(),
+        numeroParcelas: numeroParcelas || dividaExistente.numeroParcelas,
         categoriaId: categoriaId !== undefined ? categoriaId : dividaExistente.categoriaId,
         status: status || dividaExistente.status,
       },
