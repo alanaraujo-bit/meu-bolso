@@ -74,10 +74,29 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
         proximaExecucao = calcularProximaData(ultimaTransacao.data, recorrente.frequencia);
       }
 
-      // Executar todas as transações pendentes até a data atual
+      // MODIFICAÇÃO: Executar apenas transações que já venceram (não futuras)
+      // Só criar transações para datas que já passaram ou são hoje
       while (proximaExecucao <= agora) {
         // Verificar se a transação está dentro do período de validade
         if (recorrente.dataFim && proximaExecucao > recorrente.dataFim) {
+          break;
+        }
+
+        // NOVA VERIFICAÇÃO: Não criar transações futuras antecipadamente
+        // Para transações mensais, só criar quando realmente chegar o dia
+        const diaProximaExecucao = proximaExecucao.getDate();
+        const mesProximaExecucao = proximaExecucao.getMonth();
+        const anoProximaExecucao = proximaExecucao.getFullYear();
+        
+        const hoje = new Date();
+        const diaHoje = hoje.getDate();
+        const mesHoje = hoje.getMonth();
+        const anoHoje = hoje.getFullYear();
+
+        // Se a próxima execução é para uma data futura, não criar ainda
+        if (anoProximaExecucao > anoHoje || 
+           (anoProximaExecucao === anoHoje && mesProximaExecucao > mesHoje) ||
+           (anoProximaExecucao === anoHoje && mesProximaExecucao === mesHoje && diaProximaExecucao > diaHoje)) {
           break;
         }
 
@@ -97,7 +116,7 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
         });
 
         if (!transacaoExistente) {
-          // Criar nova transação
+          // Criar nova transação apenas para datas que já venceram
           const novaTransacao = await prisma.transacao.create({
             data: {
               userId: usuarioId,
@@ -166,13 +185,16 @@ export async function GET(request: NextRequest) {
     const inicioMesAnterior = inicioMesBrasil(ano, mes - 1);
     const fimMesAnterior = fimMesBrasil(ano, mes - 1);
 
-    // Buscar transações do mês atual (incluindo projeções de recorrentes)
+    // Buscar transações do mês atual (excluindo transações futuras)
+    const dataAtualBrasil = getDataAtualBrasil();
+    const dataLimite = dataAtualBrasil < fimMes ? dataAtualBrasil : fimMes; // Use a data menor entre hoje e fim do mês
+    
     const transacoes = await prisma.transacao.findMany({
       where: {
         userId: usuario.id,
         data: {
           gte: inicioMes,
-          lte: fimMes
+          lte: dataLimite // NOVA REGRA: Não pegar nada do futuro
         }
       },
       include: {
@@ -183,115 +205,17 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Buscar transações recorrentes para projetar no mês atual
-    const recorrentes = await prisma.transacaoRecorrente.findMany({
-      where: {
-        userId: usuario.id,
-        isActive: true,
-        dataInicio: { lte: fimMes }, // Recorrentes que já começaram ou começam até o fim do mês
-        OR: [
-          { dataFim: null }, // Sem data fim
-          { dataFim: { gte: inicioMes } } // Ou que terminam depois do início do mês
-        ]
-      },
-      include: {
-        categoria: true
-      }
-    });
+    // DESABILITADO: Não vamos buscar recorrentes para projeções
+    const recorrentes: any[] = [];
 
-    // Função para gerar projeções das transações recorrentes para o mês
-    const projecaoRecorrentes = [];
-    for (const recorrente of recorrentes) {
-      let dataProjecao = new Date(recorrente.dataInicio);
-      
-      // Avançar até o mês atual se necessário
-      while (dataProjecao < inicioMes) {
-        dataProjecao = calcularProximaData(dataProjecao, recorrente.frequencia);
-      }
-      
-      // Gerar todas as ocorrências do mês atual
-      while (dataProjecao <= fimMes) {
-        // Verificar se está dentro do período de validade
-        if (recorrente.dataFim && dataProjecao > recorrente.dataFim) {
-          break;
-        }
-        
-        // Verificar se já existe uma transação real para esta data
-        const transacaoExistente = transacoes.find(t => 
-          t.recorrenteId === recorrente.id &&
-          t.data.toDateString() === dataProjecao.toDateString()
-        );
-        
-        if (!transacaoExistente) {
-          // Adicionar projeção
-          projecaoRecorrentes.push({
-            id: `projection_${recorrente.id}_${dataProjecao.getTime()}`,
-            userId: recorrente.userId,
-            categoriaId: recorrente.categoriaId,
-            tipo: recorrente.tipo,
-            valor: recorrente.valor,
-            descricao: `${recorrente.descricao} (Projeção)`,
-            data: dataProjecao,
-            isRecorrente: true,
-            recorrenteId: recorrente.id,
-            isProjection: true, // Flag para identificar projeções
-            categoria: recorrente.categoria,
-            criadoEm: new Date(),
-            atualizadoEm: new Date()
-          });
-        }
-        
-        dataProjecao = calcularProximaData(dataProjecao, recorrente.frequencia);
-      }
-    }
-
-    // Buscar dívidas e suas parcelas para incluir as do mês atual como projeções de despesa
-    const dividasComParcelas = await prisma.divida.findMany({
-      where: { 
-        userId: usuario.id,
-        status: 'ATIVA'
-      },
-      include: {
-        parcelas: {
-          where: {
-            status: 'PENDENTE',
-            dataVencimento: {
-              gte: inicioMes,
-              lte: fimMes
-            }
-          }
-        },
-        categoria: true,
-      },
-    });
-
-    // Gerar projeções das parcelas de dívidas como despesas
+    // DESABILITADO: Não vamos mais gerar projeções
+    const projecaoRecorrentes: any[] = [];
+    
+    // DESABILITADO: Não vamos mais buscar projeções de dívidas  
     const projecaoParcelas: any[] = [];
-    dividasComParcelas.forEach(divida => {
-      divida.parcelas.forEach(parcela => {
-        projecaoParcelas.push({
-          id: `debt_projection_${parcela.id}`,
-          userId: usuario.id,
-          categoriaId: divida.categoriaId,
-          tipo: 'despesa',
-          valor: parcela.valor,
-          descricao: `${divida.nome} - Parcela ${parcela.numero}/${divida.numeroParcelas}`,
-          data: parcela.dataVencimento,
-          isRecorrente: false,
-          recorrenteId: null,
-          isProjection: true,
-          isDividaProjection: true, // Flag específica para parcelas de dívida
-          dividaId: divida.id,
-          parcelaId: parcela.id,
-          categoria: divida.categoria,
-          criadoEm: new Date(),
-          atualizadoEm: new Date()
-        });
-      });
-    });
 
-    // Combinar transações reais com projeções (recorrentes + parcelas de dívidas)
-    const todasTransacoes = [...transacoes, ...projecaoRecorrentes, ...projecaoParcelas].sort((a, b) => 
+    // Combinar apenas transações reais (sem projeções)
+    const todasTransacoes = [...transacoes].sort((a, b) => 
       new Date(b.data).getTime() - new Date(a.data).getTime()
     );
 
@@ -320,30 +244,24 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Calcular totais do mês atual (incluindo projeções)
-    const totalReceitas = todasTransacoes
+    // Agora todas as transações são reais (sem projeções)
+    const transacoesReais = todasTransacoes; // Todas são reais
+    const projecoes: any[] = []; // Não há mais projeções
+
+    const totalReceitas = transacoesReais
       .filter(t => t.tipo === 'receita')
       .reduce((sum, t) => sum + Number(t.valor), 0);
     
-    const totalDespesas = todasTransacoes
+    const totalDespesas = transacoesReais
       .filter(t => t.tipo === 'despesa')
       .reduce((sum, t) => sum + Number(t.valor), 0);
     
     const saldo = totalReceitas - totalDespesas;
 
-    // Separar transações reais e projeções para métricas
-    const transacoesReais = todasTransacoes.filter(t => !(t as any).isProjection);
-    const projecoes = todasTransacoes.filter(t => (t as any).isProjection);
-
-    const totalReceitasReais = transacoesReais
-      .filter(t => t.tipo === 'receita')
-      .reduce((sum, t) => sum + Number(t.valor), 0);
-    
-    const totalDespesasReais = transacoesReais
-      .filter(t => t.tipo === 'despesa')
-      .reduce((sum, t) => sum + Number(t.valor), 0);
-
-    const saldoReal = totalReceitasReais - totalDespesasReais;
+    // Manter compatibilidade com variáveis existentes
+    const totalReceitasReais = totalReceitas;
+    const totalDespesasReais = totalDespesas;
+    const saldoReal = saldo;
 
     // Calcular totais do mês anterior
     const totalReceitasMesAnterior = transacoesMesAnterior
@@ -367,13 +285,13 @@ export async function GET(request: NextRequest) {
     const mediaGastoDiario = totalDespesasReais / hoje.getDate();
     const taxaEconomia = totalReceitas > 0 ? (saldo / totalReceitas) * 100 : 0;
     
-    // Maior gasto do mês (incluindo projeções)
-    const maiorGasto = todasTransacoes
+    // Maior gasto do mês (APENAS TRANSAÇÕES REAIS)
+    const maiorGasto = transacoesReais
       .filter(t => t.tipo === 'despesa')
       .sort((a, b) => Number(b.valor) - Number(a.valor))[0];
 
-    // Categoria que mais gasta (incluindo projeções)
-    const gastosComCategoria = todasTransacoes
+    // Categoria que mais gasta (APENAS TRANSAÇÕES REAIS)
+    const gastosComCategoria = transacoesReais
       .filter(t => t.tipo === 'despesa')
       .reduce((acc, transacao) => {
         const categoria = transacao.categoria?.nome || 'Sem categoria';
@@ -382,26 +300,22 @@ export async function GET(request: NextRequest) {
         if (existing) {
           existing.valor += Number(transacao.valor);
           existing.transacoes += 1;
-          if ((transacao as any).isProjection) {
-            existing.projecoes = (existing.projecoes || 0) + 1;
-          }
         } else {
           acc.push({
             categoria,
             valor: Number(transacao.valor),
             cor: transacao.categoria?.cor || '#EF4444',
-            transacoes: 1,
-            projecoes: (transacao as any).isProjection ? 1 : 0
+            transacoes: 1
           });
         }
         
         return acc;
-      }, [] as Array<{ categoria: string; valor: number; cor: string; transacoes: number; projecoes?: number }>);
+      }, [] as Array<{ categoria: string; valor: number; cor: string; transacoes: number }>);
 
     const categoriaMaisGasta = gastosComCategoria.sort((a: any, b: any) => b.valor - a.valor)[0];
 
-    // Receitas por categoria (incluindo projeções)
-    const receitasComCategoria = todasTransacoes
+    // Receitas por categoria (APENAS TRANSAÇÕES REAIS)
+    const receitasComCategoria = transacoesReais
       .filter(t => t.tipo === 'receita')
       .reduce((acc, transacao) => {
         const categoria = transacao.categoria?.nome || 'Sem categoria';
@@ -409,18 +323,14 @@ export async function GET(request: NextRequest) {
         
         if (existing) {
           existing.valor += Number(transacao.valor);
-          if ((transacao as any).isProjection) {
-            existing.projecoes = (existing.projecoes || 0) + Number(transacao.valor);
-          } else {
-            existing.reais = (existing.reais || 0) + Number(transacao.valor);
-          }
+          existing.reais = (existing.reais || 0) + Number(transacao.valor);
         } else {
           acc.push({
             categoria,
             valor: Number(transacao.valor),
             cor: transacao.categoria?.cor || '#10B981',
-            reais: (transacao as any).isProjection ? 0 : Number(transacao.valor),
-            projecoes: (transacao as any).isProjection ? Number(transacao.valor) : 0
+            reais: Number(transacao.valor), // Todas são reais agora
+            projecoes: 0 // Não há projeções aqui
           });
         }
         
@@ -433,12 +343,15 @@ export async function GET(request: NextRequest) {
       const dataInicio = new Date(ano, mes - 1 - i, 1);
       const dataFim = new Date(ano, mes - i, 0, 23, 59, 59);
       
+      // Garantir que não pegamos dados futuros em nenhum mês
+      const dataLimiteMes = dataAtualBrasil < dataFim ? dataAtualBrasil : dataFim;
+      
       const transacoesMes = await prisma.transacao.findMany({
         where: {
           userId: usuario.id,
           data: {
             gte: dataInicio,
-            lte: dataFim
+            lte: dataLimiteMes // Não pegar dados futuros
           }
         }
       });
@@ -788,12 +701,12 @@ export async function GET(request: NextRequest) {
         totalDespesasProjetadas: totalDespesas - totalDespesasReais,
         saldoProjetado: saldo - saldoReal,
         economias: saldo > 0 ? saldo : 0,
-        transacoesCount: todasTransacoes.length,
+        transacoesCount: transacoesReais.length, // Apenas transações reais
         transacoesReaisCount: transacoesReais.length,
         projecoesCount: projecoes.length,
         categoriasCount: categorias.length,
-        receitasCount: todasTransacoes.filter(t => t.tipo === 'receita').length,
-        despesasCount: todasTransacoes.filter(t => t.tipo === 'despesa').length,
+        receitasCount: transacoesReais.filter(t => t.tipo === 'receita').length, // Apenas transações reais
+        despesasCount: transacoesReais.filter(t => t.tipo === 'despesa').length, // Apenas transações reais
         totalEconomizado: metasConcluidas.reduce((sum, m) => sum + m.currentAmount, 0),
         metasAtivas: metasAtivas.length,
         metasConcluidas: metasConcluidas.length,
@@ -805,8 +718,7 @@ export async function GET(request: NextRequest) {
         maiorGasto: maiorGasto ? {
           descricao: maiorGasto.descricao,
           valor: Number(maiorGasto.valor),
-          categoria: maiorGasto.categoria?.nome || 'Sem categoria',
-          isProjection: (maiorGasto as any).isProjection || false
+          categoria: maiorGasto.categoria?.nome || 'Sem categoria'
         } : null,
         // Informações sobre transações recorrentes executadas
         transacoesRecorrentesExecutadas: transacoesRecorrentesExecutadas.length,

@@ -8,6 +8,7 @@ import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { usePerfilFinanceiro } from '@/hooks/useOnboarding';
 import HelpButton from '@/components/HelpButton';
 import { helpContents } from '@/lib/helpContents';
+import PreviewProximoMes from '@/components/PreviewProximoMes';
 import { 
   PieChart, 
   Pie, 
@@ -1005,6 +1006,13 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Preview do Próximo Mês */}
+        <PreviewProximoMes 
+          darkMode={darkMode} 
+          mesAtual={mesAtual} 
+          anoAtual={anoAtual}
+        />
 
         {/* Insights Profissionais */}
         {mostrarInsights && dashboardData.insights.length > 0 && (
