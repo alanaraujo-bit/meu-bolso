@@ -148,7 +148,7 @@ export default function CadastroPage() {
       {/* Botão Dark Mode */}
       <button
         onClick={toggleDarkMode}
-        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 ${
+        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-40 p-2 sm:p-3 rounded-full transition-all duration-300 ${
           darkMode 
             ? 'bg-gray-800/80 hover:bg-gray-700/80 text-amber-400 hover:text-amber-300' 
             : 'bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900'

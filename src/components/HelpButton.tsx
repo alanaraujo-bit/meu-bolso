@@ -59,8 +59,8 @@ export default function HelpButton({ title, steps, size = 'md', variant = 'inlin
     switch (variant) {
       case 'floating':
         return darkMode
-          ? 'fixed bottom-6 right-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25 z-40'
-          : 'fixed bottom-6 right-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg z-40';
+          ? 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25 z-30 sm:z-40'
+          : 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg z-30 sm:z-40';
       case 'header':
         return darkMode
           ? 'bg-gray-800/80 hover:bg-gray-700/80 text-emerald-400 hover:text-emerald-300 backdrop-blur-sm border border-gray-700/50'

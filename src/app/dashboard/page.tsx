@@ -616,10 +616,10 @@ export default function Dashboard() {
         ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
         : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
     }`}>
-      {/* Botão Dark Mode */}
+      {/* Botão Dark Mode - Responsivo e não sobreposto */}
       <button
         onClick={toggleDarkMode}
-        className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 ${
+        className={`fixed top-4 right-4 z-40 p-2 rounded-full transition-all duration-300 sm:p-3 ${
           darkMode 
             ? 'bg-gray-800/80 hover:bg-gray-700/80 text-amber-400 hover:text-amber-300' 
             : 'bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900'
@@ -633,46 +633,47 @@ export default function Dashboard() {
         )}
       </button>
 
-      {/* Background decorativo */}
-      <div className="absolute inset-0">
-        <div className={`absolute top-0 left-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse ${
+      {/* Background decorativo - Ajustado para mobile */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className={`absolute -top-10 -left-10 w-40 h-40 sm:w-72 sm:h-72 rounded-full mix-blend-multiply filter blur-xl opacity-50 sm:opacity-70 animate-pulse ${
           darkMode ? 'bg-emerald-900/30' : 'bg-emerald-200'
         }`}></div>
-        <div className={`absolute top-0 right-0 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000 ${
+        <div className={`absolute -top-10 -right-10 w-40 h-40 sm:w-72 sm:h-72 rounded-full mix-blend-multiply filter blur-xl opacity-50 sm:opacity-70 animate-pulse animation-delay-2000 ${
           darkMode ? 'bg-teal-900/30' : 'bg-teal-200'
         }`}></div>
-        <div className={`absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000 ${
+        <div className={`absolute -bottom-20 left-10 w-40 h-40 sm:w-72 sm:h-72 rounded-full mix-blend-multiply filter blur-xl opacity-50 sm:opacity-70 animate-pulse animation-delay-4000 ${
           darkMode ? 'bg-cyan-900/30' : 'bg-cyan-200'
         }`}></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-        {/* Mensagem de Boas-vindas */}
+      {/* Container principal com padding responsivo */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 relative z-10">
+        {/* Mensagem de Boas-vindas - Responsiva */}
         {mostrarBoasVindas && (
-          <div className={`mb-6 rounded-xl p-6 shadow-lg backdrop-blur-sm border transition-all duration-300 ${
+          <div className={`mb-4 sm:mb-6 rounded-xl p-4 sm:p-6 shadow-lg backdrop-blur-sm border transition-all duration-300 ${
             darkMode 
               ? 'bg-gradient-to-r from-emerald-800/80 to-teal-800/80 text-white border-emerald-600/30' 
               : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-white/20'
           }`}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3 sm:gap-0">
               <div className="flex items-center space-x-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                   darkMode ? 'bg-emerald-600/50' : 'bg-white/20'
                 }`}>
-                  <Sparkles className="h-6 w-6" />
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold leading-tight">
                     🎉 Bem-vindo ao Meu Bolso, {session?.user?.name?.split(' ')[0]}!
                   </h2>
-                  <p className={`${darkMode ? 'text-emerald-100' : 'text-emerald-100'}`}>
-                    Configuração concluída! Agora você pode começar a controlar suas finanças de forma inteligente.
+                  <p className={`text-sm sm:text-base mt-1 ${darkMode ? 'text-emerald-100' : 'text-emerald-100'}`}>
+                    Configuração concluída! Agora você pode começar a controlar suas finanças.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setMostrarBoasVindas(false)}
-                className={`p-2 rounded-full transition-colors ${
+                className={`p-2 rounded-full transition-colors flex-shrink-0 ${
                   darkMode ? 'text-emerald-200 hover:text-white hover:bg-white/10' : 'text-emerald-100 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -682,61 +683,67 @@ export default function Dashboard() {
           </div>
         )}
         
-        {/* Header com Navegação de Mês */}
-        <div className="mb-8">
+        {/* Header com Navegação de Mês - Responsivo */}
+        <div className="mb-6 sm:mb-8">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
                 darkMode ? 'bg-emerald-600' : 'bg-emerald-600'
               }`}>
-                <BarChart3 className="w-6 h-6 text-white" />
+                <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h1 className={`text-3xl font-bold transition-colors duration-300 ${
+                <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-300 ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>Dashboard</h1>
-                <p className={`transition-colors duration-300 ${
+                <p className={`text-sm sm:text-base transition-colors duration-300 ${
                   darkMode ? 'text-gray-300' : 'text-gray-600'
                 }`}>Visão geral das suas finanças</p>
               </div>
-              <HelpButton 
-                title="Como usar o Dashboard"
-                steps={helpContents.dashboard}
-                size="md"
-                variant="inline"
-              />
+              <div className="hidden sm:block">
+                <HelpButton 
+                  title="Como usar o Dashboard"
+                  steps={helpContents.dashboard}
+                  size="md"
+                  variant="inline"
+                />
+              </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <span className={`text-sm transition-colors duration-300 ${
-                darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {modoAvancado ? 'Avançado' : 'Simples'}
-              </span>
-              <button
-                onClick={toggleModo}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  modoAvancado 
-                    ? darkMode ? 'bg-emerald-600' : 'bg-emerald-600' 
-                    : darkMode ? 'bg-gray-600' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    modoAvancado ? 'translate-x-6' : 'translate-x-1'
+            {/* Controles - Layout responsivo */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              {/* Toggle Modo Avançado/Simples */}
+              <div className="flex items-center space-x-2">
+                <span className={`text-xs sm:text-sm transition-colors duration-300 ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {modoAvancado ? 'Avançado' : 'Simples'}
+                </span>
+                <button
+                  onClick={toggleModo}
+                  className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors ${
+                    modoAvancado 
+                      ? darkMode ? 'bg-emerald-600' : 'bg-emerald-600' 
+                      : darkMode ? 'bg-gray-600' : 'bg-gray-300'
                   }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`inline-block h-3 w-3 sm:h-4 sm:w-4 transform rounded-full bg-white transition-transform ${
+                      modoAvancado ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
               
               {/* Botão para mostrar/ocultar insights */}
               {dashboardData?.insights && dashboardData.insights.length > 0 && (
                 <div className="flex items-center space-x-2">
-                  <span className={`text-sm hidden sm:block transition-colors duration-300 ${
+                  <span className={`text-xs sm:text-sm hidden sm:block transition-colors duration-300 ${
                     darkMode ? 'text-gray-400' : 'text-gray-600'
                   }`}>Insights</span>
                   <button
                     onClick={toggleInsights}
-                    className={`flex items-center px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
+                    className={`flex items-center px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 ${
                       mostrarInsights 
                         ? darkMode 
                           ? 'bg-purple-900/50 text-purple-300 hover:bg-purple-800/50 border border-purple-600/30' 
@@ -757,38 +764,41 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Navegação de Mês/Ano */}
-          <div className={`flex items-center justify-between backdrop-blur-sm rounded-xl shadow-lg border p-4 transition-all duration-300 ${
+          {/* Navegação de Mês/Ano - Responsiva */}
+          <div className={`flex flex-col sm:flex-row items-center justify-between backdrop-blur-sm rounded-xl shadow-lg border p-3 sm:p-4 gap-3 sm:gap-0 transition-all duration-300 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
             <button
               onClick={() => navegarMes('anterior')}
-              className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
+              className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 text-sm sm:text-base ${
                 darkMode 
                   ? 'text-gray-300 hover:text-white hover:bg-slate-700/50' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              <ChevronLeft className="h-5 w-5 mr-1" />
-              Anterior
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1" />
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden">Ant</span>
             </button>
 
-            <div className="flex items-center space-x-4">
-              <div className={`flex items-center text-lg font-semibold transition-colors duration-300 ${
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className={`flex items-center text-base sm:text-lg font-semibold transition-colors duration-300 ${
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>
-                <Calendar className={`h-5 w-5 mr-2 ${
+                <Calendar className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${
                   darkMode ? 'text-emerald-400' : 'text-emerald-600'
                 }`} />
-                {formatarMesAno(mesAtual, anoAtual)}
+                <span className="text-sm sm:text-lg">
+                  {formatarMesAno(mesAtual, anoAtual)}
+                </span>
               </div>
               
               {!isHoje() && (
                 <button
                   onClick={voltarParaHoje}
-                  className={`px-3 py-1 text-sm rounded-lg transition-all duration-300 ${
+                  className={`px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm rounded-lg transition-all duration-300 ${
                     darkMode 
                       ? 'bg-emerald-900/50 text-emerald-300 hover:bg-emerald-800/50 border border-emerald-600/30' 
                       : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
@@ -801,38 +811,39 @@ export default function Dashboard() {
 
             <button
               onClick={() => navegarMes('proximo')}
-              className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
+              className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 text-sm sm:text-base ${
                 darkMode 
                   ? 'text-gray-300 hover:text-white hover:bg-slate-700/50' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              Próximo
-              <ChevronRight className="h-5 w-5 ml-1" />
+              <span className="hidden sm:inline">Próximo</span>
+              <span className="sm:hidden">Prox</span>
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 ml-1" />
             </button>
           </div>
         </div>
 
-        {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+        {/* Cards de Resumo - Layout responsivo */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-1.5 sm:p-2 rounded-lg ${
                 darkMode ? 'bg-emerald-900/50' : 'bg-emerald-100'
               }`}>
-                <DollarSign className={`h-6 w-6 ${
+                <DollarSign className={`h-5 w-5 sm:h-6 sm:w-6 ${
                   darkMode ? 'text-emerald-400' : 'text-emerald-600'
                 }`} />
               </div>
-              <div className="ml-4">
-                <p className={`text-sm transition-colors duration-300 ${
+              <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Receitas</p>
-                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   {formatCurrency(dashboardData.resumo.totalReceitas)}
@@ -840,10 +851,10 @@ export default function Dashboard() {
                 {modoAvancado && (
                   <div className="flex items-center mt-1">
                     {dashboardData.resumo.variacaoReceitas >= 0 ? 
-                      <TrendingUp className="h-4 w-4 text-emerald-500 mr-1" /> : 
-                      <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 mr-1" /> : 
+                      <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mr-1" />
                     }
-                    <span className={`text-sm ${dashboardData.resumo.variacaoReceitas >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <span className={`text-xs sm:text-sm ${dashboardData.resumo.variacaoReceitas >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {formatPercent(dashboardData.resumo.variacaoReceitas)}
                     </span>
                   </div>
@@ -852,24 +863,24 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-1.5 sm:p-2 rounded-lg ${
                 darkMode ? 'bg-red-900/50' : 'bg-red-100'
               }`}>
-                <CreditCard className={`h-6 w-6 ${
+                <CreditCard className={`h-5 w-5 sm:h-6 sm:w-6 ${
                   darkMode ? 'text-red-400' : 'text-red-600'
                 }`} />
               </div>
-              <div className="ml-4">
-                <p className={`text-sm transition-colors duration-300 ${
+              <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Despesas</p>
-                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   {formatCurrency(dashboardData.resumo.totalDespesas)}
@@ -877,10 +888,10 @@ export default function Dashboard() {
                 {modoAvancado && (
                   <div className="flex items-center mt-1">
                     {dashboardData.resumo.variacaoDespesas >= 0 ? 
-                      <TrendingUp className="h-4 w-4 text-red-500 mr-1" /> : 
-                      <TrendingDown className="h-4 w-4 text-emerald-500 mr-1" />
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 mr-1" /> : 
+                      <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500 mr-1" />
                     }
-                    <span className={`text-sm ${dashboardData.resumo.variacaoDespesas >= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <span className={`text-xs sm:text-sm ${dashboardData.resumo.variacaoDespesas >= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                       {formatPercent(dashboardData.resumo.variacaoDespesas)}
                     </span>
                   </div>
@@ -889,28 +900,28 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-1.5 sm:p-2 rounded-lg ${
                 dashboardData.resumo.saldo >= 0 
                   ? darkMode ? 'bg-cyan-900/50' : 'bg-cyan-100'
                   : darkMode ? 'bg-orange-900/50' : 'bg-orange-100'
               }`}>
-                <Wallet className={`h-6 w-6 ${
+                <Wallet className={`h-5 w-5 sm:h-6 sm:w-6 ${
                   dashboardData.resumo.saldo >= 0 
                     ? darkMode ? 'text-cyan-400' : 'text-cyan-600'
                     : darkMode ? 'text-orange-400' : 'text-orange-600'
                 }`} />
               </div>
-              <div className="ml-4">
-                <p className={`text-sm transition-colors duration-300 ${
+              <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Saldo</p>
-                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
                   dashboardData.resumo.saldo >= 0 
                     ? darkMode ? 'text-emerald-400' : 'text-emerald-600' 
                     : 'text-red-600'
@@ -918,7 +929,7 @@ export default function Dashboard() {
                   {formatCurrency(dashboardData.resumo.saldo)}
                 </p>
                 {modoAvancado && (
-                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     Taxa: {dashboardData.resumo.taxaEconomia.toFixed(1)}%
@@ -928,36 +939,36 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-1.5 sm:p-2 rounded-lg ${
                 darkMode ? 'bg-purple-900/50' : 'bg-purple-100'
               }`}>
-                <BarChart3 className={`h-6 w-6 ${
+                <BarChart3 className={`h-5 w-5 sm:h-6 sm:w-6 ${
                   darkMode ? 'text-purple-400' : 'text-purple-600'
                 }`} />
               </div>
-              <div className="ml-4">
-                <p className={`text-sm transition-colors duration-300 ${
+              <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Transações</p>
-                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   {dashboardData.resumo.transacoesCount}
                 </p>
                 {modoAvancado ? (
-                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     Média: {formatCurrency(dashboardData.resumo.mediaGastoDiario)}/dia
                   </p>
                 ) : (
-                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     {dashboardData.resumo.receitasCount} receitas, {dashboardData.resumo.despesasCount} despesas
@@ -967,37 +978,37 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-1.5 sm:p-2 rounded-lg ${
                 darkMode ? 'bg-orange-900/50' : 'bg-orange-100'
               }`}>
-                <CreditCard className={`h-6 w-6 ${
+                <CreditCard className={`h-5 w-5 sm:h-6 sm:w-6 ${
                   darkMode ? 'text-orange-400' : 'text-orange-600'
                 }`} />
               </div>
-              <div className="ml-4">
-                <p className={`text-sm transition-colors duration-300 ${
+              <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Dívidas</p>
-                <p className={`text-2xl font-semibold transition-colors duration-300 ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   {dashboardData.resumo.dividasAtivas || 0}
                 </p>
                 {modoAvancado ? (
-                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     {dashboardData.resumo.valorTotalRestanteDividas ? 
                       formatCurrency(dashboardData.resumo.valorTotalRestanteDividas) : 'R$ 0,00'} restante
                   </p>
                 ) : (
-                  <p className={`text-sm mt-1 transition-colors duration-300 ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     {dashboardData.resumo.parcelasVencidas || 0} vencidas
@@ -1094,27 +1105,28 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Próximas Parcelas de Dívidas */}
+        {/* Próximas Parcelas de Dívidas - Responsivo */}
         {dashboardData.dividas && dashboardData.dividas.proximasParcelas.length > 0 && (
-          <div className={`backdrop-blur-xl rounded-2xl shadow-xl border mb-8 ${
+          <div className={`backdrop-blur-xl rounded-2xl shadow-xl border mb-4 sm:mb-6 lg:mb-8 ${
             darkMode 
               ? 'bg-gray-800/40 border-gray-700/50' 
               : 'bg-white/40 border-white/50'
           }`}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className={`text-2xl font-bold flex items-center gap-3 transition-colors duration-300 ${
+            <div className="p-3 sm:p-4 lg:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+                <h2 className={`text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2 sm:gap-3 transition-colors duration-300 ${
                   darkMode ? 'text-white' : 'text-gray-800'
                 }`}>
-                  <CreditCard className="text-orange-500" size={28} />
-                  📅 Próximas Parcelas
+                  <CreditCard className="text-orange-500" size={20} />
+                  <span className="hidden sm:inline">📅 Próximas Parcelas</span>
+                  <span className="sm:hidden">📅 Parcelas</span>
                 </h2>
-                <div className={`px-4 py-2 rounded-xl border transition-colors duration-300 ${
+                <div className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border transition-colors duration-300 ${
                   darkMode 
                     ? 'bg-orange-900/20 border-orange-500/30 text-orange-300' 
                     : 'bg-orange-50 border-orange-200 text-orange-700'
                 }`}>
-                  <span className="font-semibold">
+                  <span className="font-semibold text-xs sm:text-sm">
                     {dashboardData.dividas.totalProximas} parcela(s) próximas
                   </span>
                 </div>
@@ -1124,36 +1136,36 @@ export default function Dashboard() {
                 {dashboardData.dividas.proximasParcelas.map((parcela, index) => (
                   <div 
                     key={parcela.id} 
-                    className={`p-4 rounded-xl border-l-4 transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                    className={`p-3 sm:p-4 rounded-xl border-l-4 transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
                       darkMode 
                         ? 'bg-gray-700/30 border-gray-600/30 hover:bg-gray-700/50' 
                         : 'bg-white/60 border-white/60 hover:bg-white/80'
                     }`}
                     style={{ borderLeftColor: parcela.cor }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex-1 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2">
                           <div 
                             className="w-3 h-3 rounded-full shadow-sm"
                             style={{ backgroundColor: parcela.cor }}
                           ></div>
-                          <h3 className={`font-bold text-lg ${
+                          <h3 className={`font-bold text-base sm:text-lg truncate ${
                             darkMode ? 'text-white' : 'text-gray-800'
                           }`}>
                             {parcela.dividaNome}
                           </h3>
                         </div>
                         
-                        <div className="flex items-center gap-4 mb-2">
-                          <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-2">
+                          <span className={`text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1 rounded-lg ${
                             darkMode 
                               ? 'bg-blue-900/30 text-blue-300' 
                               : 'bg-blue-50 text-blue-700'
                           }`}>
                             📦 Parcela {parcela.numero}
                           </span>
-                          <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
+                          <span className={`text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1 rounded-lg ${
                             darkMode 
                               ? 'bg-purple-900/30 text-purple-300' 
                               : 'bg-purple-50 text-purple-700'
@@ -1162,15 +1174,17 @@ export default function Dashboard() {
                           </span>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
-                          <span className={`text-sm font-medium ${
-                            darkMode ? 'text-gray-300' : 'text-gray-600'
-                          }`}>
-                            {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
-                          </span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar size={14} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
+                            <span className={`text-xs sm:text-sm font-medium ${
+                              darkMode ? 'text-gray-300' : 'text-gray-600'
+                            }`}>
+                              {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
                           {parcela.diasParaVencimento <= 7 && (
-                            <span className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                            <span className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-semibold ${
                               parcela.diasParaVencimento <= 0 
                                 ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
                                 : parcela.diasParaVencimento <= 3
@@ -1188,15 +1202,15 @@ export default function Dashboard() {
                         </div>
                       </div>
                       
-                      <div className="text-right ml-4">
-                        <p className={`text-2xl font-bold mb-2 ${
+                      <div className="text-left sm:text-right w-full sm:w-auto sm:ml-4">
+                        <p className={`text-xl sm:text-2xl font-bold mb-2 ${
                           darkMode ? 'text-white' : 'text-gray-800'
                         }`}>
                           {formatCurrency(parcela.valor)}
                         </p>
                         <button 
                           onClick={() => window.location.href = `/dividas/${parcela.dividaId}`}
-                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 ${
+                          className={`w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-105 ${
                             darkMode 
                               ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                               : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -1211,14 +1225,14 @@ export default function Dashboard() {
               </div>
               
               {dashboardData.dividas.totalProximas > 10 && (
-                <div className={`mt-6 p-4 rounded-xl border text-center ${
+                <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl border text-center ${
                   darkMode 
                     ? 'bg-gray-700/30 border-gray-600/30' 
                     : 'bg-gray-50/60 border-gray-200/60'
                 }`}>
                   <a 
                     href="/dividas" 
-                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 text-sm sm:text-base ${
                       darkMode 
                         ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' 
                         : 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
@@ -1233,26 +1247,26 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Gráficos - Layout responsivo */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-4 sm:mb-6 lg:mb-8">
           {/* Gráfico de Pizza - Despesas */}
           {dadosGraficoPizza.length > 0 && (
-            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 ${
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-3 sm:p-4 lg:p-6 transition-all duration-300 ${
               darkMode 
                 ? 'bg-slate-800/80 border-slate-600/30' 
                 : 'bg-white/80 border-white/20'
             }`}>
-              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+              <h2 className={`text-base sm:text-lg font-semibold mb-3 sm:mb-4 transition-colors duration-300 ${
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>Despesas por Categoria</h2>
-              <div className="h-80">
+              <div className="h-60 sm:h-72 lg:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={dadosGraficoPizza}
                       cx="50%"
                       cy="50%"
-                      outerRadius={100}
+                      outerRadius={window.innerWidth < 640 ? 70 : window.innerWidth < 1024 ? 80 : 100}
                       fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
@@ -1267,7 +1281,8 @@ export default function Dashboard() {
                         backgroundColor: darkMode ? '#1e293b' : '#ffffff',
                         border: darkMode ? '1px solid #475569' : '1px solid #e5e7eb',
                         borderRadius: '8px',
-                        color: darkMode ? '#f1f5f9' : '#111827'
+                        color: darkMode ? '#f1f5f9' : '#111827',
+                        fontSize: window.innerWidth < 640 ? '12px' : '14px'
                       }}
                     />
                   </PieChart>
@@ -1278,22 +1293,22 @@ export default function Dashboard() {
 
           {/* Gráfico de Pizza - Receitas (Modo Avançado) */}
           {modoAvancado && dadosReceitasPizza.length > 0 ? (
-            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 ${
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-3 sm:p-4 lg:p-6 transition-all duration-300 ${
               darkMode 
                 ? 'bg-slate-800/80 border-slate-600/30' 
                 : 'bg-white/80 border-white/20'
             }`}>
-              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+              <h2 className={`text-base sm:text-lg font-semibold mb-3 sm:mb-4 transition-colors duration-300 ${
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>Receitas por Categoria</h2>
-              <div className="h-80">
+              <div className="h-60 sm:h-72 lg:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={dadosReceitasPizza}
                       cx="50%"
                       cy="50%"
-                      outerRadius={100}
+                      outerRadius={window.innerWidth < 640 ? 70 : window.innerWidth < 1024 ? 80 : 100}
                       fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
@@ -1308,7 +1323,8 @@ export default function Dashboard() {
                         backgroundColor: darkMode ? '#1e293b' : '#ffffff',
                         border: darkMode ? '1px solid #475569' : '1px solid #e5e7eb',
                         borderRadius: '8px',
-                        color: darkMode ? '#f1f5f9' : '#111827'
+                        color: darkMode ? '#f1f5f9' : '#111827',
+                        fontSize: window.innerWidth < 640 ? '12px' : '14px'
                       }}
                     />
                   </PieChart>
@@ -1317,15 +1333,15 @@ export default function Dashboard() {
             </div>
           ) : (
             /* Gráfico de Barras - Comparação */
-            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 transition-all duration-300 ${
+            <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-3 sm:p-4 lg:p-6 transition-all duration-300 ${
               darkMode 
                 ? 'bg-slate-800/80 border-slate-600/30' 
                 : 'bg-white/80 border-white/20'
             }`}>
-              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+              <h2 className={`text-base sm:text-lg font-semibold mb-3 sm:mb-4 transition-colors duration-300 ${
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>Comparação Mensal</h2>
-              <div className="h-80">
+              <div className="h-60 sm:h-72 lg:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dadosComparacao}>
                     <CartesianGrid 
@@ -1334,11 +1350,11 @@ export default function Dashboard() {
                     />
                     <XAxis 
                       dataKey="periodo" 
-                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: window.innerWidth < 640 ? 10 : 12 }}
                     />
                     <YAxis 
                       tickFormatter={(value) => formatCurrency(value)}
-                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: window.innerWidth < 640 ? 10 : 12 }}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="receitas" fill="#10B981" name="Receitas" />
@@ -1350,17 +1366,17 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Evolução Mensal (Modo Avançado) */}
+        {/* Evolução Mensal (Modo Avançado) - Responsivo */}
         {modoAvancado && (
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 mb-8 transition-all duration-300 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 lg:mb-8 transition-all duration-300 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
-            <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+            <h2 className={`text-base sm:text-lg font-semibold mb-3 sm:mb-4 transition-colors duration-300 ${
               darkMode ? 'text-white' : 'text-gray-900'
             }`}>Evolução dos Últimos 6 Meses</h2>
-            <div className="h-80">
+            <div className="h-60 sm:h-72 lg:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dashboardData.graficos.evolucaoMensal}>
                   <CartesianGrid 
@@ -1369,11 +1385,11 @@ export default function Dashboard() {
                   />
                   <XAxis 
                     dataKey="mes" 
-                    tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                    tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: window.innerWidth < 640 ? 10 : 12 }}
                   />
                   <YAxis 
                     tickFormatter={(value) => formatCurrency(value)}
-                    tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
+                    tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: window.innerWidth < 640 ? 10 : 12 }}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Area 
@@ -1400,39 +1416,39 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Lista de Categorias */}
+        {/* Lista de Categorias - Responsivo */}
         {dashboardData.graficos.gastosPorCategoria.length > 0 && (
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 mb-8 transition-all duration-300 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 lg:mb-8 transition-all duration-300 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
-            <h2 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+            <h2 className={`text-base sm:text-lg font-semibold mb-3 sm:mb-4 transition-colors duration-300 ${
               darkMode ? 'text-white' : 'text-gray-900'
             }`}>Gastos por Categoria</h2>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {dashboardData.graficos.gastosPorCategoria.slice(0, modoAvancado ? 10 : 6).map((item, index) => (
-                <div key={index} className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 ${
+                <div key={index} className={`flex items-center justify-between p-2 sm:p-3 rounded-lg transition-all duration-300 ${
                   darkMode ? 'bg-slate-700/50' : 'bg-gray-50'
                 }`}>
-                  <div className="flex items-center">
+                  <div className="flex items-center flex-1 min-w-0">
                     <div 
-                      className="w-4 h-4 rounded-full mr-3" 
+                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 sm:mr-3 flex-shrink-0" 
                       style={{ backgroundColor: item.cor }}
                     ></div>
-                    <div>
-                      <span className={`font-medium transition-colors duration-300 ${
+                    <div className="min-w-0 flex-1">
+                      <span className={`font-medium transition-colors duration-300 text-sm sm:text-base truncate block ${
                         darkMode ? 'text-white' : 'text-gray-900'
                       }`}>{item.categoria}</span>
                       {modoAvancado && (
-                        <p className={`text-xs transition-colors duration-300 ${
+                        <p className={`text-xs sm:text-xs transition-colors duration-300 ${
                           darkMode ? 'text-gray-400' : 'text-gray-500'
                         }`}>{item.transacoes} transações</p>
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`font-semibold transition-colors duration-300 ${
+                  <div className="text-right ml-2 flex-shrink-0">
+                    <span className={`font-semibold transition-colors duration-300 text-sm sm:text-base ${
                       darkMode ? 'text-white' : 'text-gray-900'
                     }`}>
                       {formatCurrency(item.valor)}
@@ -1534,42 +1550,42 @@ export default function Dashboard() {
             }`}>organizadas</p>
           </div>
 
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
-            <Target className={`h-8 w-8 mx-auto mb-2 ${
+            <Target className={`h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 ${
               darkMode ? 'text-teal-400' : 'text-teal-600'
             }`} />
-            <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
+            <h3 className={`font-semibold mb-1 text-sm sm:text-base transition-colors duration-300 ${
               darkMode ? 'text-white' : 'text-gray-900'
             }`}>Metas</h3>
-            <p className={`text-2xl font-bold mb-1 ${
+            <p className={`text-xl sm:text-2xl font-bold mb-1 ${
               darkMode ? 'text-teal-400' : 'text-teal-600'
             }`}>{dashboardData.metas.resumo.total}</p>
-            <p className={`text-sm transition-colors duration-300 ${
+            <p className={`text-xs sm:text-sm transition-colors duration-300 ${
               darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>{dashboardData.metas.resumo.ativas} em andamento</p>
           </div>
 
-          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+          <div className={`backdrop-blur-sm rounded-xl shadow-lg border p-4 sm:p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 ${
             darkMode 
               ? 'bg-slate-800/80 border-slate-600/30' 
               : 'bg-white/80 border-white/20'
           }`}>
-            <PiggyBank className={`h-8 w-8 mx-auto mb-2 ${
+            <PiggyBank className={`h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 ${
               darkMode ? 'text-cyan-400' : 'text-cyan-600'
             }`} />
-            <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
+            <h3 className={`font-semibold mb-1 text-sm sm:text-base transition-colors duration-300 ${
               darkMode ? 'text-white' : 'text-gray-900'
             }`}>Economizado</h3>
-            <p className={`text-2xl font-bold mb-1 ${
+            <p className={`text-xl sm:text-2xl font-bold mb-1 ${
               darkMode ? 'text-cyan-400' : 'text-cyan-600'
             }`}>
               {formatCurrency(dashboardData.resumo.totalEconomizado)}
             </p>
-            <p className={`text-sm transition-colors duration-300 ${
+            <p className={`text-xs sm:text-sm transition-colors duration-300 ${
               darkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>em metas concluídas</p>
           </div>

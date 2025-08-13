@@ -127,11 +127,11 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - Com espaço para não ser sobreposto */}
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`p-2 rounded-lg transition-all duration-300 ${
+              className={`p-2 rounded-lg transition-all duration-300 mr-12 ${
                 darkMode 
                   ? 'text-gray-300 hover:text-white hover:bg-slate-700/50' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
