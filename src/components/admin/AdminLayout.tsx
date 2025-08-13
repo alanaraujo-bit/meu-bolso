@@ -3,11 +3,13 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 import { 
   BarChart3, Users, Settings, Database, FileText, 
   TrendingUp, Shield, LogOut, Bell, Search,
   Home, Activity, DollarSign, Target, Calendar,
-  MessageSquare, CreditCard, AlertTriangle, Wifi
+  MessageSquare, CreditCard, AlertTriangle, Wifi,
+  Sun, Moon
 } from 'lucide-react';
 import NotificacaoAdmin from './NotificacaoAdmin';
 
@@ -22,6 +24,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -44,6 +47,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       href: '/admin/dashboard',
       icon: Home,
       description: 'Visão geral e métricas principais'
+    },
+    {
+      name: 'Dashboard Avançado',
+      href: '/admin/dashboard-avancado',
+      icon: BarChart3,
+      description: 'Dashboard completo com todas as métricas'
     },
     {
       name: 'Dashboard Aprimorado',
@@ -107,11 +116,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className={`min-h-screen flex ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-80' : 'w-20'} bg-gray-900 text-white transition-all duration-300 flex flex-col`}>
+      <div className={`${sidebarOpen ? 'w-80' : 'w-20'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-gray-900 border-gray-700'} text-white transition-all duration-300 flex flex-col`}>
         {/* Header Admin */}
-        <div className="p-6 border-b border-gray-700">
+        <div className={`p-6 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-700'}`}>
           <div className="flex items-center justify-between">
             <div className={`${sidebarOpen ? 'block' : 'hidden'}`}>
               <h1 className="text-xl font-bold flex items-center">
@@ -157,7 +166,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* User Info */}
-        <div className="p-4 border-t border-gray-700">
+        <div className={`p-4 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-700'}`}>
           <div className={`${sidebarOpen ? 'block' : 'hidden'}`}>
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
@@ -183,25 +192,42 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm border-b px-6 py-4`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 🛡️ Painel Administrativo
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                 Sistema de gestão completo - Meu Bolso
               </p>
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-lg transition-all ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                }`}
+                title={`Alternar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className={`absolute left-3 top-3 h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
                 <input
                   type="text"
                   placeholder="Buscar..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-64"
+                  className={`pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 w-64 ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
                 />
               </div>
               
@@ -209,16 +235,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <NotificacaoAdmin />
               
               {/* User Menu */}
-              <div className="flex items-center space-x-2 p-2 rounded-lg bg-gray-50">
+              <div className={`flex items-center space-x-2 p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <Shield className="w-5 h-5 text-blue-500" />
-                <span className="text-sm font-medium text-gray-700">Admin</span>
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Admin</span>
               </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <main className={`flex-1 overflow-y-auto p-6 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
           {children}
         </main>
       </div>

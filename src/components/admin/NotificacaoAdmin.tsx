@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 import { Bell, X, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
 
 interface Notificacao {
@@ -20,6 +21,7 @@ export default function NotificacaoAdmin() {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [abertas, setAbertas] = useState(false);
   const [naoLidas, setNaoLidas] = useState(0);
+  const { theme } = useTheme();
 
   const buscarNotificacoes = async () => {
     try {

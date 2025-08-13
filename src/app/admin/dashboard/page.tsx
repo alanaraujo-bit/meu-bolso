@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import CleanLoading from '@/components/CleanLoading';
 import { useCleanLoading } from '@/hooks/useCleanLoading';
+import { useTheme } from '@/hooks/useTheme';
 import { 
   Users, DollarSign, TrendingUp, Activity, 
   Target, CreditCard, AlertTriangle, Calendar,
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const { loading, setLoading } = useCleanLoading();
   const [periodo, setPeriodo] = useState('hoje');
+  const { theme } = useTheme();
 
   useEffect(() => {
     buscarEstatisticas();

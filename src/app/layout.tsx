@@ -3,6 +3,7 @@ import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-geist-sans", // mantemos o nome da variável para não quebrar estilos
@@ -35,11 +36,13 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${robotoMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
