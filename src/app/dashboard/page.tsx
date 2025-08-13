@@ -39,7 +39,8 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  Sparkles
+  Sparkles,
+  Brain
 } from 'lucide-react';
 
 interface DashboardData {
@@ -171,43 +172,91 @@ interface InsightCardProps {
 
 function InsightCard({ insight, getPriorityBorderColor, getPriorityBgColor, getCategoryColor, getPriorityColor }: InsightCardProps) {
   const [expandido, setExpandido] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
   
   return (
-    <div className={`bg-white rounded-lg sm:rounded-xl shadow-sm border-l-4 overflow-hidden ${getPriorityBorderColor(insight.prioridade)} hover:shadow-md transition-all duration-200`}>
-      <div className="p-4 sm:p-6">
+    <div className={`backdrop-blur-xl rounded-2xl shadow-xl border-l-4 overflow-hidden transition-all duration-300 hover:shadow-2xl transform hover:scale-[1.02] ${
+      darkMode 
+        ? 'bg-gray-800/40 border-gray-700/50' 
+        : 'bg-white/60 border-white/60'
+    } ${getPriorityBorderColor(insight.prioridade)}`}>
+      <div className="p-6">
         <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
-            <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-xl ${getPriorityBgColor(insight.prioridade)}`}>
+          <div className="flex items-start space-x-4 flex-1">
+            <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-lg ${getPriorityBgColor(insight.prioridade)}`}>
               {insight.icone}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
                 {insight.categoria && (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(insight.categoria)}`}>
-                    {insight.categoria}
+                  <span className={`inline-flex items-center px-3 py-1 rounded-xl text-sm font-semibold ${
+                    darkMode 
+                      ? 'bg-blue-900/30 text-blue-300 border border-blue-500/30' 
+                      : 'bg-blue-100 text-blue-800 border border-blue-200'
+                  }`}>
+                    🏷️ {insight.categoria}
                   </span>
                 )}
                 {insight.prioridade && (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(insight.prioridade)}`}>
-                    {insight.prioridade.charAt(0).toUpperCase() + insight.prioridade.slice(1)}
+                  <span className={`inline-flex items-center px-3 py-1 rounded-xl text-sm font-semibold ${
+                    insight.prioridade === 'critico' 
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                      : insight.prioridade === 'alto'
+                      ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  }`}>
+                    {insight.prioridade === 'critico' ? '🚨 Crítico' : 
+                     insight.prioridade === 'alto' ? '⚠️ Alto' : 
+                     '💡 Médio'}
                   </span>
                 )}
               </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{insight.titulo}</h3>
-              <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{insight.descricao}</p>
+              <h3 className={`text-xl font-bold mb-3 ${
+                darkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                {insight.titulo}
+              </h3>
+              <p className={`text-base leading-relaxed ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                {insight.descricao}
+              </p>
               
               {/* Conteúdo expandível */}
               {expandido && (
-                <div className="mt-4 space-y-3">
+                <div className="mt-6 space-y-4">
                   {insight.recomendacao && (
-                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                      <div className="flex items-start">
+                    <div className={`border-l-4 border-blue-400 p-4 rounded-xl ${
+                      darkMode 
+                        ? 'bg-blue-900/20 border-blue-500/30' 
+                        : 'bg-blue-50 border-blue-400'
+                    }`}>
+                      <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <Info className="h-4 w-4 text-blue-400 mt-0.5" />
+                          <Info className={`h-5 w-5 mt-0.5 ${
+                            darkMode ? 'text-blue-400' : 'text-blue-500'
+                          }`} />
                         </div>
-                        <div className="ml-2">
-                          <p className="text-sm text-blue-800">
-                            <span className="font-medium">Recomendação:</span> {insight.recomendacao}
+                        <div>
+                          <p className={`text-sm font-medium ${
+                            darkMode ? 'text-blue-300' : 'text-blue-800'
+                          }`}>
+                            💡 <span className="font-bold">Recomendação:</span> {insight.recomendacao}
                           </p>
                         </div>
                       </div>
@@ -215,11 +264,19 @@ function InsightCard({ insight, getPriorityBorderColor, getPriorityBgColor, getC
                   )}
                   
                   {insight.metricas && (
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-start text-sm text-gray-600">
-                        <BarChart3 className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <div className={`rounded-xl p-4 ${
+                      darkMode 
+                        ? 'bg-gray-700/30' 
+                        : 'bg-gray-50'
+                    }`}>
+                      <div className={`flex items-start text-sm ${
+                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
+                        <BarChart3 className={`h-5 w-5 mr-3 mt-0.5 flex-shrink-0 ${
+                          darkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`} />
                         <div>
-                          <span className="font-medium">Métricas:</span>
+                          <span className="font-semibold">📊 Métricas:</span>
                           <span className="ml-2 break-all">{insight.metricas}</span>
                         </div>
                       </div>
@@ -230,14 +287,17 @@ function InsightCard({ insight, getPriorityBorderColor, getPriorityBgColor, getC
             </div>
           </div>
           
-          {/* Botão de expandir */}
+          {/* Botão expandir */}
           {(insight.recomendacao || insight.metricas) && (
             <button
               onClick={() => setExpandido(!expandido)}
-              className="flex-shrink-0 ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              aria-label={expandido ? "Recolher" : "Expandir"}
+              className={`ml-4 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 ${
+                darkMode 
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
-              <ChevronRight className={`h-5 w-5 transform transition-transform duration-200 ${expandido ? 'rotate-90' : ''}`} />
+              {expandido ? '🔼 Menos' : '🔽 Mais'}
             </button>
           )}
         </div>
@@ -949,48 +1009,66 @@ export default function Dashboard() {
         {/* Insights Profissionais */}
         {mostrarInsights && dashboardData.insights.length > 0 && (
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className={`text-xl sm:text-2xl font-bold transition-colors duration-300 ${
-                  darkMode ? 'text-white' : 'text-gray-900'
-                }`}>Insights Financeiros</h2>
-                <p className={`mt-1 text-sm sm:text-base transition-colors duration-300 ${
-                  darkMode ? 'text-gray-300' : 'text-gray-600'
-                }`}>Análises inteligentes para otimizar sua gestão financeira</p>
+            <div className={`backdrop-blur-xl rounded-3xl shadow-2xl border overflow-hidden ${
+              darkMode 
+                ? 'bg-gradient-to-br from-gray-800/60 via-gray-800/40 to-gray-900/60 border-gray-700/40' 
+                : 'bg-gradient-to-br from-white/80 via-white/60 to-white/80 border-white/50'
+            }`}>
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center">
+                    <div className={`p-3 rounded-2xl mr-4 shadow-lg ${
+                      darkMode 
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600' 
+                        : 'bg-gradient-to-r from-purple-500 to-indigo-500'
+                    }`}>
+                      <Brain className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className={`text-3xl font-bold transition-colors duration-300 ${
+                        darkMode ? 'text-white' : 'text-gray-800'
+                      }`}>🧠 Insights Financeiros</h2>
+                      <p className={`mt-1 text-lg transition-colors duration-300 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>Análises inteligentes para otimizar sua gestão financeira</p>
+                    </div>
+                  </div>
+                  
+                  <div className="hidden sm:flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
+                      <span className={`text-sm font-medium transition-colors duration-300 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>Crítico</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-orange-500 rounded-full shadow-lg"></div>
+                      <span className={`text-sm font-medium transition-colors duration-300 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>Alto</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-lg"></div>
+                      <span className={`text-sm font-medium transition-colors duration-300 ${
+                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>Médio</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-6">
+                  {dashboardData.insights.map((insight, index) => (
+                    <InsightCard 
+                      key={index} 
+                      insight={insight} 
+                      getPriorityBorderColor={getPriorityBorderColor}
+                      getPriorityBgColor={getPriorityBgColor}
+                      getCategoryColor={getCategoryColor}
+                      getPriorityColor={getPriorityColor}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="hidden sm:flex items-center space-x-2">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className={`text-xs transition-colors duration-300 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>Crítico</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className={`text-xs transition-colors duration-300 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>Alto</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                  <span className={`text-xs transition-colors duration-300 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>Médio</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              {dashboardData.insights.map((insight, index) => (
-                <InsightCard 
-                  key={index} 
-                  insight={insight} 
-                  getPriorityBorderColor={getPriorityBorderColor}
-                  getPriorityBgColor={getPriorityBgColor}
-                  getCategoryColor={getCategoryColor}
-                  getPriorityColor={getPriorityColor}
-                />
-              ))}
             </div>
           </div>
         )}
