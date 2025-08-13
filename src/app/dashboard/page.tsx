@@ -997,73 +997,135 @@ export default function Dashboard() {
 
         {/* Próximas Parcelas de Dívidas */}
         {dashboardData.dividas && dashboardData.dividas.proximasParcelas.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-xl font-semibold transition-colors duration-300 ${
-                darkMode ? 'text-white' : 'text-gray-900'
-              }`}>Próximas Parcelas</h2>
-              <span className={`text-sm transition-colors duration-300 ${
-                darkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}>
-                {dashboardData.dividas.totalProximas} parcela(s) nos próximos 30 dias
-              </span>
-            </div>
-            <div className={`backdrop-blur-sm rounded-xl shadow-lg border overflow-hidden transition-all duration-300 ${
-              darkMode 
-                ? 'bg-slate-800/80 border-slate-600/30' 
-                : 'bg-white/80 border-white/20'
-            }`}>
-              <div className="max-h-96 overflow-y-auto">
+          <div className={`backdrop-blur-xl rounded-2xl shadow-xl border mb-8 ${
+            darkMode 
+              ? 'bg-gray-800/40 border-gray-700/50' 
+              : 'bg-white/40 border-white/50'
+          }`}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className={`text-2xl font-bold flex items-center gap-3 transition-colors duration-300 ${
+                  darkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  <CreditCard className="text-orange-500" size={28} />
+                  📅 Próximas Parcelas
+                </h2>
+                <div className={`px-4 py-2 rounded-xl border transition-colors duration-300 ${
+                  darkMode 
+                    ? 'bg-orange-900/20 border-orange-500/30 text-orange-300' 
+                    : 'bg-orange-50 border-orange-200 text-orange-700'
+                }`}>
+                  <span className="font-semibold">
+                    {dashboardData.dividas.totalProximas} parcela(s) próximas
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
                 {dashboardData.dividas.proximasParcelas.map((parcela, index) => (
-                  <div key={parcela.id} className={`p-4 border-l-4 ${index !== dashboardData.dividas!.proximasParcelas.length - 1 ? 'border-b border-gray-100' : ''}`} 
-                       style={{ borderLeftColor: parcela.cor }}>
+                  <div 
+                    key={parcela.id} 
+                    className={`p-4 rounded-xl border-l-4 transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] ${
+                      darkMode 
+                        ? 'bg-gray-700/30 border-gray-600/30 hover:bg-gray-700/50' 
+                        : 'bg-white/60 border-white/60 hover:bg-white/80'
+                    }`}
+                    style={{ borderLeftColor: parcela.cor }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{parcela.dividaNome}</h3>
-                        <p className="text-sm text-gray-600">
-                          Parcela {parcela.numero} • {parcela.categoria}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                        <div className="flex items-center gap-3 mb-2">
+                          <div 
+                            className="w-3 h-3 rounded-full shadow-sm"
+                            style={{ backgroundColor: parcela.cor }}
+                          ></div>
+                          <h3 className={`font-bold text-lg ${
+                            darkMode ? 'text-white' : 'text-gray-800'
+                          }`}>
+                            {parcela.dividaNome}
+                          </h3>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 mb-2">
+                          <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
+                            darkMode 
+                              ? 'bg-blue-900/30 text-blue-300' 
+                              : 'bg-blue-50 text-blue-700'
+                          }`}>
+                            📦 Parcela {parcela.numero}
+                          </span>
+                          <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
+                            darkMode 
+                              ? 'bg-purple-900/30 text-purple-300' 
+                              : 'bg-purple-50 text-purple-700'
+                          }`}>
+                            🏷️ {parcela.categoria}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Calendar size={14} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
+                          <span className={`text-sm font-medium ${
+                            darkMode ? 'text-gray-300' : 'text-gray-600'
+                          }`}>
+                            {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                          </span>
                           {parcela.diasParaVencimento <= 7 && (
-                            <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                            <span className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold ${
                               parcela.diasParaVencimento <= 0 
-                                ? 'bg-red-100 text-red-800' 
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
                                 : parcela.diasParaVencimento <= 3
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-yellow-100 text-yellow-800'
+                                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                                : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                             }`}>
                               {parcela.diasParaVencimento <= 0 
-                                ? 'Vencida' 
+                                ? '⚠️ Vencida' 
                                 : parcela.diasParaVencimento === 1
-                                ? 'Vence amanhã'
-                                : `${parcela.diasParaVencimento} dias`
+                                ? '🔥 Vence amanhã'
+                                : `⏰ ${parcela.diasParaVencimento} dias`
                               }
                             </span>
                           )}
-                        </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
+                      
+                      <div className="text-right ml-4">
+                        <p className={`text-2xl font-bold mb-2 ${
+                          darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
                           {formatCurrency(parcela.valor)}
                         </p>
                         <button 
                           onClick={() => window.location.href = `/dividas/${parcela.dividaId}`}
-                          className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 ${
+                            darkMode 
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          } shadow-lg`}
                         >
-                          Ver detalhes
+                          👁️ Ver detalhes
                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              
               {dashboardData.dividas.totalProximas > 10 && (
-                <div className="bg-gray-50 px-4 py-3 text-center">
+                <div className={`mt-6 p-4 rounded-xl border text-center ${
+                  darkMode 
+                    ? 'bg-gray-700/30 border-gray-600/30' 
+                    : 'bg-gray-50/60 border-gray-200/60'
+                }`}>
                   <a 
                     href="/dividas" 
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 ${
+                      darkMode 
+                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white' 
+                        : 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                    } shadow-lg`}
                   >
+                    <CreditCard size={16} />
                     Ver todas as {dashboardData.dividas.totalProximas} parcelas
                   </a>
                 </div>
