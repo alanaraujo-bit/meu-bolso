@@ -38,7 +38,8 @@ import {
   Clock,
   Info,
   X,
-  User
+  User,
+  RotateCcw
 } from 'lucide-react';
 
 interface ParcelaDivida {
@@ -261,18 +262,56 @@ export default function DividasPage() {
   };
 
   const excluirDivida = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta dívida?")) return;
+    if (!confirm("Tem certeza que deseja excluir esta dívida? Esta ação não pode ser desfeita.")) return;
 
     try {
+      setLoading(true);
       const response = await fetch(`/api/dividas/${id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
+        mostrarFeedback("✅ Dívida excluída com sucesso!", "success");
         carregarDados();
+      } else {
+        const data = await response.json();
+        mostrarFeedback(`❌ Erro: ${data.error || "Erro ao excluir a dívida."}`, "error");
       }
     } catch (error) {
       console.error("Erro ao excluir dívida:", error);
+      mostrarFeedback("❌ Erro de conexão ao excluir a dívida.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reativarDivida = async (id: string) => {
+    if (!confirm("Tem certeza que deseja reativar esta dívida?")) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/dividas/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "ATIVA"
+        }),
+      });
+
+      if (response.ok) {
+        mostrarFeedback("✅ Dívida reativada com sucesso!", "success");
+        carregarDados();
+      } else {
+        const data = await response.json();
+        mostrarFeedback(`❌ Erro: ${data.error || "Erro ao reativar a dívida."}`, "error");
+      }
+    } catch (error) {
+      console.error("Erro ao reativar dívida:", error);
+      mostrarFeedback("❌ Erro de conexão ao reativar a dívida.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -698,17 +737,35 @@ export default function DividasPage() {
                         >
                           <Eye size={16} />
                         </button>
-                        <button
-                          onClick={() => prepararEdicaoDivida(divida)}
-                          className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                            darkMode 
-                              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
-                              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                          }`}
-                          title="Editar dívida"
-                        >
-                          <Edit size={16} />
-                        </button>
+                        
+                        {divida.status !== 'QUITADA' && (
+                          <button
+                            onClick={() => prepararEdicaoDivida(divida)}
+                            className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                              darkMode 
+                                ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
+                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                            }`}
+                            title="Editar dívida"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        )}
+                        
+                        {divida.status === 'QUITADA' && (
+                          <button
+                            onClick={() => reativarDivida(divida.id)}
+                            className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                              darkMode 
+                                ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' 
+                                : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                            }`}
+                            title="Reativar dívida"
+                          >
+                            <RotateCcw size={16} />
+                          </button>
+                        )}
+                        
                         <button
                           onClick={() => excluirDivida(divida.id)}
                           className={`p-2 rounded-lg transition-all hover:scale-110 ${
