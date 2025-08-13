@@ -927,7 +927,7 @@ export default function RecorrentesPage() {
             <div className={`w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl ${
               darkMode ? 'bg-gray-800' : 'bg-white'
             }`}>
-              <TotaisRecorrentes onClose={() => setMostrarTotais(false)} />
+              <TotaisRecorrentes onClose={() => setMostrarTotais(false)} darkMode={darkMode} />
             </div>
           </div>
         )}
