@@ -136,3 +136,63 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE() {
+  try {
+    console.log('🗑️ === REMOVENDO AVATAR ===');
+    
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      console.log('❌ Usuário não autenticado');
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    
+    console.log('✅ Usuário autenticado:', session.user.email);
+
+    // Buscar usuário
+    const usuario = await prisma.usuario.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, nome: true, avatarUrl: true }
+    });
+
+    if (!usuario) {
+      console.log('❌ Usuário não encontrado no banco');
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    }
+
+    // Remover avatar (definir como null)
+    const usuarioAtualizado = await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { 
+        avatarUrl: null,
+        atualizadoEm: new Date()
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        avatarUrl: true,
+        atualizadoEm: true
+      }
+    });
+
+    console.log('✅ Avatar removido com sucesso');
+
+    return NextResponse.json({
+      success: true,
+      message: 'Avatar removido com sucesso',
+      usuario: usuarioAtualizado
+    });
+    
+  } catch (error) {
+    console.error('💥 Erro ao remover avatar:', error);
+    return NextResponse.json(
+      { 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
+      { status: 500 }
+    );
+  }
+}

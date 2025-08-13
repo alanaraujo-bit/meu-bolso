@@ -134,6 +134,44 @@ export default function PerfilPage() {
     }
   };
 
+  // Função auxiliar para comprimir imagem
+  const comprimirImagem = (file: File, qualidade: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Redimensionar se necessário (máximo 300x300)
+        const maxSize = 300;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Desenhar e comprimir
+        ctx?.drawImage(img, 0, 0, width, height);
+        const base64 = canvas.toDataURL('image/jpeg', qualidade);
+        resolve(base64);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -146,23 +184,26 @@ export default function PerfilPage() {
 
     try {
       setUploadingFoto(true);
-      const formData = new FormData();
-      formData.append('avatar', file);
+      
+      // Comprimir a imagem para base64
+      const avatarUrl = await comprimirImagem(file, 0.7);
 
       const response = await fetch('/api/usuario/avatar', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl })
       });
 
       if (response.ok) {
         const data = await response.json();
-        setPerfil(prev => prev ? { ...prev, avatarUrl: data.avatarUrl } : null);
+        setPerfil(prev => prev ? { ...prev, avatarUrl } : null);
         setMensagem('Foto atualizada com sucesso!');
         setTipoMensagem('success');
         setMostrarEditarFoto(false);
         setTimeout(() => setMensagem(''), 3000);
       } else {
-        setMensagem('Erro ao fazer upload da foto');
+        const error = await response.json();
+        setMensagem(error.error || 'Erro ao fazer upload da foto');
         setTipoMensagem('error');
       }
     } catch (error) {
@@ -234,7 +275,7 @@ export default function PerfilPage() {
     }
 
     try {
-      const response = await fetch('/api/usuario/excluir', {
+      const response = await fetch('/api/usuario/excluir-conta', {
         method: 'DELETE'
       });
 
@@ -248,6 +289,41 @@ export default function PerfilPage() {
       console.error('Erro ao excluir conta:', error);
       setMensagem('Erro ao excluir conta');
       setTipoMensagem('error');
+    }
+  };
+
+  const limparDados = async () => {
+    if (!confirm('Tem certeza que deseja limpar os dados selecionados? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      setSalvando(true);
+      const response = await fetch('/api/usuario/limpar-dados', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(opcoes)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setMensagem(`Dados limpos com sucesso! ${result.resultados?.join(', ') || ''}`);
+        setTipoMensagem('success');
+        setMostrarLimpeza(false);
+        // Recarregar o perfil para atualizar as estatísticas
+        await carregarPerfil();
+        setTimeout(() => setMensagem(''), 5000);
+      } else {
+        const error = await response.json();
+        setMensagem(error.message || 'Erro ao limpar dados');
+        setTipoMensagem('error');
+      }
+    } catch (error) {
+      console.error('Erro ao limpar dados:', error);
+      setMensagem('Erro ao limpar dados');
+      setTipoMensagem('error');
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -896,6 +972,297 @@ export default function PerfilPage() {
                   >
                     Cancelar
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Limpeza de Dados */}
+        {mostrarLimpeza && (
+          <div className={`fixed inset-0 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300 ${
+            darkMode ? 'bg-black/80' : 'bg-black/70'
+          }`}>
+            <div className={`rounded-3xl shadow-2xl max-w-md w-full transform transition-all ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className={`text-xl font-bold ${
+                    darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    🗑️ Limpar Dados
+                  </h3>
+                  <button
+                    onClick={() => setMostrarLimpeza(false)}
+                    className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <p className={`text-sm ${
+                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    Selecione quais dados deseja remover permanentemente:
+                  </p>
+
+                  {/* Opções de limpeza */}
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.transacoes}
+                        onChange={(e) => setOpcoes({...opcoes, transacoes: e.target.checked})}
+                        className="w-5 h-5 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as transações
+                      </span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.categorias}
+                        onChange={(e) => setOpcoes({...opcoes, categorias: e.target.checked})}
+                        className="w-5 h-5 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as categorias
+                      </span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.metas}
+                        onChange={(e) => setOpcoes({...opcoes, metas: e.target.checked})}
+                        className="w-5 h-5 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as metas
+                      </span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.dividas}
+                        onChange={(e) => setOpcoes({...opcoes, dividas: e.target.checked})}
+                        className="w-5 h-5 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as dívidas
+                      </span>
+                    </label>
+
+                    <div className={`border-t pt-3 ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={opcoes.todosOsDados}
+                          onChange={(e) => setOpcoes({...opcoes, todosOsDados: e.target.checked})}
+                          className="w-5 h-5 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                        />
+                        <span className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                          Todos os dados (reset completo)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {(opcoes.transacoes || opcoes.categorias || opcoes.metas || opcoes.dividas || opcoes.todosOsDados) && (
+                    <div className={`p-3 rounded-lg ${
+                      darkMode ? 'bg-orange-900/20 border border-orange-500/30' : 'bg-orange-50 border border-orange-200'
+                    }`}>
+                      <p className={`text-sm ${
+                        darkMode ? 'text-orange-300' : 'text-orange-700'
+                      }`}>
+                        ⚠️ Esta ação não pode ser desfeita! Considere fazer um backup antes.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={limparDados}
+                    disabled={salvando || (!opcoes.transacoes && !opcoes.categorias && !opcoes.metas && !opcoes.dividas && !opcoes.todosOsDados)}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {salvando ? (
+                      <>
+                        <Loader className="animate-spin" size={20} />
+                        Limpando...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={20} />
+                        Limpar Dados Selecionados
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => setMostrarLimpeza(false)}
+                    className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Limpeza de Dados */}
+        {mostrarLimpeza && (
+          <div className={`fixed inset-0 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-300 ${
+            darkMode ? 'bg-black/80' : 'bg-black/70'
+          }`}>
+            <div className={`rounded-3xl shadow-2xl max-w-md w-full transform transition-all ${
+              darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className={`text-xl font-bold ${
+                    darkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    🗑️ Limpar Dados
+                  </h3>
+                  <button
+                    onClick={() => setMostrarLimpeza(false)}
+                    className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                      darkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <p className={`text-sm ${
+                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    Selecione quais dados você deseja remover permanentemente:
+                  </p>
+
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.transacoes}
+                        onChange={(e) => setOpcoes(prev => ({ ...prev, transacoes: e.target.checked }))}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as transações
+                      </span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.categorias}
+                        onChange={(e) => setOpcoes(prev => ({ ...prev, categorias: e.target.checked }))}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as categorias
+                      </span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.metas}
+                        onChange={(e) => setOpcoes(prev => ({ ...prev, metas: e.target.checked }))}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as metas
+                      </span>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={opcoes.dividas}
+                        onChange={(e) => setOpcoes(prev => ({ ...prev, dividas: e.target.checked }))}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Todas as dívidas
+                      </span>
+                    </label>
+
+                    <div className="border-t pt-3 mt-4">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={opcoes.todosOsDados}
+                          onChange={(e) => setOpcoes(prev => ({ 
+                            ...prev, 
+                            todosOsDados: e.target.checked,
+                            ...(e.target.checked ? {
+                              transacoes: true,
+                              categorias: true,
+                              metas: true,
+                              dividas: true
+                            } : {})
+                          }))}
+                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                        />
+                        <span className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                          Todos os dados (irreversível)
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-6">
+                    <button
+                      onClick={limparDados}
+                      disabled={salvando || (!opcoes.transacoes && !opcoes.categorias && !opcoes.metas && !opcoes.dividas && !opcoes.todosOsDados)}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {salvando ? (
+                        <>
+                          <Loader className="animate-spin" size={20} />
+                          Limpando...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 size={20} />
+                          Limpar Dados Selecionados
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => setMostrarLimpeza(false)}
+                      disabled={salvando}
+                      className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                        darkMode 
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
