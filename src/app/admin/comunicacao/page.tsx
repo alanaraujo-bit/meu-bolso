@@ -322,7 +322,7 @@ export default function ComunicacaoAdmin() {
               <div className="space-y-6">
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                    <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
                   </div>
                 ) : campanhas.length === 0 ? (
                   <div className="text-center py-12">
@@ -405,7 +405,7 @@ export default function ComunicacaoAdmin() {
               <div className="space-y-6">
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                    <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
                   </div>
                 ) : notificacoes.length === 0 ? (
                   <div className="text-center py-12">
@@ -455,7 +455,7 @@ export default function ComunicacaoAdmin() {
               <div className="space-y-6">
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                    <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
                   </div>
                 ) : templates.length === 0 ? (
                   <div className="text-center py-12">

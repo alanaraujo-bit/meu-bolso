@@ -244,7 +244,7 @@ export default function CategoriasGlobais() {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+              <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
             </div>
           ) : categorias.length === 0 ? (
             <div className="text-center py-12">

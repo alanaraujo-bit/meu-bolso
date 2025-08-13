@@ -274,7 +274,7 @@ export default function FinanceiroAdmin() {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+              <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
             </div>
           ) : (
             <div className="overflow-x-auto">

@@ -329,14 +329,20 @@ export default function PerfilPage() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-500 ${
         darkMode 
           ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
           : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
       }`}>
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Carregando perfil...</p>
+          <div className={`w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4 transition-colors duration-300 ${
+            darkMode 
+              ? 'border-gray-700 border-t-emerald-400' 
+              : 'border-emerald-200 border-t-emerald-600'
+          }`}></div>
+          <p className={`transition-colors duration-300 ${
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>Carregando perfil...</p>
         </div>
       </div>
     );

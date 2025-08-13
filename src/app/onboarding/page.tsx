@@ -319,10 +319,20 @@ export default function OnboardingPage() {
   // Loading inicial
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-500 ${
+        darkMode 
+          ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+          : 'bg-gradient-to-br from-blue-50 to-indigo-100'
+      }`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando autenticação...</p>
+          <div className={`animate-spin rounded-full h-16 w-16 border-4 mx-auto mb-4 transition-colors duration-300 ${
+            darkMode 
+              ? 'border-gray-700 border-t-emerald-400' 
+              : 'border-blue-200 border-t-blue-600'
+          }`}></div>
+          <p className={`transition-colors duration-300 ${
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>Verificando autenticação...</p>
         </div>
       </div>
     );
@@ -331,10 +341,20 @@ export default function OnboardingPage() {
   // Se não está autenticado, mostrar loading enquanto redireciona
   if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-500 ${
+        darkMode 
+          ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+          : 'bg-gradient-to-br from-blue-50 to-indigo-100'
+      }`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecionando para login...</p>
+          <div className={`animate-spin rounded-full h-16 w-16 border-4 mx-auto mb-4 transition-colors duration-300 ${
+            darkMode 
+              ? 'border-gray-700 border-t-emerald-400' 
+              : 'border-blue-200 border-t-blue-600'
+          }`}></div>
+          <p className={`transition-colors duration-300 ${
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>Redirecionando para login...</p>
         </div>
       </div>
     );
@@ -345,7 +365,7 @@ export default function OnboardingPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center bg-white rounded-lg p-8 shadow-lg">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600 mx-auto mb-4"></div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Salvando suas informações...
           </h3>
@@ -585,7 +605,11 @@ export default function OnboardingPage() {
               >
                 {carregando ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className={`animate-spin rounded-full h-5 w-5 border-2 transition-colors duration-300 ${
+                      darkMode 
+                        ? 'border-gray-600 border-t-white' 
+                        : 'border-white/30 border-t-white'
+                    }`}></div>
                     <span>Salvando...</span>
                   </>
                 ) : (

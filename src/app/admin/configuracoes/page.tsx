@@ -391,7 +391,7 @@ export default function ConfiguracoesAdmin() {
 
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+                    <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
                   </div>
                 ) : (
                   <div className="space-y-6">
