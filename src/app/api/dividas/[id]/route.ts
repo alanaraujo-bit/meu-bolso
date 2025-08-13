@@ -129,24 +129,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     }
 
-    // Se mudou o número de parcelas ou valores, recrear parcelas
+    // Se mudou o número de parcelas, valores ou parcelas já pagas, recrear parcelas
+    const parcelasJaPagasAntes = dividaExistente.parcelas.filter(p => p.status === 'PAGA').length;
     const recalcularParcelas = 
       (numeroParcelas && numeroParcelas !== dividaExistente.numeroParcelas) ||
       (valorParcela && valorParcela !== dividaExistente.valorParcela.toNumber()) ||
-      (valorTotal && valorTotal !== dividaExistente.valorTotal.toNumber());
+      (valorTotal && valorTotal !== dividaExistente.valorTotal.toNumber()) ||
+      (parcelasJaPagas !== undefined && parcelasJaPagas !== parcelasJaPagasAntes);
 
     if (recalcularParcelas) {
-      // Deletar parcelas existentes pendentes
+      // Deletar TODAS as parcelas existentes para recriar
       await prisma.parcelaDivida.deleteMany({
         where: { 
-          dividaId: params.id,
-          status: 'PENDENTE'
+          dividaId: params.id
         },
       });
 
       // Calcular nova data da primeira parcela
       const dataProxima = new Date(dataProximaParcela || new Date());
-      const parcelasJaFeitas = parcelasJaPagas || 0;
+      const parcelasJaFeitas = parcelasJaPagas !== undefined ? parcelasJaPagas : parcelasJaPagasAntes;
       const dataPrimeira = new Date(dataProxima);
       dataPrimeira.setMonth(dataPrimeira.getMonth() - parcelasJaFeitas);
 
