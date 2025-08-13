@@ -498,10 +498,7 @@ export async function GET(request: NextRequest) {
       projecoes,
       transacoesRecorrentesExecutadas
     });
-
-    console.log(`✅ ${insights.length} insights inteligentes gerados com sucesso!`);
     
-    /* // CÓDIGO ANTIGO COMENTADO - AGORA USANDO SISTEMA INTELIGENTE
     // 1. ANÁLISE DE PERFORMANCE FINANCEIRA
     if (totalReceitas > 0) {
       const saudefinanceira = (saldo / totalReceitas) * 100;
@@ -707,7 +704,6 @@ export async function GET(request: NextRequest) {
     // Ordenar insights por prioridade (crítica > alta > média > baixa)
     const prioridadeOrdem: { [key: string]: number } = { 'critica': 4, 'alta': 3, 'media': 2, 'baixa': 1 };
     insights.sort((a: any, b: any) => prioridadeOrdem[b.prioridade] - prioridadeOrdem[a.prioridade]);
-    */ // FIM DO CÓDIGO ANTIGO COMENTADO
 
     return NextResponse.json({
       periodo: {

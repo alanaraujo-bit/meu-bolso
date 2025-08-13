@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import CleanLoading from '@/components/CleanLoading';
+import InsightInteligente from '@/components/InsightInteligente';
 import { useCleanLoading } from '@/hooks/useCleanLoading';
 import { usePerfilFinanceiro } from '@/hooks/useOnboarding';
 import HelpButton from '@/components/HelpButton';
@@ -1035,10 +1036,10 @@ export default function Dashboard() {
                     <div>
                       <h2 className={`text-3xl font-bold transition-colors duration-300 ${
                         darkMode ? 'text-white' : 'text-gray-800'
-                      }`}>🧠 Insights Financeiros</h2>
+                      }`}>� Seu Consultor Financeiro Pessoal</h2>
                       <p className={`mt-1 text-lg transition-colors duration-300 ${
                         darkMode ? 'text-gray-300' : 'text-gray-600'
-                      }`}>Análises inteligentes para otimizar sua gestão financeira</p>
+                      }`}>Insights personalizados baseados no seu perfil único</p>
                     </div>
                   </div>
                   
@@ -1066,15 +1067,27 @@ export default function Dashboard() {
                 
                 <div className="space-y-6">
                   {dashboardData.insights.map((insight, index) => (
-                    <InsightCard 
-                      key={index} 
-                      insight={insight} 
-                      getPriorityBorderColor={getPriorityBorderColor}
-                      getPriorityBgColor={getPriorityBgColor}
-                      getCategoryColor={getCategoryColor}
-                      getPriorityColor={getPriorityColor}
+                    <InsightInteligente 
+                      key={`insight-${index}-${insight.titulo}`}
+                      insight={insight}
                     />
                   ))}
+                  
+                  {dashboardData.insights.length === 0 && (
+                    <div className={`text-center py-12 rounded-xl border-2 border-dashed transition-colors duration-300 ${
+                      darkMode 
+                        ? 'border-gray-600 text-gray-400' 
+                        : 'border-gray-300 text-gray-500'
+                    }`}>
+                      <Brain className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        🧠 Analisando seus dados...
+                      </h3>
+                      <p className="text-sm">
+                        Continue registrando suas transações para receber insights personalizados!
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
