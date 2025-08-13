@@ -429,6 +429,33 @@ export default function DividasPage() {
     setTimeout(() => setMensagemFeedback(null), 5000); // Remove após 5 segundos
   };
 
+  // Função para ordenar parcelas: pendentes primeiro, depois pagas
+  const ordenarParcelas = (parcelas: ParcelaDivida[]) => {
+    return [...parcelas].sort((a, b) => {
+      // Primeiro critério: status (PENDENTE > VENCIDA > PAGA)
+      const statusOrder = { 'PENDENTE': 0, 'VENCIDA': 1, 'PAGA': 2 };
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status];
+      }
+      
+      // Segundo critério: número da parcela (crescente para pendentes, decrescente para pagas)
+      if (a.status === 'PAGA' && b.status === 'PAGA') {
+        return b.numero - a.numero; // Pagas mais recentes primeiro
+      }
+      
+      return a.numero - b.numero; // Pendentes em ordem crescente
+    });
+  };
+
+  // Função para obter informações da próxima parcela
+  const obterProximaParcela = (divida: Divida) => {
+    const parcelasPendentes = divida.parcelas
+      .filter(p => p.status === 'PENDENTE')
+      .sort((a, b) => a.numero - b.numero);
+    
+    return parcelasPendentes[0] || null;
+  };
+
   // Função para formatar valores monetários
   const formatarValor = (valor: number): string => {
     return new Intl.NumberFormat("pt-BR", {
@@ -780,86 +807,98 @@ export default function DividasPage() {
                       </div>
                     </div>
 
-                    {/* Informações da dívida */}
+                    {/* Informações da dívida - Design Minimalista */}
                     <div className="space-y-3">
+                      {/* Progresso Principal */}
                       <div className="flex justify-between items-center">
-                        <span className={`text-sm font-medium ${
-                          darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          Valor Total:
-                        </span>
-                        <span className={`font-bold ${
-                          darkMode ? 'text-white' : 'text-gray-800'
-                        }`}>
-                          {formatarValor(divida.valorTotal)}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <span className={`text-sm font-medium ${
-                          darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          Parcelas:
-                        </span>
-                        <span className={`font-bold ${
-                          darkMode ? 'text-white' : 'text-gray-800'
-                        }`}>
-                          {divida.estatisticas?.parcelasPagas || 0}/{divida.numeroParcelas}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <span className={`text-sm font-medium ${
-                          darkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          Valor Parcela:
-                        </span>
-                        <span className={`font-bold ${
-                          darkMode ? 'text-white' : 'text-gray-800'
-                        }`}>
-                          {formatarValor(divida.valorParcela)}
-                        </span>
-                      </div>
-
-                      {/* Progresso */}
-                      {divida.estatisticas && (
-                        <div className="mt-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className={`text-sm font-medium ${
-                              darkMode ? 'text-gray-400' : 'text-gray-600'
-                            }`}>
-                              Progresso:
-                            </span>
-                            <span className={`font-bold ${
-                              darkMode ? 'text-white' : 'text-gray-800'
-                            }`}>
-                              {divida.estatisticas.percentualQuitado.toFixed(1)}%
-                            </span>
-                          </div>
-                          <div className={`w-full bg-gray-200 rounded-full h-2 ${
-                            darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium ${
+                            darkMode ? 'text-gray-400' : 'text-gray-600'
                           }`}>
-                            <div 
-                              className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${divida.estatisticas.percentualQuitado}%` }}
-                            ></div>
-                          </div>
+                            Progresso:
+                          </span>
+                          <span className={`text-lg font-bold ${
+                            darkMode ? 'text-white' : 'text-gray-800'
+                          }`}>
+                            {divida.estatisticas?.parcelasPagas || 0}/{divida.numeroParcelas}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Próxima parcela */}
-                      {divida.estatisticas?.proximaParcelaVencimento && (
-                        <div className={`mt-4 p-3 rounded-lg border ${
-                          darkMode 
-                            ? 'bg-orange-900/20 border-orange-500/30 text-orange-300' 
-                            : 'bg-orange-50 border-orange-200 text-orange-700'
+                        <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                          divida.estatisticas && divida.estatisticas.percentualQuitado === 100
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-blue-500/20 text-blue-400'
                         }`}>
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <Clock size={14} />
-                            Próxima: {new Date(divida.estatisticas.proximaParcelaVencimento.dataVencimento).toLocaleDateString('pt-BR')}
+                          {divida.estatisticas?.percentualQuitado.toFixed(0)}%
+                        </span>
+                      </div>
+
+                      {/* Barra de Progresso */}
+                      <div className={`w-full rounded-full h-2 ${
+                        darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                      }`}>
+                        <div 
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${divida.estatisticas?.percentualQuitado || 0}%` }}
+                        ></div>
+                      </div>
+
+                      {/* Valores Resumidos */}
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <div className={`text-center p-2 rounded-lg ${
+                          darkMode ? 'bg-emerald-900/20' : 'bg-emerald-50'
+                        }`}>
+                          <div className={`text-xs font-medium ${
+                            darkMode ? 'text-emerald-400' : 'text-emerald-600'
+                          }`}>
+                            Pago
+                          </div>
+                          <div className={`text-sm font-bold ${
+                            darkMode ? 'text-emerald-300' : 'text-emerald-700'
+                          }`}>
+                            {formatarValor(divida.estatisticas?.valorPago || 0)}
                           </div>
                         </div>
-                      )}
+                        
+                        <div className={`text-center p-2 rounded-lg ${
+                          darkMode ? 'bg-orange-900/20' : 'bg-orange-50'
+                        }`}>
+                          <div className={`text-xs font-medium ${
+                            darkMode ? 'text-orange-400' : 'text-orange-600'
+                          }`}>
+                            Restante
+                          </div>
+                          <div className={`text-sm font-bold ${
+                            darkMode ? 'text-orange-300' : 'text-orange-700'
+                          }`}>
+                            {formatarValor(divida.estatisticas?.valorRestante || 0)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Próxima Parcela */}
+                      {(() => {
+                        const proximaParcela = obterProximaParcela(divida);
+                        return proximaParcela && (
+                          <div className={`mt-3 p-3 rounded-lg border-l-4 ${
+                            darkMode 
+                              ? 'bg-blue-900/20 border-blue-400 text-blue-300' 
+                              : 'bg-blue-50 border-blue-400 text-blue-700'
+                          }`}>
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2 text-sm font-medium">
+                                <Clock size={14} />
+                                Próxima: #{proximaParcela.numero}
+                              </div>
+                              <div className="text-sm font-bold">
+                                {formatarValor(proximaParcela.valor)}
+                              </div>
+                            </div>
+                            <div className="text-xs mt-1 opacity-80">
+                              Vence: {new Date(proximaParcela.dataVencimento).toLocaleDateString('pt-BR')}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Seção de Parcelas (Expandida) */}
@@ -876,46 +915,63 @@ export default function DividasPage() {
                         </h4>
                         
                         <div className="space-y-3 max-h-64 overflow-y-auto">
-                          {divida.parcelas.map((parcela) => (
+                          {ordenarParcelas(divida.parcelas).map((parcela) => (
                             <div key={parcela.id} className={`p-3 rounded-lg border transition-all ${
                               parcela.status === 'PAGA'
                                 ? (darkMode 
                                     ? 'bg-emerald-900/20 border-emerald-500/30 opacity-75' 
                                     : 'bg-emerald-50 border-emerald-200 opacity-75')
-                                : (darkMode 
-                                    ? 'bg-gray-700/50 border-gray-600' 
-                                    : 'bg-white border-gray-200')
+                                : parcela.status === 'VENCIDA'
+                                  ? (darkMode 
+                                      ? 'bg-red-900/20 border-red-500/30' 
+                                      : 'bg-red-50 border-red-200')
+                                  : (darkMode 
+                                      ? 'bg-blue-900/20 border-blue-500/30' 
+                                      : 'bg-blue-50 border-blue-200')
                             }`}>
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className={`font-semibold ${
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <span className={`font-bold text-lg ${
                                       darkMode ? 'text-white' : 'text-gray-800'
                                     }`}>
-                                      Parcela {parcela.numero}
+                                      #{parcela.numero}
                                     </span>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
                                       parcela.status === 'PAGA'
                                         ? 'bg-emerald-500/20 text-emerald-400'
                                         : parcela.status === 'VENCIDA'
                                           ? 'bg-red-500/20 text-red-400'
-                                          : 'bg-yellow-500/20 text-yellow-400'
+                                          : 'bg-blue-500/20 text-blue-400'
                                     }`}>
                                       {parcela.status === 'PAGA' ? '✅ Paga' : 
-                                       parcela.status === 'VENCIDA' ? '⚠️ Vencida' : '⏳ Pendente'}
+                                       parcela.status === 'VENCIDA' ? '⚠️ Vencida' : '⏳ Próxima'}
                                     </span>
                                   </div>
                                   
-                                  <div className={`text-sm space-y-1 ${
-                                    darkMode ? 'text-gray-300' : 'text-gray-600'
-                                  }`}>
-                                    <div className="flex justify-between">
-                                      <span>Valor:</span>
-                                      <span className="font-semibold">{formatarValor(parcela.valor)}</span>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className={`text-sm ${
+                                      darkMode ? 'text-gray-300' : 'text-gray-600'
+                                    }`}>
+                                      <span className="font-medium">Valor:</span>
+                                      <div className={`font-bold text-lg ${
+                                        parcela.status === 'PAGA' 
+                                          ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
+                                          : (darkMode ? 'text-white' : 'text-gray-800')
+                                      }`}>
+                                        {formatarValor(parcela.valor)}
+                                      </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                      <span>Vencimento:</span>
-                                      <span>{new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}</span>
+                                    
+                                    <div className={`text-sm ${
+                                      darkMode ? 'text-gray-300' : 'text-gray-600'
+                                    }`}>
+                                      <span className="font-medium">Vencimento:</span>
+                                      <div className={`font-semibold ${
+                                        darkMode ? 'text-gray-200' : 'text-gray-700'
+                                      }`}>
+                                        {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -924,10 +980,10 @@ export default function DividasPage() {
                                 {parcela.status === 'PENDENTE' && (
                                   <button
                                     onClick={() => marcarParcelaPaga(divida.id, parcela.id)}
-                                    className="ml-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                                    className="ml-4 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center gap-2 shadow-lg"
                                     title="Marcar como paga"
                                   >
-                                    <Check size={14} />
+                                    <Check size={16} />
                                     Pagar
                                   </button>
                                 )}
