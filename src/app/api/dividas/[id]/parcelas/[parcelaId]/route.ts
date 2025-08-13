@@ -4,6 +4,97 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prepararDataParaBanco } from '@/lib/dateUtils';
 
+// POST - Marcar parcela como paga
+export async function POST(req: NextRequest, { params }: { params: { id: string; parcelaId: string } }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!usuario) {
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    // Verificar se a dívida existe e pertence ao usuário
+    const divida = await prisma.divida.findFirst({
+      where: {
+        id: params.id,
+        userId: usuario.id,
+      },
+    });
+
+    if (!divida) {
+      return NextResponse.json({ error: "Dívida não encontrada" }, { status: 404 });
+    }
+
+    // Verificar se a parcela existe e está pendente
+    const parcela = await prisma.parcelaDivida.findFirst({
+      where: {
+        id: params.parcelaId,
+        dividaId: params.id,
+      },
+    });
+
+    if (!parcela) {
+      return NextResponse.json({ error: "Parcela não encontrada" }, { status: 404 });
+    }
+
+    if (parcela.status === 'PAGA') {
+      return NextResponse.json({ error: "Parcela já foi paga" }, { status: 400 });
+    }
+
+    // Marcar parcela como paga
+    await prisma.parcelaDivida.update({
+      where: { id: params.parcelaId },
+      data: { 
+        status: 'PAGA',
+        // Adicionar data de pagamento se não existir no schema
+      },
+    });
+
+    // Verificar se todas as parcelas estão pagas para atualizar status da dívida
+    const todasParcelas = await prisma.parcelaDivida.findMany({
+      where: { dividaId: params.id },
+    });
+
+    const parcelasRestantes = todasParcelas.filter(p => p.status === 'PENDENTE').length;
+    
+    if (parcelasRestantes === 0 && divida.status === 'ATIVA') {
+      // Todas as parcelas foram pagas, marcar dívida como quitada
+      await prisma.divida.update({
+        where: { id: params.id },
+        data: { status: 'QUITADA' },
+      });
+      
+      console.log(`✅ Dívida ${params.id} foi quitada automaticamente!`);
+    }
+
+    // Buscar dados atualizados da dívida
+    const dividaAtualizada = await prisma.divida.findUnique({
+      where: { id: params.id },
+      include: {
+        parcelas: {
+          orderBy: { numero: 'asc' }
+        }
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Parcela marcada como paga com sucesso!",
+      divida: dividaAtualizada
+    });
+  } catch (error) {
+    console.error("Erro ao marcar parcela como paga:", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
 // PUT - Atualizar parcela específica de uma dívida
 export async function PUT(req: NextRequest, { params }: { params: { id: string; parcelaId: string } }) {
   try {

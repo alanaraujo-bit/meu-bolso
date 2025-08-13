@@ -28,6 +28,7 @@ import {
   Edit,
   Trash2,
   CreditCard,
+  Check,
   Calendar,
   AlertTriangle,
   CheckCircle,
@@ -121,7 +122,8 @@ export default function DividasPage() {
   const [showModal, setShowModal] = useState(false);
   const [showDetalhes, setShowDetalhes] = useState<string | null>(null);
   const [editandoDivida, setEditandoDivida] = useState<string | null>(null);
-  const [filtroStatus, setFiltroStatus] = useState<"TODAS" | "ATIVA" | "QUITADA">("TODAS");
+  const [filtroStatus, setFiltroStatus] = useState<"TODAS" | "ATIVA" | "QUITADA">("ATIVA");
+  const [dividaExpandida, setDividaExpandida] = useState<string | null>(null);
 
   const [formulario, setFormulario] = useState<FormularioDivida>({
     nome: "",
@@ -343,16 +345,26 @@ export default function DividasPage() {
 
   const marcarParcelaPaga = async (dividaId: string, parcelaId: string) => {
     try {
-      const response = await fetch(`/api/dividas/${dividaId}/parcelas/${parcelaId}/pagar`, {
+      const response = await fetch(`/api/dividas/${dividaId}/parcelas/${parcelaId}`, {
         method: "POST",
       });
 
       if (response.ok) {
-        carregarDados();
+        const data = await response.json();
+        console.log("✅ Parcela marcada como paga:", data.message);
+        carregarDados(); // Recarregar os dados para atualizar a interface
+      } else {
+        const error = await response.json();
+        console.error("❌ Erro ao marcar parcela como paga:", error.error);
       }
     } catch (error) {
       console.error("Erro ao marcar parcela como paga:", error);
     }
+  };
+
+  // Função para alternar exibição das parcelas
+  const toggleParcelas = (dividaId: string) => {
+    setDividaExpandida(dividaExpandida === dividaId ? null : dividaId);
   };
 
   // Função para formatar valores monetários
@@ -627,13 +639,17 @@ export default function DividasPage() {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setShowDetalhes(divida.id)}
+                          onClick={() => toggleParcelas(divida.id)}
                           className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                            darkMode 
-                              ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
-                              : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                            dividaExpandida === divida.id
+                              ? (darkMode 
+                                  ? 'bg-blue-500/30 text-blue-300' 
+                                  : 'bg-blue-200 text-blue-700')
+                              : (darkMode 
+                                  ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
+                                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100')
                           }`}
-                          title="Ver detalhes"
+                          title={dividaExpandida === divida.id ? "Ocultar parcelas" : "Ver parcelas"}
                         >
                           <Eye size={16} />
                         </button>
@@ -743,6 +759,82 @@ export default function DividasPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Seção de Parcelas (Expandida) */}
+                    {dividaExpandida === divida.id && divida.parcelas && (
+                      <div className={`mt-4 p-4 rounded-lg border-t ${
+                        darkMode 
+                          ? 'border-gray-700 bg-gray-800/50' 
+                          : 'border-gray-200 bg-gray-50/50'
+                      }`}>
+                        <h4 className={`font-bold mb-4 flex items-center gap-2 ${
+                          darkMode ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          📋 Parcelas ({divida.parcelas.length})
+                        </h4>
+                        
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {divida.parcelas.map((parcela) => (
+                            <div key={parcela.id} className={`p-3 rounded-lg border transition-all ${
+                              parcela.status === 'PAGA'
+                                ? (darkMode 
+                                    ? 'bg-emerald-900/20 border-emerald-500/30 opacity-75' 
+                                    : 'bg-emerald-50 border-emerald-200 opacity-75')
+                                : (darkMode 
+                                    ? 'bg-gray-700/50 border-gray-600' 
+                                    : 'bg-white border-gray-200')
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className={`font-semibold ${
+                                      darkMode ? 'text-white' : 'text-gray-800'
+                                    }`}>
+                                      Parcela {parcela.numero}
+                                    </span>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      parcela.status === 'PAGA'
+                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                        : parcela.status === 'VENCIDA'
+                                          ? 'bg-red-500/20 text-red-400'
+                                          : 'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                      {parcela.status === 'PAGA' ? '✅ Paga' : 
+                                       parcela.status === 'VENCIDA' ? '⚠️ Vencida' : '⏳ Pendente'}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className={`text-sm space-y-1 ${
+                                    darkMode ? 'text-gray-300' : 'text-gray-600'
+                                  }`}>
+                                    <div className="flex justify-between">
+                                      <span>Valor:</span>
+                                      <span className="font-semibold">{formatarValor(parcela.valor)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Vencimento:</span>
+                                      <span>{new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Botão de Pagar */}
+                                {parcela.status === 'PENDENTE' && (
+                                  <button
+                                    onClick={() => marcarParcelaPaga(divida.id, parcela.id)}
+                                    className="ml-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                                    title="Marcar como paga"
+                                  >
+                                    <Check size={14} />
+                                    Pagar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
