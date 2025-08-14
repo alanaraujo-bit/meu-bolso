@@ -4,8 +4,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 /**
- * API para conversão automática de dívidas em transações recorrentes
- * Converte quando restam 10 ou menos parcelas
+ * API para conversão de dívidas em transações recorrentes
+ * Converte qualquer dívida em recorrente, mantendo a dívida original
+ */
+
+/**
+ * POST - Converter dívida específica em transação recorrente
  */
 export async function POST(req: NextRequest) {
   try {
@@ -49,12 +53,6 @@ export async function POST(req: NextRequest) {
     // Verificar quantas parcelas restam
     const parcelasRestantes = divida.parcelas.filter(p => p.status === 'PENDENTE');
     
-    if (parcelasRestantes.length > 10) {
-      return NextResponse.json({ 
-        error: "Ainda restam mais de 10 parcelas. Conversão disponível apenas quando restam 10 ou menos parcelas." 
-      }, { status: 400 });
-    }
-
     if (parcelasRestantes.length === 0) {
       return NextResponse.json({ 
         error: "Não há parcelas pendentes para converter." 
@@ -66,14 +64,14 @@ export async function POST(req: NextRequest) {
       where: {
         userId: usuario.id,
         descricao: {
-          contains: divida.nome
+          contains: `💳 ${divida.nome} - Parcela`
         }
       }
     });
 
     if (recorrenteExistente) {
       return NextResponse.json({ 
-        error: "Já existe uma transação recorrente relacionada a esta dívida." 
+        error: "Esta dívida já foi convertida em transação recorrente." 
       }, { status: 400 });
     }
 
@@ -101,23 +99,30 @@ export async function POST(req: NextRequest) {
     });
 
     // Log para auditoria
-    console.log(`🔄 CONVERSÃO AUTOMÁTICA REALIZADA:`);
+    console.log(`🔄 CONVERSÃO REALIZADA:`);
     console.log(`   📋 Dívida: ${divida.nome}`);
     console.log(`   💰 Valor: R$ ${divida.valorParcela}`);
     console.log(`   📅 De: ${proximaParcela.dataVencimento.toLocaleDateString('pt-BR')}`);
     console.log(`   📅 Até: ${ultimaParcela.dataVencimento.toLocaleDateString('pt-BR')}`);
     console.log(`   📊 Parcelas restantes: ${parcelasRestantes.length}`);
+    console.log(`   ✅ Dívida mantida + Recorrente criada`);
 
     return NextResponse.json({
       success: true,
-      message: `Dívida "${divida.nome}" convertida em transação recorrente com sucesso!`,
+      message: `Dívida "${divida.nome}" convertida em recorrente! A dívida continua ativa e agora também funciona como recorrente.`,
+      detalhes: {
+        dividaMantida: true,
+        recorrenteCriada: true,
+        parcelasRestantes: parcelasRestantes.length,
+        valorParcela: divida.valorParcela,
+        periodicidade: 'Mensal'
+      },
       transacaoRecorrente: {
         id: transacaoRecorrente.id,
         descricao: transacaoRecorrente.descricao,
         valor: transacaoRecorrente.valor,
         dataInicio: transacaoRecorrente.dataInicio,
         dataFim: transacaoRecorrente.dataFim,
-        parcelasRestantes: parcelasRestantes.length,
       },
       dataPrevistaQuitacao: ultimaParcela.dataVencimento,
     });
@@ -188,7 +193,7 @@ export async function GET(req: NextRequest) {
         totalParcelas: divida.numeroParcelas,
         progressoPercentual: Math.round(progressoPercentual),
         dataPrevistaQuitacao,
-        elegivel: parcelasRestantes.length <= 10 && parcelasRestantes.length > 0,
+        elegivel: parcelasRestantes.length > 0, // Qualquer dívida com parcelas pendentes pode ser convertida
         categoria: divida.categoria?.nome || 'Sem categoria',
         proximaParcelaData: parcelasRestantes[0]?.dataVencimento,
       };

@@ -762,12 +762,12 @@ export default function DividasPage() {
                   <h3 className={`text-lg font-bold ${
                     darkMode ? 'text-white' : 'text-gray-900'
                   }`}>
-                    🤖 Conversão Automática Disponível
+                    🔄 Conversão para Recorrente Disponível
                   </h3>
                   <p className={`text-sm ${
                     darkMode ? 'text-purple-300' : 'text-purple-700'
                   }`}>
-                    {dividasElegiveis.length} dívida(s) podem virar transações recorrentes
+                    {dividasElegiveis.length} dívida(s) podem virar recorrentes (mantendo a dívida original)
                   </p>
                 </div>
               </div>
@@ -875,10 +875,11 @@ export default function DividasPage() {
                     Como funciona a conversão automática?
                   </div>
                   <div className="text-xs mt-2 opacity-90">
-                    • Quando restam 10 ou menos parcelas, você pode converter a dívida em transação recorrente<br/>
-                    • Isso criará pagamentos automáticos mensais para as parcelas restantes<br/>
-                    • Facilita o controle e garante que nenhuma parcela seja esquecida<br/>
-                    • A transação recorrente terá o mesmo valor e categoria da dívida
+                    • Qualquer dívida com parcelas pendentes pode ser convertida em recorrente<br/>
+                    • A dívida original continua aparecendo na lista de dívidas<br/>
+                    • Uma transação recorrente é criada para gerar os pagamentos automaticamente<br/>
+                    • Funciona para qualquer quantidade de parcelas (1, 15, 30, etc.)<br/>
+                    • A recorrente terá o mesmo valor e categoria da dívida
                   </div>
                 </div>
               </div>
