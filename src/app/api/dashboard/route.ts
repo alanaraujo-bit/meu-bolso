@@ -39,6 +39,55 @@ function calcularProximaData(ultimaData: Date, frequencia: string): Date {
   }
 }
 
+// 🔄 Função para marcar parcela de dívida como paga quando recorrente executa
+async function marcarParcelaDividaComoPaga(
+  usuarioId: string, 
+  descricaoRecorrente: string, 
+  dataExecucao: Date, 
+  transacaoId: string
+) {
+  try {
+    // Extrair nome da dívida da descrição (formato: "💳 Nome da Dívida - Parcela")
+    const match = descricaoRecorrente.match(/💳 (.+) - Parcela/);
+    if (!match) return;
+
+    const nomeDivida = match[1];
+    
+    // Buscar a dívida
+    const divida = await prisma.divida.findFirst({
+      where: {
+        userId: usuarioId,
+        nome: nomeDivida,
+        status: 'ATIVA'
+      },
+      include: {
+        parcelas: {
+          where: { status: 'PENDENTE' },
+          orderBy: { dataVencimento: 'asc' }
+        }
+      }
+    });
+
+    if (!divida || divida.parcelas.length === 0) return;
+
+    // Marcar a próxima parcela pendente como paga
+    const proximaParcela = divida.parcelas[0];
+    
+    await prisma.parcelaDivida.update({
+      where: { id: proximaParcela.id },
+      data: { 
+        status: 'PAGA',
+        // Adicionar referência à transação que pagou (se houver campo para isso)
+      }
+    });
+
+    console.log(`✅ Parcela ${proximaParcela.numero} da dívida "${nomeDivida}" marcada como PAGA automaticamente`);
+
+  } catch (error) {
+    console.error('❌ Erro ao marcar parcela como paga:', error);
+  }
+}
+
 // Função para executar transações recorrentes pendentes automaticamente
 async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
   try {
@@ -130,6 +179,11 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
               recorrenteId: recorrente.id,
             },
           });
+
+          // 🔄 SINCRONIZAÇÃO: Se for recorrente de dívida, marcar parcela como paga
+          if (recorrente.descricao && recorrente.descricao.includes('💳') && recorrente.descricao.includes('- Parcela')) {
+            await marcarParcelaDividaComoPaga(usuarioId, recorrente.descricao, proximaExecucao, novaTransacao.id);
+          }
 
           transacoesCriadas.push(novaTransacao);
         }

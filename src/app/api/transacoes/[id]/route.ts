@@ -164,6 +164,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Transação não encontrada" }, { status: 404 });
     }
 
+    // 🔄 SINCRONIZAÇÃO: Se for recorrente de dívida, reverter parcela para PENDENTE
+    await reverterParcelaDivida(usuario.id, transacao);
+
     // Excluir tags associadas
     await prisma.tag.deleteMany({
       where: { transacaoId: transacao.id }
@@ -191,5 +194,62 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   } catch (error) {
     console.error('Erro ao excluir transação:', error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
+// 🔄 Função para reverter parcela para PENDENTE quando transação recorrente é excluída
+async function reverterParcelaDivida(
+  usuarioId: string, 
+  transacao: any
+) {
+  try {
+    // Verificar se é transação de recorrente de dívida
+    if (!transacao.isRecorrente || !transacao.recorrenteId) return;
+
+    // Buscar a recorrente
+    const recorrente = await prisma.transacaoRecorrente.findFirst({
+      where: {
+        id: transacao.recorrenteId,
+        userId: usuarioId
+      }
+    });
+
+    if (!recorrente || !recorrente.descricao) return;
+
+    // Verificar se é de dívida
+    const match = recorrente.descricao.match(/💳 (.+) - Parcela/);
+    if (!match) return;
+
+    const nomeDivida = match[1];
+    
+    // Buscar a dívida
+    const divida = await prisma.divida.findFirst({
+      where: {
+        userId: usuarioId,
+        nome: nomeDivida,
+        status: 'ATIVA'
+      },
+      include: {
+        parcelas: {
+          where: { status: 'PAGA' },
+          orderBy: { dataVencimento: 'desc' }
+        }
+      }
+    });
+
+    if (!divida || divida.parcelas.length === 0) return;
+
+    // Reverter a última parcela paga para PENDENTE
+    const ultimaParcelaPaga = divida.parcelas[0];
+    
+    await prisma.parcelaDivida.update({
+      where: { id: ultimaParcelaPaga.id },
+      data: { status: 'PENDENTE' }
+    });
+
+    console.log(`🔄 Parcela ${ultimaParcelaPaga.numero} da dívida "${nomeDivida}" revertida para PENDENTE`);
+
+  } catch (error) {
+    console.error('❌ Erro ao reverter parcela:', error);
   }
 }
