@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { 
+  formatarValor, 
+  formatarValorCompacto, 
+  ValorResponsivo 
+} from '@/lib/formatters';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import CleanLoading from '@/components/CleanLoading';
@@ -843,10 +848,10 @@ export default function Dashboard() {
                 <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Receitas</p>
-                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
-                  {formatCurrency(dashboardData.resumo.totalReceitas)}
+                  <ValorResponsivo valor={dashboardData.resumo.totalReceitas} />
                 </p>
                 {modoAvancado && (
                   <div className="flex items-center mt-1">
@@ -880,10 +885,10 @@ export default function Dashboard() {
                 <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Despesas</p>
-                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 ${
                   darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
-                  {formatCurrency(dashboardData.resumo.totalDespesas)}
+                  <ValorResponsivo valor={dashboardData.resumo.totalDespesas} />
                 </p>
                 {modoAvancado && (
                   <div className="flex items-center mt-1">
@@ -921,12 +926,12 @@ export default function Dashboard() {
                 <p className={`text-xs sm:text-sm transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 }`}>Saldo</p>
-                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 truncate ${
+                <p className={`text-lg sm:text-2xl font-semibold transition-colors duration-300 ${
                   dashboardData.resumo.saldo >= 0 
                     ? darkMode ? 'text-emerald-400' : 'text-emerald-600' 
                     : 'text-red-600'
                 }`}>
-                  {formatCurrency(dashboardData.resumo.saldo)}
+                  <ValorResponsivo valor={dashboardData.resumo.saldo} />
                 </p>
                 {modoAvancado && (
                   <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 ${
@@ -962,10 +967,10 @@ export default function Dashboard() {
                   {dashboardData.resumo.transacoesCount}
                 </p>
                 {modoAvancado ? (
-                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
-                    Média: {formatCurrency(dashboardData.resumo.mediaGastoDiario)}/dia
+                    Média: <ValorResponsivo valor={dashboardData.resumo.mediaGastoDiario} showCompactAlways={true} />/dia
                   </p>
                 ) : (
                   <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
@@ -1001,11 +1006,12 @@ export default function Dashboard() {
                   {dashboardData.resumo.dividasAtivas || 0}
                 </p>
                 {modoAvancado ? (
-                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${
+                  <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 ${
                     darkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
-                    {dashboardData.resumo.valorTotalRestanteDividas ? 
-                      formatCurrency(dashboardData.resumo.valorTotalRestanteDividas) : 'R$ 0,00'} restante
+                    {dashboardData.resumo.valorTotalRestanteDividas ? (
+                      <ValorResponsivo valor={dashboardData.resumo.valorTotalRestanteDividas} showCompactAlways={true} />
+                    ) : 'R$ 0,00'} restante
                   </p>
                 ) : (
                   <p className={`text-xs sm:text-sm mt-1 transition-colors duration-300 truncate ${

@@ -503,6 +503,16 @@ export default function DividasPage() {
     }).format(valor);
   };
 
+  // Função para formatar valores de forma compacta
+  const formatarValorCompacto = (valor: number): string => {
+    if (valor >= 1000000) {
+      return `R$ ${(valor / 1000000).toFixed(1)}M`;
+    } else if (valor >= 1000) {
+      return `R$ ${(valor / 1000).toFixed(0)}k`;
+    }
+    return formatarValor(valor);
+  };
+
   if (loading && !dividas.length) {
     return <CleanLoading />;
   }
@@ -611,24 +621,29 @@ export default function DividasPage() {
               
               {/* Estatísticas rápidas */}
               {estatisticas && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-                    <div className="text-2xl font-bold text-white">{estatisticas.resumo.totalDividas}</div>
-                    <div className="text-white/90 text-sm font-medium">Total</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30 text-center">
+                    <div className="text-xl sm:text-2xl font-bold text-white">{estatisticas.resumo.totalDividas}</div>
+                    <div className="text-white/90 text-xs sm:text-sm font-medium">Total</div>
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-                    <div className="text-2xl font-bold text-white">{estatisticas.resumo.dividasAtivas}</div>
-                    <div className="text-white/90 text-sm font-medium">Ativas</div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30 text-center">
+                    <div className="text-xl sm:text-2xl font-bold text-white">{estatisticas.resumo.dividasAtivas}</div>
+                    <div className="text-white/90 text-xs sm:text-sm font-medium">Ativas</div>
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-                    <div className="text-2xl font-bold text-white">
-                      {formatarValor(estatisticas.resumo.valorTotalRestante)}
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30 text-center">
+                    <div className="text-sm sm:text-lg md:text-xl font-bold text-white break-words">
+                      <span className="hidden sm:inline">
+                        {formatarValor(estatisticas.resumo.valorTotalRestante)}
+                      </span>
+                      <span className="sm:hidden">
+                        {formatarValorCompacto(estatisticas.resumo.valorTotalRestante)}
+                      </span>
                     </div>
-                    <div className="text-white/90 text-sm font-medium">Restante</div>
+                    <div className="text-white/90 text-xs sm:text-sm font-medium">Restante</div>
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
-                    <div className="text-2xl font-bold text-white">{estatisticas.resumo.parcelasVencidas}</div>
-                    <div className="text-white/90 text-sm font-medium">Vencidas</div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30 text-center">
+                    <div className="text-xl sm:text-2xl font-bold text-white">{estatisticas.resumo.parcelasVencidas}</div>
+                    <div className="text-white/90 text-xs sm:text-sm font-medium">Vencidas</div>
                   </div>
                 </div>
               )}
@@ -891,10 +906,15 @@ export default function DividasPage() {
                           }`}>
                             Pago
                           </div>
-                          <div className={`text-sm font-bold ${
+                          <div className={`text-xs sm:text-sm font-bold break-words ${
                             darkMode ? 'text-emerald-300' : 'text-emerald-700'
                           }`}>
-                            {formatarValor(divida.estatisticas?.valorPago || 0)}
+                            <span className="hidden sm:inline">
+                              {formatarValor(divida.estatisticas?.valorPago || 0)}
+                            </span>
+                            <span className="sm:hidden">
+                              {formatarValorCompacto(divida.estatisticas?.valorPago || 0)}
+                            </span>
                           </div>
                         </div>
                         
@@ -906,10 +926,15 @@ export default function DividasPage() {
                           }`}>
                             Restante
                           </div>
-                          <div className={`text-sm font-bold ${
+                          <div className={`text-xs sm:text-sm font-bold break-words ${
                             darkMode ? 'text-orange-300' : 'text-orange-700'
                           }`}>
-                            {formatarValor(divida.estatisticas?.valorRestante || 0)}
+                            <span className="hidden sm:inline">
+                              {formatarValor(divida.estatisticas?.valorRestante || 0)}
+                            </span>
+                            <span className="sm:hidden">
+                              {formatarValorCompacto(divida.estatisticas?.valorRestante || 0)}
+                            </span>
                           </div>
                         </div>
                       </div>
