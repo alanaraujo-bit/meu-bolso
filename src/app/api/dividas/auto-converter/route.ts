@@ -178,8 +178,31 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Analisar quais são elegíveis para conversão
-    const elegiveisParaConversao = dividas.map(divida => {
+    // Buscar recorrentes criadas a partir de dívidas para excluir já convertidas
+    const recorrentesExistentes = await prisma.transacaoRecorrente.findMany({
+      where: {
+        userId: usuario.id,
+        descricao: {
+          contains: '💳'
+        }
+      }
+    });
+
+    // Criar set com nomes de dívidas já convertidas
+    const dividasJaConvertidas = new Set<string>();
+    recorrentesExistentes.forEach(rec => {
+      if (rec.descricao) {
+        const match = rec.descricao.match(/💳 (.+) - Parcela/);
+        if (match) {
+          dividasJaConvertidas.add(match[1]);
+        }
+      }
+    });
+
+    // Analisar quais são elegíveis para conversão (excluindo já convertidas)
+    const elegiveisParaConversao = dividas
+      .filter(divida => !dividasJaConvertidas.has(divida.nome)) // ✅ Filtrar já convertidas
+      .map(divida => {
       const parcelasRestantes = divida.parcelas.filter(p => p.status === 'PENDENTE');
       const parcelasPagas = divida.parcelas.filter(p => p.status === 'PAGA');
       const ultimaParcela = parcelasRestantes[parcelasRestantes.length - 1];

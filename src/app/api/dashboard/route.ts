@@ -200,7 +200,7 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -211,6 +211,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mesParam = searchParams.get('mes');
     const anoParam = searchParams.get('ano');
+    const detalhes = searchParams.get('detalhes') === 'true'; // ✅ Novo parâmetro para mostrar detalhes
     
     const hoje = getDataAtualBrasil();
     const mes = mesParam ? parseInt(mesParam) : hoje.getMonth() + 1;
@@ -561,6 +562,55 @@ export async function GET(request: NextRequest) {
         });
     });
 
+    // ✅ ADICIONAR: Próximas execuções de recorrentes (especialmente de dívidas convertidas)
+    const recorrentesAtivas = await prisma.transacaoRecorrente.findMany({
+      where: {
+        userId: usuario.id,
+        isActive: true,
+        dataInicio: { lte: em30Dias },
+        OR: [
+          { dataFim: null },
+          { dataFim: { gte: agora } }
+        ]
+      },
+      include: {
+        categoria: true,
+        transacoes: {
+          orderBy: { data: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    // Calcular próximas execuções de recorrentes
+    recorrentesAtivas.forEach(recorrente => {
+      let proximaExecucao = new Date(recorrente.dataInicio);
+
+      // Se já há transações, calcular a partir da última
+      if (recorrente.transacoes.length > 0) {
+        const ultimaTransacao = recorrente.transacoes[0];
+        proximaExecucao = calcularProximaData(ultimaTransacao.data, recorrente.frequencia);
+      }
+
+      // Verificar se próxima execução está no período
+      if (proximaExecucao >= agora && proximaExecucao <= em30Dias) {
+        // Verificar se data fim não passou
+        if (!recorrente.dataFim || proximaExecucao <= recorrente.dataFim) {
+          proximasParcelasDetalhadas.push({
+            id: `rec-${recorrente.id}`,
+            dividaId: recorrente.id,
+            dividaNome: recorrente.descricao || 'Recorrente',
+            numero: 0, // Recorrentes não têm número de parcela
+            valor: recorrente.valor.toNumber(),
+            dataVencimento: proximaExecucao,
+            categoria: recorrente.categoria?.nome || 'Sem categoria',
+            cor: recorrente.categoria?.cor || '#10B981', // Verde para recorrentes
+            diasParaVencimento: Math.ceil((proximaExecucao.getTime() - agora.getTime()) / (1000 * 60 * 60 * 24))
+          });
+        }
+      }
+    });
+
     // Ordenar por data de vencimento
     proximasParcelasDetalhadas.sort((a, b) => 
       new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime()
@@ -878,7 +928,29 @@ export async function GET(request: NextRequest) {
           totalEconomizado: metasConcluidas.reduce((sum, m) => sum + m.currentAmount, 0)
         }
       },
-      insights
+      insights,
+      // ✅ Detalhes de prévia se solicitado
+      ...(detalhes && {
+        previaSetembro: {
+          dividasNaoConvertidas: proximasParcelasDetalhadas
+            .filter(p => p.dataVencimento >= new Date(2024, 8, 1) && p.dataVencimento <= new Date(2024, 8, 30))
+            .filter(p => !p.id.startsWith('rec-'))
+            .map(p => ({
+              nome: p.dividaNome,
+              parcela: p.numero,
+              valor: p.valor,
+              categoria: p.categoria
+            })),
+          recorrentesConvertidas: proximasParcelasDetalhadas
+            .filter(p => p.dataVencimento >= new Date(2024, 8, 1) && p.dataVencimento <= new Date(2024, 8, 30))
+            .filter(p => p.id.startsWith('rec-'))
+            .map(p => ({
+              nome: p.dividaNome,
+              valor: p.valor,
+              categoria: p.categoria
+            }))
+        }
+      })
     });
 
   } catch (error) {
