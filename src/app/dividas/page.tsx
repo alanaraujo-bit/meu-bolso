@@ -126,6 +126,8 @@ export default function DividasPage() {
   const [filtroStatus, setFiltroStatus] = useState<"TODAS" | "ATIVA" | "QUITADA">("ATIVA");
   const [dividaExpandida, setDividaExpandida] = useState<string | null>(null);
   const [mensagemFeedback, setMensagemFeedback] = useState<{texto: string, tipo: 'success' | 'error'} | null>(null);
+  const [dividasElegiveis, setDividasElegiveis] = useState<any[]>([]);
+  const [mostrarAutoConversao, setMostrarAutoConversao] = useState(false);
 
   const [formulario, setFormulario] = useState<FormularioDivida>({
     nome: "",
@@ -185,7 +187,60 @@ export default function DividasPage() {
     
     carregarDados();
     carregarCategorias();
+    verificarDividasElegiveis();
   }, [session, status, router, filtroStatus]);
+
+  // Verificar dívidas elegíveis para conversão automática
+  const verificarDividasElegiveis = async () => {
+    try {
+      const response = await fetch('/api/dividas/auto-converter');
+      if (response.ok) {
+        const data = await response.json();
+        setDividasElegiveis(data.dividas || []);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar dívidas elegíveis:', error);
+    }
+  };
+
+  // Converter dívida em transação recorrente
+  const converterDividaParaRecorrente = async (dividaId: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/dividas/auto-converter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dividaId })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        mostrarFeedback(`✅ ${data.message}`, 'success');
+        carregarDados();
+        verificarDividasElegiveis();
+      } else {
+        const error = await response.json();
+        mostrarFeedback(`❌ ${error.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('Erro na conversão:', error);
+      mostrarFeedback('❌ Erro inesperado na conversão', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calcular data prevista de quitação
+  const calcularDataPrevistaQuitacao = (divida: Divida) => {
+    const parcelasRestantes = divida.parcelas.filter(p => p.status === 'PENDENTE');
+    if (parcelasRestantes.length === 0) return null;
+    
+    const ultimaParcela = parcelasRestantes.sort((a, b) => 
+      new Date(b.dataVencimento).getTime() - new Date(a.dataVencimento).getTime()
+    )[0];
+    
+    return ultimaParcela ? new Date(ultimaParcela.dataVencimento) : null;
+  };
 
   // Função para calcular estatísticas de uma dívida
   const calcularEstatisticasDivida = (divida: any) => {
@@ -691,6 +746,146 @@ export default function DividasPage() {
           </div>
         )}
 
+        {/* Dívidas Elegíveis para Conversão Automática */}
+        {dividasElegiveis.length > 0 && (
+          <div className={`backdrop-blur-xl rounded-2xl shadow-xl border mb-8 p-6 ${
+            darkMode 
+              ? 'bg-purple-800/40 border-purple-700/50' 
+              : 'bg-purple-50/80 border-purple-200/50'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                  <RotateCcw className="w-5 h-5 text-purple-500" />
+                </div>
+                <div>
+                  <h3 className={`text-lg font-bold ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    🤖 Conversão Automática Disponível
+                  </h3>
+                  <p className={`text-sm ${
+                    darkMode ? 'text-purple-300' : 'text-purple-700'
+                  }`}>
+                    {dividasElegiveis.length} dívida(s) podem virar transações recorrentes
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setMostrarAutoConversao(!mostrarAutoConversao)}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  darkMode 
+                    ? 'bg-purple-600/20 text-purple-300 hover:bg-purple-600/30' 
+                    : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                }`}
+              >
+                {mostrarAutoConversao ? 'Ocultar' : 'Ver Detalhes'}
+              </button>
+            </div>
+
+            {mostrarAutoConversao && (
+              <div className="space-y-3">
+                {dividasElegiveis.map((divida) => (
+                  <div key={divida.id} className={`p-4 rounded-lg border ${
+                    darkMode 
+                      ? 'bg-purple-900/20 border-purple-600/30' 
+                      : 'bg-white/60 border-purple-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className={`font-semibold ${
+                          darkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          💳 {divida.nome}
+                        </h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2 text-sm">
+                          <div>
+                            <span className={`font-medium ${
+                              darkMode ? 'text-purple-300' : 'text-purple-600'
+                            }`}>
+                              Restantes:
+                            </span>
+                            <div className={`font-bold ${
+                              darkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {divida.parcelasRestantes} parcelas
+                            </div>
+                          </div>
+                          <div>
+                            <span className={`font-medium ${
+                              darkMode ? 'text-purple-300' : 'text-purple-600'
+                            }`}>
+                              Valor:
+                            </span>
+                            <div className={`font-bold ${
+                              darkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {formatarValor(divida.valorParcela)}
+                            </div>
+                          </div>
+                          <div>
+                            <span className={`font-medium ${
+                              darkMode ? 'text-purple-300' : 'text-purple-600'
+                            }`}>
+                              Progresso:
+                            </span>
+                            <div className={`font-bold ${
+                              darkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {divida.progressoPercentual}%
+                            </div>
+                          </div>
+                          <div>
+                            <span className={`font-medium ${
+                              darkMode ? 'text-purple-300' : 'text-purple-600'
+                            }`}>
+                              Quitação:
+                            </span>
+                            <div className={`font-bold text-xs ${
+                              darkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {divida.dataPrevistaQuitacao ? 
+                                new Date(divida.dataPrevistaQuitacao).toLocaleDateString('pt-BR') : 
+                                'N/A'
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => converterDividaParaRecorrente(divida.id)}
+                        className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-lg transition-all duration-200 hover:scale-105 shadow-lg flex items-center gap-2"
+                      >
+                        <RotateCcw size={16} />
+                        Converter
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className={`p-3 rounded-lg border-l-4 text-sm ${
+                  darkMode 
+                    ? 'bg-blue-900/20 border-blue-400 text-blue-300' 
+                    : 'bg-blue-50 border-blue-400 text-blue-700'
+                }`}>
+                  <div className="flex items-center gap-2 font-medium">
+                    <Info size={14} />
+                    Como funciona a conversão automática?
+                  </div>
+                  <div className="text-xs mt-2 opacity-90">
+                    • Quando restam 10 ou menos parcelas, você pode converter a dívida em transação recorrente<br/>
+                    • Isso criará pagamentos automáticos mensais para as parcelas restantes<br/>
+                    • Facilita o controle e garante que nenhuma parcela seja esquecida<br/>
+                    • A transação recorrente terá o mesmo valor e categoria da dívida
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Controles */}
         <div className={`backdrop-blur-xl rounded-2xl shadow-xl border mb-8 p-6 ${
           darkMode 
@@ -939,27 +1134,89 @@ export default function DividasPage() {
                         </div>
                       </div>
 
-                      {/* Próxima Parcela */}
+                      {/* Próxima Parcela e Data Prevista de Quitação */}
                       {(() => {
                         const proximaParcela = obterProximaParcela(divida);
-                        return proximaParcela && (
-                          <div className={`mt-3 p-3 rounded-lg border-l-4 ${
-                            darkMode 
-                              ? 'bg-blue-900/20 border-blue-400 text-blue-300' 
-                              : 'bg-blue-50 border-blue-400 text-blue-700'
-                          }`}>
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2 text-sm font-medium">
-                                <Clock size={14} />
-                                Próxima: #{proximaParcela.numero}
+                        const dataPrevistaQuitacao = calcularDataPrevistaQuitacao(divida);
+                        const parcelasRestantes = divida.parcelas.filter(p => p.status === 'PENDENTE').length;
+                        const elegiveParaConversao = parcelasRestantes <= 10 && parcelasRestantes > 0;
+                        
+                        return (
+                          <div className="space-y-3 mt-4">
+                            {/* Próxima Parcela */}
+                            {proximaParcela && (
+                              <div className={`p-3 rounded-lg border-l-4 ${
+                                darkMode 
+                                  ? 'bg-blue-900/20 border-blue-400 text-blue-300' 
+                                  : 'bg-blue-50 border-blue-400 text-blue-700'
+                              }`}>
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2 text-sm font-medium">
+                                    <Clock size={14} />
+                                    Próxima: #{proximaParcela.numero}
+                                  </div>
+                                  <div className="text-sm font-bold">
+                                    {formatarValor(proximaParcela.valor)}
+                                  </div>
+                                </div>
+                                <div className="text-xs mt-1 opacity-80">
+                                  Vence: {new Date(proximaParcela.dataVencimento).toLocaleDateString('pt-BR')}
+                                </div>
                               </div>
-                              <div className="text-sm font-bold">
-                                {formatarValor(proximaParcela.valor)}
+                            )}
+
+                            {/* Data Prevista de Quitação */}
+                            {dataPrevistaQuitacao && (
+                              <div className={`p-3 rounded-lg border-l-4 ${
+                                darkMode 
+                                  ? 'bg-emerald-900/20 border-emerald-400 text-emerald-300' 
+                                  : 'bg-emerald-50 border-emerald-400 text-emerald-700'
+                              }`}>
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                  <Target size={14} />
+                                  Quitação Prevista:
+                                </div>
+                                <div className="text-sm font-bold mt-1">
+                                  📅 {dataPrevistaQuitacao.toLocaleDateString('pt-BR', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </div>
+                                <div className="text-xs mt-1 opacity-80">
+                                  {parcelasRestantes} parcelas restantes
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-xs mt-1 opacity-80">
-                              Vence: {new Date(proximaParcela.dataVencimento).toLocaleDateString('pt-BR')}
-                            </div>
+                            )}
+
+                            {/* Conversão Automática */}
+                            {elegiveParaConversao && (
+                              <div className={`p-3 rounded-lg border-l-4 ${
+                                darkMode 
+                                  ? 'bg-purple-900/20 border-purple-400 text-purple-300' 
+                                  : 'bg-purple-50 border-purple-400 text-purple-700'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                                      <RotateCcw size={14} />
+                                      Conversão Automática Disponível
+                                    </div>
+                                    <div className="text-xs opacity-80">
+                                      🤖 Restam {parcelasRestantes} parcelas - pode virar recorrente!
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => converterDividaParaRecorrente(divida.id)}
+                                    className="ml-3 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold rounded-lg transition-all duration-200 hover:scale-105 shadow-lg"
+                                    title="Converter para transação recorrente"
+                                  >
+                                    🔄 Converter
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
