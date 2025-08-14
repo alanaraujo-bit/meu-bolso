@@ -98,6 +98,12 @@ export async function POST(req: NextRequest) {
       data: dadosRecorrente,
     });
 
+    // TODO: Marcar a dívida como convertida após resolver tipos do Prisma
+    // await prisma.divida.update({
+    //   where: { id: dividaId },
+    //   data: { convertidaRecorrente: true, recorrenteId: transacaoRecorrente.id }
+    // });
+
     // Log para auditoria
     console.log(`🔄 CONVERSÃO REALIZADA:`);
     console.log(`   📋 Dívida: ${divida.nome}`);

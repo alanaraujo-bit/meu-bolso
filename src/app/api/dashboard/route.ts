@@ -412,6 +412,32 @@ export async function GET(request: NextRequest) {
 
     // Parcelas vencidas
     const agora = new Date();
+    
+    // Buscar dívidas que foram convertidas para recorrentes (evitar contagem dupla)
+    const dividasConvertidas = new Set<string>();
+    const recorrentesGeradas = await prisma.transacaoRecorrente.findMany({
+      where: {
+        userId: usuario.id,
+        descricao: {
+          contains: '💳'
+        }
+      }
+    });
+    
+    // Extrair nomes das dívidas convertidas
+    recorrentesGeradas.forEach(rec => {
+      if (rec.descricao) {
+        const match = rec.descricao.match(/💳 (.+) - Parcela/);
+        if (match) {
+          const nomeDivida = match[1];
+          const dividaConvertida = dividas.find(d => d.nome === nomeDivida);
+          if (dividaConvertida) {
+            dividasConvertidas.add(dividaConvertida.id);
+          }
+        }
+      }
+    });
+    
     const parcelasVencidas = dividas.reduce((acc, divida) => {
       const vencidas = divida.parcelas.filter(p => 
         p.status === 'PENDENTE' && new Date(p.dataVencimento) < agora
@@ -419,11 +445,16 @@ export async function GET(request: NextRequest) {
       return acc + vencidas;
     }, 0);
 
-    // Próximas parcelas (próximos 7 dias)
+    // Próximas parcelas (próximos 7 dias) - excluindo dívidas convertidas
     const em7Dias = new Date();
     em7Dias.setDate(em7Dias.getDate() + 7);
     
     const proximasParcelas = dividas.reduce((acc, divida) => {
+      // Pular dívidas convertidas para evitar contagem dupla
+      if (dividasConvertidas.has(divida.id)) {
+        return acc;
+      }
+      
       const proximas = divida.parcelas.filter(p => 
         p.status === 'PENDENTE' && 
         new Date(p.dataVencimento) >= agora && 
@@ -449,6 +480,11 @@ export async function GET(request: NextRequest) {
     }> = [];
     
     dividas.forEach(divida => {
+      // Pular dívidas que foram convertidas para recorrentes (evitar contagem dupla)
+      if (dividasConvertidas.has(divida.id)) {
+        return;
+      }
+      
       divida.parcelas
         .filter(p => 
           p.status === 'PENDENTE' && 

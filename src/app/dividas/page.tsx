@@ -230,6 +230,23 @@ export default function DividasPage() {
     }
   };
 
+  // Verificar se dívida já foi convertida para recorrente
+  const verificarDividaConvertida = async (nomeCompletoIdDivida: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/transacoes-recorrentes');
+      if (response.ok) {
+        const data = await response.json();
+        const recorrentes = data.recorrentes || [];
+        return recorrentes.some((r: any) => 
+          r.descricao.includes(`💳 ${nomeCompletoIdDivida} - Parcela`)
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao verificar conversão:', error);
+    }
+    return false;
+  };
+
   // Calcular data prevista de quitação
   const calcularDataPrevistaQuitacao = (divida: Divida) => {
     const parcelasRestantes = divida.parcelas.filter(p => p.status === 'PENDENTE');
@@ -1140,7 +1157,8 @@ export default function DividasPage() {
                         const proximaParcela = obterProximaParcela(divida);
                         const dataPrevistaQuitacao = calcularDataPrevistaQuitacao(divida);
                         const parcelasRestantes = divida.parcelas.filter(p => p.status === 'PENDENTE').length;
-                        const elegiveParaConversao = parcelasRestantes <= 10 && parcelasRestantes > 0;
+                        const elegiveParaConversao = parcelasRestantes > 0 && 
+                          dividasElegiveis.some(elegivel => elegivel.id === divida.id); // Só exibe se está na lista de elegíveis
                         
                         return (
                           <div className="space-y-3 mt-4">
