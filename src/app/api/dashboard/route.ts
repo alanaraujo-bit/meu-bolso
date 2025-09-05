@@ -138,7 +138,7 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
         const mesProximaExecucao = proximaExecucao.getMonth();
         const anoProximaExecucao = proximaExecucao.getFullYear();
         
-        const hoje = new Date();
+        const hoje = getDataAtualBrasil(); // USANDO TIMEZONE BRASILEIRO CORRETO
         const diaHoje = hoje.getDate();
         const mesHoje = hoje.getMonth();
         const anoHoje = hoje.getFullYear();
@@ -465,8 +465,8 @@ export async function GET(request: Request) {
     }, 0);
     const valorTotalRestanteDividas = valorTotalDividas - valorTotalPagoDividas;
 
-    // Parcelas vencidas
-    const agora = new Date();
+    // Parcelas vencidas - USANDO TIMEZONE BRASILEIRO CORRETO
+    const agora = getDataAtualBrasil();
     
     // Buscar dívidas que foram convertidas para recorrentes (evitar contagem dupla)
     const dividasConvertidas = new Set<string>();
@@ -500,8 +500,8 @@ export async function GET(request: Request) {
       return acc + vencidas;
     }, 0);
 
-    // Próximas parcelas (próximos 7 dias) - excluindo dívidas convertidas
-    const em7Dias = new Date();
+    // Próximas parcelas (próximos 7 dias) - USANDO TIMEZONE BRASILEIRO CORRETO
+    const em7Dias = getDataAtualBrasil();
     em7Dias.setDate(em7Dias.getDate() + 7);
     
     const proximasParcelas = dividas.reduce((acc, divida) => {
@@ -518,8 +518,8 @@ export async function GET(request: Request) {
       return acc + proximas.length;
     }, 0);
 
-    // Lista detalhada das próximas parcelas (próximos 30 dias)
-    const em30Dias = new Date();
+    // Lista detalhada das próximas parcelas (próximos 30 dias) - USANDO TIMEZONE BRASILEIRO CORRETO
+    const em30Dias = getDataAtualBrasil();
     em30Dias.setDate(em30Dias.getDate() + 30);
     
     const proximasParcelasDetalhadas: Array<{
