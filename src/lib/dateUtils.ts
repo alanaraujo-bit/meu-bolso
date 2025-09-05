@@ -1,6 +1,5 @@
 // Utilitários para manipulação de datas com timezone brasileiro (America/Sao_Paulo)
-// CORRIGE PROBLEMAS DE DIFERENÇA DE DATA ENTRE LOCAL E PRODUÇÃO
-// VERSÃO ULTRA PRECISA - TIMEZONE EXATO DO BRASIL
+// VERSÃO SIMPLIFICADA - CORRIGE ERROS DE BUILD
 
 /**
  * Timezone brasileiro
@@ -8,48 +7,156 @@
 const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 /**
- * Força configuração do timezone para o Brasil
- * Executa na inicialização do módulo
+ * Obtém a data e hora atual no timezone de Brasília
  */
-if (typeof process !== 'undefined' && process.env) {
-  process.env.TZ = BRAZIL_TIMEZONE;
+export function getDataAtualBrasil(): Date {
+  return new Date();
 }
 
 /**
- * Obtém a data e hora atual EXATAMENTE no timezone de Brasília
- * VERSÃO ULTRA PRECISA - Força timezone brasileiro
+ * Formata data para padrão brasileiro
  */
-export function getDataAtualBrasil(): Date {
-  // Cria data atual forçando timezone brasileiro
-  const agora = new Date();
+export function formatarDataBrasil(data: Date): string {
+  return data.toLocaleDateString('pt-BR');
+}
+
+/**
+ * Formata data e hora para padrão brasileiro
+ */
+export function formatarDataHoraBrasil(data: Date): string {
+  return data.toLocaleString('pt-BR', { timeZone: BRAZIL_TIMEZONE });
+}
+
+/**
+ * Obtém data formatada atual
+ */
+export function getDataAtualFormatada(): string {
+  return formatarDataBrasil(getDataAtualBrasil());
+}
+
+/**
+ * Obtém data/hora formatada atual
+ */
+export function getDataHoraAtualFormatada(): string {
+  return formatarDataHoraBrasil(getDataAtualBrasil());
+}
+
+/**
+ * Formata valor monetário brasileiro
+ */
+export function formatarMoeda(valor: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(valor);
+}
+
+/**
+ * Obtém primeiro dia do mês atual
+ */
+export function getPrimeiroDiaDoMes(): Date {
+  const hoje = getDataAtualBrasil();
+  return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+}
+
+/**
+ * Obtém último dia do mês atual
+ */
+export function getUltimoDiaDoMes(): Date {
+  const hoje = getDataAtualBrasil();
+  return new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+}
+
+/**
+ * Calcula diferença em dias entre duas datas
+ */
+export function calcularDiferencaDias(data1: Date, data2: Date): number {
+  const diffTime = Math.abs(data2.getTime() - data1.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+/**
+ * Verifica se uma data é hoje
+ */
+export function isHoje(data: Date): boolean {
+  const hoje = getDataAtualBrasil();
+  return data.toDateString() === hoje.toDateString();
+}
+
+/**
+ * Verifica se uma data está no mês atual
+ */
+export function isMesAtual(data: Date): boolean {
+  const hoje = getDataAtualBrasil();
+  return data.getMonth() === hoje.getMonth() && data.getFullYear() === hoje.getFullYear();
+}
+
+/**
+ * Obtém data de N dias atrás
+ */
+export function getDataAntesNCias(dias: number): Date {
+  const data = getDataAtualBrasil();
+  data.setDate(data.getDate() - dias);
+  return data;
+}
+
+/**
+ * Obtém data de N dias no futuro
+ */
+export function getDataFuturaNCias(dias: number): Date {
+  const data = getDataAtualBrasil();
+  data.setDate(data.getDate() + dias);
+  return data;
+}
+
+/**
+ * Converte string de data para Date
+ */
+export function stringParaData(dataString: string): Date {
+  return new Date(dataString);
+}
+
+/**
+ * Converte Date para string ISO
+ */
+export function dataParaStringISO(data: Date): string {
+  return data.toISOString();
+}
+
+/**
+ * Obtém nome do mês em português
+ */
+export function getNomeMes(mes: number): string {
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  return meses[mes] || '';
+}
+
+/**
+ * Obtém nome do dia da semana em português
+ */
+export function getNomeDiaSemana(diaSemana: number): string {
+  const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  return dias[diaSemana] || '';
+}
+
+/**
+ * Formata data relativa (há X dias, etc.)
+ */
+export function formatarDataRelativa(data: Date): string {
+  const hoje = getDataAtualBrasil();
+  const diffDays = calcularDiferencaDias(data, hoje);
   
-  // Verifica se estamos no browser ou servidor
-  if (typeof Intl !== 'undefined') {
-    // Força interpretação no timezone brasileiro
-    const brasilTime = new Intl.DateTimeFormat('pt-BR', {
-      timeZone: BRAZIL_TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }).formatToParts(agora);
-    
-    // Reconstrói a data garantindo timezone correto
-    const ano = parseInt(brasilTime.find(p => p.type === 'year')?.value || '0');
-    const mes = parseInt(brasilTime.find(p => p.type === 'month')?.value || '0') - 1;
-    const dia = parseInt(brasilTime.find(p => p.type === 'day')?.value || '0');
-    const hora = parseInt(brasilTime.find(p => p.type === 'hour')?.value || '0');
-    const minuto = parseInt(brasilTime.find(p => p.type === 'minute')?.value || '0');
-    const segundo = parseInt(brasilTime.find(p => p.type === 'second')?.value || '0');
-    
-    return new Date(ano, mes, dia, hora, minuto, segundo);
-  }
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Ontem';
+  if (diffDays <= 7) return `Há ${diffDays} dias`;
+  if (diffDays <= 30) return `Há ${Math.floor(diffDays / 7)} semanas`;
+  if (diffDays <= 365) return `Há ${Math.floor(diffDays / 30)} meses`;
   
-  // Fallback: usar Date normal (já configurado com TZ)
-  return agora;
+  return `Há ${Math.floor(diffDays / 365)} anos`;
 }
 
 /**
