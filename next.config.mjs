@@ -16,9 +16,10 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
   },
   
-  // Configurações de timezone para produção
+  // Configurações de timezone para produção - ULTRA PRECISO
   env: {
     TZ: 'America/Sao_Paulo',
+    TIMEZONE: 'America/Sao_Paulo',
   },
   
   // Headers para timezone e CORS

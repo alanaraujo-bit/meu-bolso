@@ -1,5 +1,12 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { timezoneMiddleware } from "@/lib/timezoneMiddleware";
+
+// Configurar timezone logo no início
+if (typeof process !== 'undefined' && process.env) {
+  process.env.TZ = 'America/Sao_Paulo';
+  process.env.TIMEZONE = 'America/Sao_Paulo';
+}
 
 // Lista de emails de administradores
 const ADMIN_EMAILS = [

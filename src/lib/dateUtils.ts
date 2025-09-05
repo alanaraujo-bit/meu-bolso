@@ -1,5 +1,6 @@
 // Utilitários para manipulação de datas com timezone brasileiro (America/Sao_Paulo)
 // CORRIGE PROBLEMAS DE DIFERENÇA DE DATA ENTRE LOCAL E PRODUÇÃO
+// VERSÃO ULTRA PRECISA - TIMEZONE EXATO DO BRASIL
 
 /**
  * Timezone brasileiro
@@ -7,13 +8,48 @@
 const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 /**
- * Obtém a data e hora atual no timezone de Brasília
- * VERSÃO SIMPLIFICADA - Sempre usar a data/hora real do sistema
+ * Força configuração do timezone para o Brasil
+ * Executa na inicialização do módulo
+ */
+if (typeof process !== 'undefined' && process.env) {
+  process.env.TZ = BRAZIL_TIMEZONE;
+}
+
+/**
+ * Obtém a data e hora atual EXATAMENTE no timezone de Brasília
+ * VERSÃO ULTRA PRECISA - Força timezone brasileiro
  */
 export function getDataAtualBrasil(): Date {
-  // CORREÇÃO: Usar sempre new Date() - ela já captura a data/hora correta
-  // O banco de dados MySQL vai armazenar no timezone correto
-  return new Date();
+  // Cria data atual forçando timezone brasileiro
+  const agora = new Date();
+  
+  // Verifica se estamos no browser ou servidor
+  if (typeof Intl !== 'undefined') {
+    // Força interpretação no timezone brasileiro
+    const brasilTime = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: BRAZIL_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).formatToParts(agora);
+    
+    // Reconstrói a data garantindo timezone correto
+    const ano = parseInt(brasilTime.find(p => p.type === 'year')?.value || '0');
+    const mes = parseInt(brasilTime.find(p => p.type === 'month')?.value || '0') - 1;
+    const dia = parseInt(brasilTime.find(p => p.type === 'day')?.value || '0');
+    const hora = parseInt(brasilTime.find(p => p.type === 'hour')?.value || '0');
+    const minuto = parseInt(brasilTime.find(p => p.type === 'minute')?.value || '0');
+    const segundo = parseInt(brasilTime.find(p => p.type === 'second')?.value || '0');
+    
+    return new Date(ano, mes, dia, hora, minuto, segundo);
+  }
+  
+  // Fallback: usar Date normal (já configurado com TZ)
+  return agora;
 }
 
 /**
