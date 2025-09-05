@@ -1191,14 +1191,18 @@ export default function Dashboard() {
                           </div>
                           {parcela.diasParaVencimento <= 7 && (
                             <span className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-semibold ${
-                              parcela.diasParaVencimento <= 0 
+                              parcela.diasParaVencimento < 0 
                                 ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                                : parcela.diasParaVencimento === 0
+                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                                 : parcela.diasParaVencimento <= 3
                                 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
                                 : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                             }`}>
-                              {parcela.diasParaVencimento <= 0 
+                              {parcela.diasParaVencimento < 0 
                                 ? '⚠️ Vencida' 
+                                : parcela.diasParaVencimento === 0
+                                ? '🎯 Vence hoje'
                                 : parcela.diasParaVencimento === 1
                                 ? '🔥 Vence amanhã'
                                 : `⏰ ${parcela.diasParaVencimento} dias`

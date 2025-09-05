@@ -548,6 +548,16 @@ export async function GET(request: Request) {
         )
         .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())
         .forEach(parcela => {
+          // Calcular dias para vencimento baseado apenas na data (sem horas)
+          const dataVencimento = new Date(parcela.dataVencimento);
+          const dataHoje = getDataAtualBrasil();
+          
+          // Zerar as horas para comparação apenas das datas
+          const vencimentoSemHora = new Date(dataVencimento.getFullYear(), dataVencimento.getMonth(), dataVencimento.getDate());
+          const hojeSemHora = new Date(dataHoje.getFullYear(), dataHoje.getMonth(), dataHoje.getDate());
+          
+          const diasParaVencimento = Math.round((vencimentoSemHora.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24));
+          
           proximasParcelasDetalhadas.push({
             id: parcela.id,
             dividaId: divida.id,
@@ -557,7 +567,7 @@ export async function GET(request: Request) {
             dataVencimento: parcela.dataVencimento,
             categoria: divida.categoria?.nome || 'Sem categoria',
             cor: divida.categoria?.cor || '#EF4444',
-            diasParaVencimento: Math.ceil((new Date(parcela.dataVencimento).getTime() - agora.getTime()) / (1000 * 60 * 60 * 24))
+            diasParaVencimento: diasParaVencimento
           });
         });
     });
@@ -596,6 +606,15 @@ export async function GET(request: Request) {
       if (proximaExecucao >= agora && proximaExecucao <= em30Dias) {
         // Verificar se data fim não passou
         if (!recorrente.dataFim || proximaExecucao <= recorrente.dataFim) {
+          // Calcular dias para vencimento baseado apenas na data (sem horas)
+          const dataHoje = getDataAtualBrasil();
+          
+          // Zerar as horas para comparação apenas das datas
+          const vencimentoSemHora = new Date(proximaExecucao.getFullYear(), proximaExecucao.getMonth(), proximaExecucao.getDate());
+          const hojeSemHora = new Date(dataHoje.getFullYear(), dataHoje.getMonth(), dataHoje.getDate());
+          
+          const diasParaVencimento = Math.round((vencimentoSemHora.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24));
+          
           proximasParcelasDetalhadas.push({
             id: `rec-${recorrente.id}`,
             dividaId: recorrente.id,
@@ -605,7 +624,7 @@ export async function GET(request: Request) {
             dataVencimento: proximaExecucao,
             categoria: recorrente.categoria?.nome || 'Sem categoria',
             cor: recorrente.categoria?.cor || '#10B981', // Verde para recorrentes
-            diasParaVencimento: Math.ceil((proximaExecucao.getTime() - agora.getTime()) / (1000 * 60 * 60 * 24))
+            diasParaVencimento: diasParaVencimento
           });
         }
       }
