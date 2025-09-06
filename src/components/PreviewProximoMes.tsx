@@ -23,6 +23,7 @@ interface DadosDebug {
   totalDividas?: number;
   dividasConvertidas?: string[];
   fontesDados: string[];
+  transacoesDetalhadas: TransacaoFutura[];
   calculos: {
     totalReceitas: number;
     totalDespesas: number;
@@ -90,6 +91,7 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
           dataConsulta: new Date().toLocaleString('pt-BR'),
           totalRecorrentes: (data.transacoes || []).filter((t: TransacaoFutura) => t.isRecorrente).length,
           totalDividas: (data.transacoes || []).filter((t: TransacaoFutura) => !t.isRecorrente && t.categoria === 'Dívidas').length,
+          transacoesDetalhadas: data.transacoes || [],
           fontesDados: [
             'Transações Recorrentes Ativas',
             'Parcelas de Dívidas Pendentes', 
@@ -153,6 +155,7 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
           dataConsulta: new Date().toLocaleString('pt-BR'),
           totalRecorrentes: 4,
           totalDividas: 1,
+          transacoesDetalhadas: mockData,
           fontesDados: [
             'Dados simulados (MOCK)',
             'API não respondeu corretamente'
@@ -476,6 +479,75 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
                   📊 Saldo: {formatCurrency(dadosDebug.calculos.saldoPrevisao)}
                 </p>
               </div>
+            </div>
+
+            {/* NOVA SEÇÃO: Lista de Todas as Transações */}
+            <div className={`p-3 rounded-lg ${
+              darkMode ? 'bg-gray-800/50' : 'bg-white/80'
+            }`}>
+              <p className={`text-sm font-medium mb-3 ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                📋 Todas as Transações Encontradas ({dadosDebug.transacoesDetalhadas.length}):
+              </p>
+              
+              {dadosDebug.transacoesDetalhadas.length === 0 ? (
+                <p className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  Nenhuma transação encontrada para este período
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {dadosDebug.transacoesDetalhadas.map((transacao, index) => (
+                    <div 
+                      key={`${transacao.id}-${index}`}
+                      className={`p-2 rounded border-l-2 ${
+                        transacao.tipo === 'receita'
+                          ? 'border-emerald-500 bg-emerald-50/20'
+                          : 'border-red-500 bg-red-50/20'
+                      } ${darkMode ? 'bg-gray-900/30' : 'bg-gray-50/50'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className={`text-xs font-medium ${
+                            darkMode ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            {transacao.titulo}
+                          </p>
+                          <p className={`text-xs ${
+                            darkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            📁 {transacao.categoria} • 
+                            📅 {transacao.dataVencimento.toLocaleDateString('pt-BR')} • 
+                            {transacao.isRecorrente ? '🔄 Recorrente' : '💳 Dívida'}
+                            {transacao.status && ` • ⏳ ${transacao.status}`}
+                          </p>
+                          <p className={`text-xs font-mono ${
+                            darkMode ? 'text-gray-500' : 'text-gray-400'
+                          }`}>
+                            ID: {transacao.id}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-xs font-bold ${
+                            transacao.tipo === 'receita'
+                              ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
+                              : (darkMode ? 'text-red-400' : 'text-red-600')
+                          }`}>
+                            {transacao.tipo === 'receita' ? '+' : '-'}{formatCurrency(Math.abs(transacao.valor))}
+                          </p>
+                          <p className={`text-xs ${
+                            transacao.tipo === 'receita'
+                              ? (darkMode ? 'text-emerald-300' : 'text-emerald-500')
+                              : (darkMode ? 'text-red-300' : 'text-red-500')
+                          }`}>
+                            {transacao.tipo.toUpperCase()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Info de Consulta */}
