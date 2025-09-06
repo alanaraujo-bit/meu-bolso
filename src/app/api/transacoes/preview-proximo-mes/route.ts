@@ -60,6 +60,39 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // ✅ NOVA LÓGICA: Buscar dívidas que foram convertidas para recorrentes (evitar contagem dupla)
+    const dividasConvertidas = new Set<string>();
+    const recorrentesGeradas = await prisma.transacaoRecorrente.findMany({
+      where: {
+        userId: userId,
+        descricao: {
+          contains: '💳'
+        }
+      }
+    });
+    
+    // Extrair nomes das dívidas convertidas
+    recorrentesGeradas.forEach(rec => {
+      if (rec.descricao) {
+        const match = rec.descricao.match(/💳 (.+) - Parcela/);
+        if (match) {
+          const nomeDivida = match[1];
+          const dividaConvertida = dividasDoMes.find(d => d.divida.nome === nomeDivida);
+          if (dividaConvertida) {
+            dividasConvertidas.add(dividaConvertida.divida.id);
+          }
+        }
+      }
+    });
+
+    // DEBUG: Log das dívidas convertidas para evitar duplicação
+    console.log('🔍 PREVIEW - Dívidas convertidas para recorrentes:', {
+      totalRecorrentes: recorrentesGeradas.length,
+      totalDividas: dividasDoMes.length,
+      dividasConvertidas: Array.from(dividasConvertidas),
+      nomesDividasConvertidas: recorrentesGeradas.map(r => r.descricao).filter(d => d?.includes('💳'))
+    });
+
     // Buscar compromissos e metas com vencimento no mês
     const metasDoMes = await prisma.meta.findMany({
       where: {
@@ -134,18 +167,20 @@ export async function GET(request: NextRequest) {
         };
       });
 
-    // Adicionar TODAS as dívidas pendentes (parcelas não pagas)
-    const dividasFuturas = dividasDoMes.map((parcela: any) => ({
-      id: `div_${parcela.id}`,
-      titulo: `${parcela.divida.nome} (Parcela ${parcela.numeroParcela || 'N/A'})`,
-      valor: Number(parcela.valor),
-      tipo: 'despesa' as const,
-      categoria: 'Dívidas',
-      dataVencimento: parcela.dataVencimento,
-      isRecorrente: false,
-      status: 'pendente',
-      observacao: `Vence em ${new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}`
-    }));
+    // ✅ CORREÇÃO: Adicionar APENAS dívidas que NÃO foram convertidas para recorrentes
+    const dividasFuturas = dividasDoMes
+      .filter(parcela => !dividasConvertidas.has(parcela.divida.id)) // Excluir convertidas
+      .map((parcela: any) => ({
+        id: `div_${parcela.id}`,
+        titulo: `${parcela.divida.nome} (Parcela ${parcela.numeroParcela || 'N/A'})`,
+        valor: Number(parcela.valor),
+        tipo: 'despesa' as const,
+        categoria: 'Dívidas',
+        dataVencimento: parcela.dataVencimento,
+        isRecorrente: false,
+        status: 'pendente',
+        observacao: `Vence em ${new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}`
+      }));
 
     // Adicionar metas como lembretes (não afetam saldo)
     const metasFuturas = metasDoMes.map((meta: any) => ({
