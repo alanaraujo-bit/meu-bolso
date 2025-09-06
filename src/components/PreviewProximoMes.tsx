@@ -363,195 +363,88 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
         </div>
       </div>
 
-      {/* Seção de Debug - Fonte dos Dados */}
+      {/* Seção Simplificada - Apenas Lista de Transações */}
       {mostrarDebug && dadosDebug && (
         <div className={`border-t border-b px-6 py-4 ${
           darkMode ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200/50 bg-gray-50/80'
         }`}>
           <div className="flex items-center gap-2 mb-4">
-            <Code className="w-5 h-5 text-blue-500" />
+            <Database className="w-5 h-5 text-blue-500" />
             <h4 className={`font-semibold ${
               darkMode ? 'text-white' : 'text-gray-900'
             }`}>
-              🔍 Fonte dos Dados - Preview {nomeProximoMes}
+              � Transações Encontradas ({dadosDebug.transacoesDetalhadas.length})
             </h4>
           </div>
           
-          <div className="space-y-4">
-            {/* Endpoint da API */}
-            <div className={`p-3 rounded-lg ${
-              darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            }`}>
-              <p className={`text-sm font-medium mb-2 ${
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                📡 Endpoint da API:
-              </p>
-              <code className={`text-xs block p-2 rounded font-mono ${
-                darkMode ? 'bg-gray-900/50 text-green-400' : 'bg-gray-100 text-green-700'
-              }`}>
-                {dadosDebug.endpoint}
-              </code>
-            </div>
-
-            {/* Fontes dos Dados */}
-            <div className={`p-3 rounded-lg ${
-              darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            }`}>
-              <p className={`text-sm font-medium mb-2 ${
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                📊 Fontes dos Dados:
-              </p>
-              <ul className="space-y-1">
-                {dadosDebug.fontesDados.map((fonte, index) => (
-                  <li key={index} className={`text-xs flex items-center gap-2 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                    {fonte}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Estatísticas */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className={`p-3 rounded-lg ${
-                darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              }`}>
-                <p className={`text-xs font-medium ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  📈 Transações Recorrentes
-                </p>
-                <p className={`text-lg font-bold ${
-                  darkMode ? 'text-emerald-400' : 'text-emerald-600'
-                }`}>
-                  {dadosDebug.totalRecorrentes || 0}
-                </p>
-              </div>
-              
-              <div className={`p-3 rounded-lg ${
-                darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              }`}>
-                <p className={`text-xs font-medium ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  💳 Parcelas de Dívidas
-                </p>
-                <p className={`text-lg font-bold ${
-                  darkMode ? 'text-red-400' : 'text-red-600'
-                }`}>
-                  {dadosDebug.totalDividas || 0}
-                </p>
-              </div>
-            </div>
-
-            {/* Cálculos */}
-            <div className={`p-3 rounded-lg ${
-              darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            }`}>
-              <p className={`text-sm font-medium mb-2 ${
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                🧮 Cálculos Realizados:
-              </p>
-              <div className="space-y-1">
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  💰 Receitas: {formatCurrency(dadosDebug.calculos.totalReceitas)}
-                </p>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  💸 Despesas: {formatCurrency(dadosDebug.calculos.totalDespesas)}
-                </p>
-                <p className={`text-xs font-semibold ${
-                  dadosDebug.calculos.saldoPrevisao >= 0 
-                    ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
-                    : (darkMode ? 'text-red-400' : 'text-red-600')
-                }`}>
-                  📊 Saldo: {formatCurrency(dadosDebug.calculos.saldoPrevisao)}
-                </p>
-              </div>
-            </div>
-
-            {/* NOVA SEÇÃO: Lista de Todas as Transações */}
-            <div className={`p-3 rounded-lg ${
-              darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            }`}>
-              <p className={`text-sm font-medium mb-3 ${
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                📋 Todas as Transações Encontradas ({dadosDebug.transacoesDetalhadas.length}):
-              </p>
-              
-              {dadosDebug.transacoesDetalhadas.length === 0 ? (
-                <p className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  Nenhuma transação encontrada para este período
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {dadosDebug.transacoesDetalhadas.map((transacao, index) => (
-                    <div 
-                      key={`${transacao.id}-${index}`}
-                      className={`p-2 rounded border-l-2 ${
-                        transacao.tipo === 'receita'
-                          ? 'border-emerald-500 bg-emerald-50/20'
-                          : 'border-red-500 bg-red-50/20'
-                      } ${darkMode ? 'bg-gray-900/30' : 'bg-gray-50/50'}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className={`text-xs font-medium ${
-                            darkMode ? 'text-white' : 'text-gray-900'
-                          }`}>
-                            {transacao.titulo}
-                          </p>
-                          <p className={`text-xs ${
-                            darkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
-                            📁 {transacao.categoria} • 
-                            📅 {formatDateSafe(transacao.dataVencimento)} • 
-                            {transacao.isRecorrente ? '🔄 Recorrente' : '💳 Dívida'}
-                            {transacao.status && ` • ⏳ ${transacao.status}`}
-                          </p>
-                          <p className={`text-xs font-mono ${
-                            darkMode ? 'text-gray-500' : 'text-gray-400'
-                          }`}>
-                            ID: {transacao.id}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-xs font-bold ${
-                            transacao.tipo === 'receita'
-                              ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
-                              : (darkMode ? 'text-red-400' : 'text-red-600')
-                          }`}>
-                            {transacao.tipo === 'receita' ? '+' : '-'}{formatCurrency(Math.abs(transacao.valor))}
-                          </p>
-                          <p className={`text-xs ${
-                            transacao.tipo === 'receita'
-                              ? (darkMode ? 'text-emerald-300' : 'text-emerald-500')
-                              : (darkMode ? 'text-red-300' : 'text-red-500')
-                          }`}>
-                            {transacao.tipo.toUpperCase()}
-                          </p>
-                        </div>
+          {dadosDebug.transacoesDetalhadas.length === 0 ? (
+            <p className={`text-sm italic ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Nenhuma transação encontrada para outubro de 2025
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {dadosDebug.transacoesDetalhadas.map((transacao, index) => (
+                <div 
+                  key={`${transacao.id}-${index}`}
+                  className={`p-3 rounded-lg border-l-4 ${
+                    transacao.tipo === 'receita'
+                      ? 'border-emerald-500 bg-emerald-50/10'
+                      : 'border-red-500 bg-red-50/10'
+                  } ${darkMode ? 'bg-gray-800/30' : 'bg-white/50'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className={`font-semibold ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {transacao.titulo}
+                      </p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          � {transacao.categoria}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          📅 {formatDateSafe(transacao.dataVencimento)}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          transacao.isRecorrente 
+                            ? (darkMode ? 'bg-blue-700 text-blue-300' : 'bg-blue-100 text-blue-700')
+                            : (darkMode ? 'bg-orange-700 text-orange-300' : 'bg-orange-100 text-orange-700')
+                        }`}>
+                          {transacao.isRecorrente ? '🔄 Recorrente' : '💳 Dívida'}
+                        </span>
                       </div>
+                      <p className={`text-xs font-mono mt-1 ${
+                        darkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
+                        ID: {transacao.id}
+                      </p>
                     </div>
-                  ))}
+                    <div className="text-right ml-4">
+                      <p className={`text-lg font-bold ${
+                        transacao.tipo === 'receita'
+                          ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
+                          : (darkMode ? 'text-red-400' : 'text-red-600')
+                      }`}>
+                        {transacao.tipo === 'receita' ? '+' : '-'}{formatCurrency(Math.abs(transacao.valor))}
+                      </p>
+                      <p className={`text-xs uppercase font-semibold ${
+                        transacao.tipo === 'receita'
+                          ? (darkMode ? 'text-emerald-300' : 'text-emerald-500')
+                          : (darkMode ? 'text-red-300' : 'text-red-500')
+                      }`}>
+                        {transacao.tipo}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-
-            {/* Info de Consulta */}
-            <div className={`p-3 rounded-lg ${
-              darkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            }`}>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                🕒 Última consulta: {dadosDebug.dataConsulta}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>
