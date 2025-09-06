@@ -40,7 +40,6 @@ interface PreviewProximoMesProps {
 export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual }: PreviewProximoMesProps) {
   const { data: session } = useSession();
   const [transacoesFuturas, setTransacoesFuturas] = useState<TransacaoFutura[]>([]);
-  const [expandido, setExpandido] = useState(false);
   const [mostrarDebug, setMostrarDebug] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dadosDebug, setDadosDebug] = useState<DadosDebug | null>(null);
@@ -201,6 +200,19 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
     }).format(value);
   };
 
+  // Função helper para formatar data de forma segura
+  const formatDateSafe = (date: Date | string) => {
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) {
+        return 'Data inválida';
+      }
+      return dateObj.toLocaleDateString('pt-BR');
+    } catch (error) {
+      return 'Data inválida';
+    }
+  };
+
   if (loading) {
     return (
       <div className={`rounded-2xl p-6 mb-6 backdrop-blur-sm border transition-all duration-300 ${
@@ -283,37 +295,18 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            {/* Botão para mostrar fonte dos dados */}
-            <button
-              onClick={() => setMostrarDebug(!mostrarDebug)}
-              className={`p-2 rounded-lg transition-colors ${
-                darkMode 
-                  ? 'hover:bg-gray-700/50 text-gray-300 hover:text-white' 
-                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-              }`}
-              title="Ver de onde vêm os dados"
-            >
-              <Database className="w-5 h-5" />
-            </button>
-            
-            {/* Botão para expandir lista */}
-            <button
-              onClick={() => setExpandido(!expandido)}
-              className={`p-2 rounded-lg transition-colors ${
-                darkMode 
-                  ? 'hover:bg-gray-700/50 text-gray-300 hover:text-white' 
-                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-              }`}
-              title={expandido ? "Recolher lista" : "Expandir lista"}
-            >
-              {expandido ? (
-                <ChevronUp className="w-5 h-5" />
-              ) : (
-                <ChevronDown className="w-5 h-5" />
-              )}
-            </button>
-          </div>
+          {/* Botão único para mostrar/ocultar dados detalhados */}
+          <button
+            onClick={() => setMostrarDebug(!mostrarDebug)}
+            className={`p-2 rounded-lg transition-colors ${
+              darkMode 
+                ? 'hover:bg-gray-700/50 text-gray-300 hover:text-white' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+            }`}
+            title={mostrarDebug ? "Ocultar detalhes" : "Ver dados detalhados"}
+          >
+            <Database className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Resumo dos Totais */}
@@ -517,7 +510,7 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
                             darkMode ? 'text-gray-400' : 'text-gray-600'
                           }`}>
                             📁 {transacao.categoria} • 
-                            📅 {transacao.dataVencimento.toLocaleDateString('pt-BR')} • 
+                            📅 {formatDateSafe(transacao.dataVencimento)} • 
                             {transacao.isRecorrente ? '🔄 Recorrente' : '💳 Dívida'}
                             {transacao.status && ` • ⏳ ${transacao.status}`}
                           </p>
@@ -558,62 +551,6 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
                 🕒 Última consulta: {dadosDebug.dataConsulta}
               </p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lista Detalhada (expandível) */}
-      {expandido && (
-        <div className={`border-t px-6 pb-6 ${
-          darkMode ? 'border-gray-700/50' : 'border-gray-200/50'
-        }`}>
-          <div className="space-y-3 mt-4">
-            {transacoesFuturas.map((transacao) => (
-              <div 
-                key={transacao.id}
-                className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                  darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50/80'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    transacao.tipo === 'receita'
-                      ? (darkMode ? 'bg-emerald-600/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700')
-                      : (darkMode ? 'bg-red-600/20 text-red-400' : 'bg-red-100 text-red-700')
-                  }`}>
-                    {transacao.tipo === 'receita' ? '+' : '-'}
-                  </div>
-                  <div>
-                    <p className={`font-medium ${
-                      darkMode ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      {transacao.titulo}
-                    </p>
-                    <p className={`text-xs ${
-                      darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      {transacao.categoria} • {transacao.dataVencimento.toLocaleDateString('pt-BR')}
-                      {transacao.isRecorrente && ' • Recorrente'}
-                      {transacao.status === 'pendente' && ' • Pendente'}
-                    </p>
-                    {transacao.observacao && (
-                      <p className={`text-xs italic ${
-                        darkMode ? 'text-gray-500' : 'text-gray-400'
-                      }`}>
-                        {transacao.observacao}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <span className={`font-bold ${
-                  transacao.tipo === 'receita'
-                    ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
-                    : (darkMode ? 'text-red-400' : 'text-red-600')
-                }`}>
-                  {transacao.tipo === 'receita' ? '+' : '-'}{formatCurrency(Math.abs(transacao.valor))}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
       )}
