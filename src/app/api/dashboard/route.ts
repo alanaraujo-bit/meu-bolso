@@ -558,6 +558,16 @@ export async function GET(request: Request) {
           
           const diasParaVencimento = Math.round((vencimentoSemHora.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24));
           
+          // DEBUG: Log para verificar o cálculo
+          console.log(`🔍 DEBUG Vencimento - ${divida.nome}:`, {
+            dataVencimento: dataVencimento.toLocaleDateString('pt-BR'),
+            dataHoje: dataHoje.toLocaleDateString('pt-BR'),
+            vencimentoSemHora: vencimentoSemHora.toLocaleDateString('pt-BR'),
+            hojeSemHora: hojeSemHora.toLocaleDateString('pt-BR'),
+            diferençaMs: vencimentoSemHora.getTime() - hojeSemHora.getTime(),
+            diasCalculados: diasParaVencimento
+          });
+          
           proximasParcelasDetalhadas.push({
             id: parcela.id,
             dividaId: divida.id,
@@ -614,6 +624,16 @@ export async function GET(request: Request) {
           const hojeSemHora = new Date(dataHoje.getFullYear(), dataHoje.getMonth(), dataHoje.getDate());
           
           const diasParaVencimento = Math.round((vencimentoSemHora.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // DEBUG: Log para verificar o cálculo de recorrentes
+          console.log(`🔍 DEBUG Recorrente - ${recorrente.descricao}:`, {
+            proximaExecucao: proximaExecucao.toLocaleDateString('pt-BR'),
+            dataHoje: dataHoje.toLocaleDateString('pt-BR'),
+            vencimentoSemHora: vencimentoSemHora.toLocaleDateString('pt-BR'),
+            hojeSemHora: hojeSemHora.toLocaleDateString('pt-BR'),
+            diferençaMs: vencimentoSemHora.getTime() - hojeSemHora.getTime(),
+            diasCalculados: diasParaVencimento
+          });
           
           proximasParcelasDetalhadas.push({
             id: `rec-${recorrente.id}`,
