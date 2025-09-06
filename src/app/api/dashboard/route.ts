@@ -548,24 +548,33 @@ export async function GET(request: Request) {
         )
         .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())
         .forEach(parcela => {
-          // Calcular dias para vencimento baseado apenas na data (sem horas)
+          // CÁLCULO SIMPLIFICADO E CORRETO
           const dataVencimento = new Date(parcela.dataVencimento);
-          const dataHoje = getDataAtualBrasil();
+          const dataHoje = new Date(); // Usar Date normal para comparação
           
-          // Zerar as horas para comparação apenas das datas
-          const vencimentoSemHora = new Date(dataVencimento.getFullYear(), dataVencimento.getMonth(), dataVencimento.getDate());
-          const hojeSemHora = new Date(dataHoje.getFullYear(), dataHoje.getMonth(), dataHoje.getDate());
+          // Extrair apenas os componentes de data (dia/mês/ano)
+          const diaVencimento = dataVencimento.getDate();
+          const mesVencimento = dataVencimento.getMonth();
+          const anoVencimento = dataVencimento.getFullYear();
           
-          const diasParaVencimento = Math.round((vencimentoSemHora.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24));
+          const diaHoje = dataHoje.getDate();
+          const mesHoje = dataHoje.getMonth();
+          const anoHoje = dataHoje.getFullYear();
+          
+          // Criar datas apenas com dia/mês/ano (hora 0:00)
+          const vencimento = new Date(anoVencimento, mesVencimento, diaVencimento);
+          const hoje = new Date(anoHoje, mesHoje, diaHoje);
+          
+          // Calcular diferença em dias
+          const diferencaMs = vencimento.getTime() - hoje.getTime();
+          const diasParaVencimento = Math.round(diferencaMs / (1000 * 60 * 60 * 24));
           
           // DEBUG: Log para verificar o cálculo
-          console.log(`🔍 DEBUG Vencimento - ${divida.nome}:`, {
-            dataVencimento: dataVencimento.toLocaleDateString('pt-BR'),
-            dataHoje: dataHoje.toLocaleDateString('pt-BR'),
-            vencimentoSemHora: vencimentoSemHora.toLocaleDateString('pt-BR'),
-            hojeSemHora: hojeSemHora.toLocaleDateString('pt-BR'),
-            diferençaMs: vencimentoSemHora.getTime() - hojeSemHora.getTime(),
-            diasCalculados: diasParaVencimento
+          console.log(`🔍 DEBUG SIMPLIFICADO - ${divida.nome}:`, {
+            dataVencimento: `${diaVencimento}/${mesVencimento + 1}/${anoVencimento}`,
+            dataHoje: `${diaHoje}/${mesHoje + 1}/${anoHoje}`,
+            diferençaDias: diasParaVencimento,
+            cálculo: `${diaVencimento} - ${diaHoje} = ${diasParaVencimento} dias`
           });
           
           proximasParcelasDetalhadas.push({
@@ -616,23 +625,32 @@ export async function GET(request: Request) {
       if (proximaExecucao >= agora && proximaExecucao <= em30Dias) {
         // Verificar se data fim não passou
         if (!recorrente.dataFim || proximaExecucao <= recorrente.dataFim) {
-          // Calcular dias para vencimento baseado apenas na data (sem horas)
-          const dataHoje = getDataAtualBrasil();
+          // CÁLCULO SIMPLIFICADO E CORRETO PARA RECORRENTES
+          const dataHoje = new Date(); // Usar Date normal
           
-          // Zerar as horas para comparação apenas das datas
-          const vencimentoSemHora = new Date(proximaExecucao.getFullYear(), proximaExecucao.getMonth(), proximaExecucao.getDate());
-          const hojeSemHora = new Date(dataHoje.getFullYear(), dataHoje.getMonth(), dataHoje.getDate());
+          // Extrair apenas os componentes de data
+          const diaVencimento = proximaExecucao.getDate();
+          const mesVencimento = proximaExecucao.getMonth();
+          const anoVencimento = proximaExecucao.getFullYear();
           
-          const diasParaVencimento = Math.round((vencimentoSemHora.getTime() - hojeSemHora.getTime()) / (1000 * 60 * 60 * 24));
+          const diaHoje = dataHoje.getDate();
+          const mesHoje = dataHoje.getMonth();
+          const anoHoje = dataHoje.getFullYear();
+          
+          // Criar datas apenas com dia/mês/ano (hora 0:00)
+          const vencimento = new Date(anoVencimento, mesVencimento, diaVencimento);
+          const hoje = new Date(anoHoje, mesHoje, diaHoje);
+          
+          // Calcular diferença em dias
+          const diferencaMs = vencimento.getTime() - hoje.getTime();
+          const diasParaVencimento = Math.round(diferencaMs / (1000 * 60 * 60 * 24));
           
           // DEBUG: Log para verificar o cálculo de recorrentes
-          console.log(`🔍 DEBUG Recorrente - ${recorrente.descricao}:`, {
-            proximaExecucao: proximaExecucao.toLocaleDateString('pt-BR'),
-            dataHoje: dataHoje.toLocaleDateString('pt-BR'),
-            vencimentoSemHora: vencimentoSemHora.toLocaleDateString('pt-BR'),
-            hojeSemHora: hojeSemHora.toLocaleDateString('pt-BR'),
-            diferençaMs: vencimentoSemHora.getTime() - hojeSemHora.getTime(),
-            diasCalculados: diasParaVencimento
+          console.log(`🔍 DEBUG RECORRENTE SIMPLIFICADO - ${recorrente.descricao}:`, {
+            proximaExecucao: `${diaVencimento}/${mesVencimento + 1}/${anoVencimento}`,
+            dataHoje: `${diaHoje}/${mesHoje + 1}/${anoHoje}`,
+            diferençaDias: diasParaVencimento,
+            cálculo: `${diaVencimento} - ${diaHoje} = ${diasParaVencimento} dias`
           });
           
           proximasParcelasDetalhadas.push({
