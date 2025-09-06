@@ -10,7 +10,40 @@ const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
  * Obtém a data e hora atual no timezone de Brasília
  */
 export function getDataAtualBrasil(): Date {
-  return new Date();
+  // Criar data atual no timezone brasileiro
+  const agora = new Date();
+  
+  // Converter para o timezone brasileiro usando Intl
+  const formatoSaoPaulo = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: BRAZIL_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  const partes = formatoSaoPaulo.formatToParts(agora);
+  
+  const ano = parseInt(partes.find(p => p.type === 'year')?.value || '0');
+  const mes = parseInt(partes.find(p => p.type === 'month')?.value || '0') - 1; // Month é 0-indexed
+  const dia = parseInt(partes.find(p => p.type === 'day')?.value || '0');
+  const hora = parseInt(partes.find(p => p.type === 'hour')?.value || '0');
+  const minuto = parseInt(partes.find(p => p.type === 'minute')?.value || '0');
+  const segundo = parseInt(partes.find(p => p.type === 'second')?.value || '0');
+  
+  const dataBrasil = new Date(ano, mes, dia, hora, minuto, segundo);
+  
+  // DEBUG: Log da conversão de timezone
+  console.log('🇧🇷 DEBUG getDataAtualBrasil():', {
+    original: agora.toISOString(),
+    brasil: dataBrasil.toLocaleString('pt-BR', { timeZone: BRAZIL_TIMEZONE }),
+    diferençaHoras: (dataBrasil.getTime() - agora.getTime()) / (1000 * 60 * 60)
+  });
+  
+  return dataBrasil;
 }
 
 /**
