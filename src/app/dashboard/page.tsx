@@ -47,7 +47,8 @@ import {
   Sun,
   Moon,
   Sparkles,
-  Brain
+  Brain,
+  RefreshCw
 } from 'lucide-react';
 
 interface DashboardData {
@@ -379,6 +380,31 @@ export default function Dashboard() {
     }
   }, [status, mesAtual, anoAtual]);
 
+  // Atualizar dados quando a página ganha foco (para detectar mudanças de outras páginas)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (status === 'authenticated') {
+        console.log('🔄 Dashboard ganharam foco - atualizando dados...');
+        fetchDashboardData();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && status === 'authenticated') {
+        console.log('🔄 Dashboard tornou-se visível - atualizando dados...');
+        fetchDashboardData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [status]);
+
   // Carregar preferência do usuário
   useEffect(() => {
     const preferencia = localStorage.getItem('dashboard-modo');
@@ -709,7 +735,29 @@ export default function Dashboard() {
                   darkMode ? 'text-gray-300' : 'text-gray-600'
                 }`}>Visão geral das suas finanças</p>
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden sm:flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    console.log('🔄 Refresh manual solicitado...');
+                    fetchDashboardData();
+                  }}
+                  disabled={loading}
+                  className={`p-2 rounded-xl transition-all duration-200 ${
+                    loading 
+                      ? 'cursor-not-allowed opacity-50' 
+                      : 'hover:scale-105 active:scale-95'
+                  } ${
+                    darkMode 
+                      ? 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30' 
+                      : 'bg-blue-100 hover:bg-blue-200 text-blue-600 border border-blue-200'
+                  }`}
+                  title="Atualizar dados"
+                >
+                  <RefreshCw 
+                    size={18} 
+                    className={loading ? 'animate-spin' : ''} 
+                  />
+                </button>
                 <HelpButton 
                   title="Como usar o Dashboard"
                   steps={helpContents.dashboard}
