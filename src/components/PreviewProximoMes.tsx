@@ -35,9 +35,10 @@ interface PreviewProximoMesProps {
   darkMode?: boolean;
   mesAtual: number;
   anoAtual: number;
+  forceRefresh?: number; // Prop para forçar atualização quando há mudanças
 }
 
-export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual }: PreviewProximoMesProps) {
+export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual, forceRefresh = 0 }: PreviewProximoMesProps) {
   const { data: session } = useSession();
   const [transacoesFuturas, setTransacoesFuturas] = useState<TransacaoFutura[]>([]);
   const [mostrarDebug, setMostrarDebug] = useState(false);
@@ -63,7 +64,7 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
     if (session?.user?.id) {
       carregarTransacoesFuturas();
     }
-  }, [session, mesAtual, anoAtual]);
+  }, [session, mesAtual, anoAtual, forceRefresh]); // Adicionado forceRefresh como dependência
 
   const carregarTransacoesFuturas = async () => {
     try {

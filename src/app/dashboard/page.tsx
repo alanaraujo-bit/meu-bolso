@@ -324,6 +324,7 @@ export default function Dashboard() {
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
   const [mostrarBoasVindas, setMostrarBoasVindas] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Para forçar refresh do PreviewProximoMes
 
   // Hook para gerenciar tema
   useEffect(() => {
@@ -414,6 +415,9 @@ export default function Dashboard() {
       
       const data = await response.json();
       setDashboardData(data);
+      
+      // Forçar refresh do PreviewProximoMes quando dados são atualizados
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
       setError('Erro ao carregar dados do dashboard');
@@ -1030,6 +1034,7 @@ export default function Dashboard() {
           darkMode={darkMode} 
           mesAtual={mesAtual} 
           anoAtual={anoAtual}
+          forceRefresh={refreshTrigger}
         />
 
         {/* Insights Profissionais */}

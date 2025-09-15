@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Buscar TODAS as parcelas de dívidas pendentes que vencem no mês (não pagas)
+    // ✅ NOVA LÓGICA: Buscar parcelas de dívidas que vencem no mês, mas limitar para as 5 mais próximas
     const dividasDoMes = await prisma.parcelaDivida.findMany({
       where: {
         divida: {
@@ -57,7 +57,23 @@ export async function GET(request: NextRequest) {
       },
       include: {
         divida: true
-      }
+      },
+      orderBy: {
+        dataVencimento: 'asc' // Ordenar por data de vencimento (mais próximas primeiro)
+      },
+      take: 2 // Limitar para apenas as 2 parcelas mais próximas
+    });
+
+    // DEBUG: Log das parcelas filtradas (apenas as 2 mais próximas)
+    console.log('🔍 PREVIEW - Parcelas mais próximas (máx 2):', {
+      totalParcelas: dividasDoMes.length,
+      limiteParcelas: 2,
+      parcelas: dividasDoMes.map(p => ({
+        nome: p.divida.nome,
+        parcela: p.numero,
+        vencimento: new Date(p.dataVencimento).toLocaleDateString('pt-BR'),
+        valor: Number(p.valor)
+      }))
     });
 
     // ✅ NOVA LÓGICA: Buscar dívidas que foram convertidas para recorrentes (evitar contagem dupla)
@@ -126,12 +142,24 @@ export async function GET(request: NextRequest) {
     const transacoesFuturas = transacoesRecorrentes
       .filter(recorrente => {
         // Verificar se já existe uma transação real para esta recorrente no mês
-        const jaLancada = transacoesReaisExistentes.some(real => 
-          real.descricao?.toLowerCase().includes(recorrente.descricao?.toLowerCase() || '') ||
-          Math.abs(Number(real.valor)) === Math.abs(Number(recorrente.valor))
-        );
+        // ✅ CORREÇÃO: Lógica mais específica para evitar false positives
+        const jaLancada = transacoesReaisExistentes.some(real => {
+          // Verificar se é exatamente a mesma transação (descrição E valor E tipo)
+          const mesmaDescricao = real.descricao?.toLowerCase().trim() === recorrente.descricao?.toLowerCase().trim();
+          const mesmoValor = Math.abs(Number(real.valor)) === Math.abs(Number(recorrente.valor));
+          
+          // Para ser considerada "já lançada", precisa ter descrição E valor idênticos
+          return mesmaDescricao && mesmoValor;
+        });
+        
+        // Log para debug
+        if (jaLancada) {
+          console.log(`🚫 Transação recorrente "${recorrente.descricao}" já foi lançada no mês ${mes}/${ano}`);
+        }
+        
         return !jaLancada; // Só incluir se ainda não foi lançada
       })
+      .slice(0, 1) // ✅ LIMITE: Máximo 1 transação recorrente
       .map(recorrente => {
         // Calcular próxima data baseada na frequência
         let proximaData = new Date(inicioMes);
@@ -170,17 +198,37 @@ export async function GET(request: NextRequest) {
     // ✅ CORREÇÃO: Adicionar APENAS dívidas que NÃO foram convertidas para recorrentes
     const dividasFuturas = dividasDoMes
       .filter(parcela => !dividasConvertidas.has(parcela.divida.id)) // Excluir convertidas
-      .map((parcela: any) => ({
-        id: `div_${parcela.id}`,
-        titulo: `${parcela.divida.nome} (Parcela ${parcela.numeroParcela || 'N/A'})`,
-        valor: Number(parcela.valor),
-        tipo: 'despesa' as const,
-        categoria: 'Dívidas',
-        dataVencimento: parcela.dataVencimento,
-        isRecorrente: false,
-        status: 'pendente',
-        observacao: `Vence em ${new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}`
-      }));
+      .map((parcela: any) => {
+        // Calcular quantos dias faltam para vencer
+        const hoje = new Date();
+        const dataVencimento = new Date(parcela.dataVencimento);
+        const diasRestantes = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        
+        let statusVencimento = '';
+        if (diasRestantes <= 0) {
+          statusVencimento = 'Vencido! ⚠️';
+        } else if (diasRestantes === 1) {
+          statusVencimento = 'Vence amanhã! ⚠️';
+        } else if (diasRestantes <= 3) {
+          statusVencimento = `Vence em ${diasRestantes} dias ⚠️`;
+        } else if (diasRestantes <= 7) {
+          statusVencimento = `Vence em ${diasRestantes} dias`;
+        } else {
+          statusVencimento = `Vence em ${diasRestantes} dias`;
+        }
+        
+        return {
+          id: `div_${parcela.id}`,
+          titulo: `${parcela.divida.nome} (Parcela ${parcela.numero || 'N/A'})`,
+          valor: Number(parcela.valor),
+          tipo: 'despesa' as const,
+          categoria: 'Dívidas',
+          dataVencimento: parcela.dataVencimento,
+          isRecorrente: false,
+          status: 'pendente',
+          observacao: statusVencimento
+        };
+      });
 
     // Adicionar metas como lembretes (não afetam saldo)
     const metasFuturas = metasDoMes.map((meta: any) => ({
@@ -204,6 +252,19 @@ export async function GET(request: NextRequest) {
       new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime()
     );
 
+    // ✅ LIMITE ABSOLUTO: Máximo 3 itens para manter interface limpa
+    const transacoesLimitadas = todasTransacoes.slice(0, 3);
+    
+    console.log('🔒 LIMITE APLICADO:', {
+      totalOriginal: todasTransacoes.length,
+      totalLimitado: transacoesLimitadas.length,
+      itensLimitados: transacoesLimitadas.map(t => ({
+        titulo: t.titulo,
+        valor: t.valor,
+        vencimento: new Date(t.dataVencimento).toLocaleDateString('pt-BR')
+      }))
+    });
+
     const dataPreview = new Date(ano, mes - 1);
     const mesPreview = dataPreview.toLocaleDateString('pt-BR', { 
       month: 'long', 
@@ -212,16 +273,17 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      transacoes: todasTransacoes,
+      transacoes: transacoesLimitadas, // ✅ USAR LISTA LIMITADA
       mesPreview,
       resumo: {
-        totalReceitas: todasTransacoes
+        totalReceitas: transacoesLimitadas
           .filter(t => t.tipo === 'receita')
           .reduce((sum, t) => sum + t.valor, 0),
-        totalDespesas: todasTransacoes
+        totalDespesas: transacoesLimitadas
           .filter(t => t.tipo === 'despesa')
           .reduce((sum, t) => sum + t.valor, 0),
-        totalItens: todasTransacoes.length
+        totalItens: transacoesLimitadas.length,
+        totalOriginal: todasTransacoes.length // Para debug
       }
     });
 
