@@ -518,9 +518,9 @@ export async function GET(request: Request) {
       return acc + proximas.length;
     }, 0);
 
-    // Lista detalhada das próximas parcelas (próximos 30 dias) - USANDO TIMEZONE BRASILEIRO CORRETO
-    const em30Dias = getDataAtualBrasil();
-    em30Dias.setDate(em30Dias.getDate() + 30);
+    // Lista detalhada das próximas parcelas (próximos 10 dias) - USANDO TIMEZONE BRASILEIRO CORRETO
+    const em10Dias = getDataAtualBrasil();
+    em10Dias.setDate(em10Dias.getDate() + 10);
     
     const proximasParcelasDetalhadas: Array<{
       id: string;
@@ -544,7 +544,7 @@ export async function GET(request: Request) {
         .filter(p => 
           p.status === 'PENDENTE' && 
           new Date(p.dataVencimento) >= agora && 
-          new Date(p.dataVencimento) <= em30Dias
+          new Date(p.dataVencimento) <= em10Dias
         )
         .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())
         .forEach(parcela => {
@@ -596,7 +596,7 @@ export async function GET(request: Request) {
       where: {
         userId: usuario.id,
         isActive: true,
-        dataInicio: { lte: em30Dias },
+        dataInicio: { lte: em10Dias },
         OR: [
           { dataFim: null },
           { dataFim: { gte: agora } }
@@ -622,7 +622,7 @@ export async function GET(request: Request) {
       }
 
       // Verificar se próxima execução está no período
-      if (proximaExecucao >= agora && proximaExecucao <= em30Dias) {
+      if (proximaExecucao >= agora && proximaExecucao <= em10Dias) {
         // Verificar se data fim não passou
         if (!recorrente.dataFim || proximaExecucao <= recorrente.dataFim) {
           // CÁLCULO SIMPLIFICADO E CORRETO PARA RECORRENTES
