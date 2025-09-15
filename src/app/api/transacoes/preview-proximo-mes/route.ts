@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Force no cache para sempre ter dados atualizados
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -125,11 +129,24 @@ export async function GET(request: NextRequest) {
     // Converter transações recorrentes que ainda não foram lançadas para o formato esperado
     const transacoesFuturas = transacoesRecorrentes
       .filter(recorrente => {
-        // Verificar se já existe uma transação real para esta recorrente no mês
-        const jaLancada = transacoesReaisExistentes.some(real => 
-          real.descricao?.toLowerCase().includes(recorrente.descricao?.toLowerCase() || '') ||
-          Math.abs(Number(real.valor)) === Math.abs(Number(recorrente.valor))
-        );
+        // CORREÇÃO: Melhorar a lógica de verificação se já foi lançada
+        const jaLancada = transacoesReaisExistentes.some(real => {
+          // Verificação mais precisa baseada na descrição completa
+          const descricaoRecorrente = recorrente.descricao?.toLowerCase().trim() || '';
+          const descricaoReal = real.descricao?.toLowerCase().trim() || '';
+          const valorRecorrente = Math.abs(Number(recorrente.valor));
+          const valorReal = Math.abs(Number(real.valor));
+          
+          // Verificar se é a mesma transação (mesmo valor E descrição similar)
+          const mesmoValor = Math.abs(valorRecorrente - valorReal) < 0.01;
+          const descricaoSimilar = descricaoRecorrente && descricaoReal && 
+            (descricaoReal.includes(descricaoRecorrente) || 
+             descricaoRecorrente.includes(descricaoReal));
+          
+          return mesmoValor && descricaoSimilar;
+        });
+        
+        console.log(`🔍 RECORRENTE [${recorrente.descricao}]: ${jaLancada ? 'JÁ LANÇADA' : 'PENDENTE'}`);
         return !jaLancada; // Só incluir se ainda não foi lançada
       })
       .map(recorrente => {
@@ -206,6 +223,14 @@ export async function GET(request: NextRequest) {
     const mesPreview = dataPreview.toLocaleDateString('pt-BR', { 
       month: 'long', 
       year: 'numeric' 
+    });
+
+    console.log(`📊 PREVIEW [${mesPreview}]:`, {
+      recorrentesEncontradas: transacoesRecorrentes.length,
+      recorrentesPendentes: transacoesFuturas.length,
+      dividasPendentes: dividasFuturas.length,
+      transacoesReaisJaLancadas: transacoesReaisExistentes.length,
+      totalItens: todasTransacoes.length
     });
 
     return NextResponse.json({

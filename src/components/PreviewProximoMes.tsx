@@ -66,15 +66,50 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
     }
   }, [session, mesAtual, anoAtual, forceRefresh]); // Adicionado forceRefresh como dependência
 
+  // NOVO: Event listener para detectar mudanças em transações
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'transacao-adicionada' || e.key === 'dashboard-updated') {
+        console.log('🔄 PREVIEW - Detectada mudança nas transações, recarregando...');
+        carregarTransacoesFuturas();
+      }
+    };
+
+    const handleFocus = () => {
+      // Recarregar quando a aba ganha foco (para detectar mudanças de outras abas)
+      console.log('🔄 PREVIEW - Aba ganhou foco, recarregando...');
+      carregarTransacoesFuturas();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [session]);
+
   const carregarTransacoesFuturas = async () => {
     try {
+      setLoading(true);
       const { mes: proximoMes, ano: proximoAno } = calcularProximoMes();
       
-      // Chamada para API com o mês seguinte
-      const response = await fetch(`/api/transacoes/preview-proximo-mes?mes=${proximoMes}&ano=${proximoAno}`);
+      // CORREÇÃO: Adicionar timestamp para evitar cache + headers anti-cache
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/transacoes/preview-proximo-mes?mes=${proximoMes}&ano=${proximoAno}&t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      console.log('🔄 PREVIEW - Buscando dados:', `mes=${proximoMes}, ano=${proximoAno}, timestamp=${timestamp}`);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ PREVIEW - Dados recebidos:', data);
         setTransacoesFuturas(data.transacoes || []);
         
         // Preparar dados de debug
@@ -105,6 +140,7 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
           }
         });
       } else {
+        console.error('❌ PREVIEW - Erro na resposta da API:', response.status, response.statusText);
         // Mock de dados caso a API não funcione
         const dataProximoMes = new Date(proximoAno, proximoMes - 1);
         
@@ -168,7 +204,7 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
         });
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar transações futuras:', error);
+      console.error('❌ PREVIEW - Erro ao carregar transações futuras:', error);
       setTransacoesFuturas([]);
       setDadosDebug(null);
     } finally {
