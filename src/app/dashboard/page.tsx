@@ -433,13 +433,31 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/dashboard?mes=${mesAtual}&ano=${anoAtual}`);
+      // Adicionar timestamp para evitar cache do browser
+      const timestamp = new Date().getTime();
+      const url = `/api/dashboard?mes=${mesAtual}&ano=${anoAtual}&t=${timestamp}`;
+      
+      console.log('🔄 Fazendo fetch do dashboard:', url);
+      const response = await fetch(url, {
+        cache: 'no-store', // Forçar bypass de cache
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       
       if (!response.ok) {
         throw new Error('Erro ao carregar dados do dashboard');
       }
       
       const data = await response.json();
+      console.log('📊 Dados recebidos do dashboard:', {
+        receitas: data.totais?.receitas,
+        despesas: data.totais?.despesas,
+        saldo: data.totais?.saldo,
+        transacoes: data.transacoes?.length
+      });
+      
       setDashboardData(data);
       
       // Forçar refresh do PreviewProximoMes quando dados são atualizados

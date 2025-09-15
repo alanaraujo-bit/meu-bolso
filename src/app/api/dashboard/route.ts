@@ -202,13 +202,21 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const timestamp = searchParams.get('t');
+    
+    console.log('🔄 Dashboard API chamada:', {
+      timestamp,
+      url: request.url,
+      searchParams: Object.fromEntries(searchParams.entries())
+    });
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
     const mesParam = searchParams.get('mes');
     const anoParam = searchParams.get('ano');
     const detalhes = searchParams.get('detalhes') === 'true'; // ✅ Novo parâmetro para mostrar detalhes
@@ -259,6 +267,15 @@ export async function GET(request: Request) {
       orderBy: {
         data: 'desc'
       }
+    });
+
+    console.log('📊 Transações encontradas:', {
+      total: transacoes.length,
+      periodo: `${mes}/${ano}`,
+      dataLimite: dataLimite.toLocaleDateString('pt-BR'),
+      receitas: transacoes.filter(t => t.tipo === 'receita').length,
+      despesas: transacoes.filter(t => t.tipo === 'despesa').length,
+      valorTotal: transacoes.reduce((sum, t) => sum + t.valor.toNumber(), 0)
     });
 
     // DESABILITADO: Não vamos buscar recorrentes para projeções
@@ -313,6 +330,24 @@ export async function GET(request: Request) {
       .reduce((sum, t) => sum + Number(t.valor), 0);
     
     const saldo = totalReceitas - totalDespesas;
+
+    console.log('💰 Totais calculados:', {
+      totalReceitas,
+      totalDespesas,
+      saldo,
+      transacoesReceitas: transacoesReais.filter(t => t.tipo === 'receita').length,
+      transacoesDespesas: transacoesReais.filter(t => t.tipo === 'despesa').length,
+      detalhesReceitas: transacoesReais.filter(t => t.tipo === 'receita').map(t => ({
+        valor: t.valor.toNumber(),
+        descricao: t.descricao,
+        data: t.data
+      })),
+      detalhesDespesas: transacoesReais.filter(t => t.tipo === 'despesa').map(t => ({
+        valor: t.valor.toNumber(),
+        descricao: t.descricao,
+        data: t.data
+      }))
+    });
 
     // Manter compatibilidade com variáveis existentes
     const totalReceitasReais = totalReceitas;
