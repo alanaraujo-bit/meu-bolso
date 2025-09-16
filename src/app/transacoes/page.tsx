@@ -289,18 +289,35 @@ export default function TransacoesPage() {
     if (!confirm("Tem certeza que deseja excluir esta transação?")) return;
 
     try {
+      console.log('🗑️ Frontend - Iniciando exclusão da transação:', id);
+      
       const res = await fetch(`/api/transacoes/${id}`, {
         method: "DELETE",
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
+
+      console.log('🗑️ Frontend - Resposta da API:', { 
+        status: res.status, 
+        statusText: res.statusText,
+        ok: res.ok 
       });
 
       if (res.ok) {
+        const data = await res.json();
+        console.log('✅ Frontend - Transação excluída com sucesso:', data);
         setMensagem("Transação excluída com sucesso!");
-        fetchTransacoes();
+        
+        // Forçar atualização da lista
+        await fetchTransacoes();
       } else {
         const data = await res.json();
+        console.error('❌ Frontend - Erro na exclusão:', data);
         setMensagem(data.error || "Erro ao excluir transação");
       }
     } catch (error) {
+      console.error('❌ Frontend - Erro de conexão:', error);
       setMensagem("Erro ao excluir transação");
     }
   }

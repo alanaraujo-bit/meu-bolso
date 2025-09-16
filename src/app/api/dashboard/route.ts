@@ -124,6 +124,8 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
         proximaExecucao = calcularProximaData(ultimaTransacao.data, recorrente.frequencia);
       }
 
+      console.log(`🔍 Analisando recorrente: ${recorrente.descricao} - Próxima execução: ${proximaExecucao.toLocaleDateString('pt-BR')}`);
+
       // MODIFICAÇÃO: Executar apenas transações que já venceram (não futuras)
       // Só criar transações para datas que já passaram ou são hoje
       while (proximaExecucao <= agora) {
@@ -133,20 +135,11 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
         }
 
         // NOVA VERIFICAÇÃO: Não criar transações futuras antecipadamente
-        // Para transações mensais, só criar quando realmente chegar o dia
-        const diaProximaExecucao = proximaExecucao.getDate();
-        const mesProximaExecucao = proximaExecucao.getMonth();
-        const anoProximaExecucao = proximaExecucao.getFullYear();
-        
+        // Para navegação no dashboard, só criar transações até a data atual
         const hoje = getDataAtualBrasil(); // USANDO TIMEZONE BRASILEIRO CORRETO
-        const diaHoje = hoje.getDate();
-        const mesHoje = hoje.getMonth();
-        const anoHoje = hoje.getFullYear();
-
-        // Se a próxima execução é para uma data futura, não criar ainda
-        if (anoProximaExecucao > anoHoje || 
-           (anoProximaExecucao === anoHoje && mesProximaExecucao > mesHoje) ||
-           (anoProximaExecucao === anoHoje && mesProximaExecucao === mesHoje && diaProximaExecucao > diaHoje)) {
+        
+        // Se a próxima execução é para uma data futura (além de hoje), não criar ainda
+        if (proximaExecucao > hoje) {
           break;
         }
 
@@ -167,6 +160,8 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
 
         if (!transacaoExistente) {
           // Criar nova transação apenas para datas que já venceram
+          console.log(`✅ Criando transação recorrente: ${recorrente.descricao} para ${proximaExecucao.toLocaleDateString('pt-BR')}`);
+          
           const novaTransacao = await prisma.transacao.create({
             data: {
               userId: usuarioId,
@@ -186,6 +181,8 @@ async function executarTransacoesRecorrentesPendentes(usuarioId: string) {
           }
 
           transacoesCriadas.push(novaTransacao);
+        } else {
+          console.log(`ℹ️ Transação já existe para ${recorrente.descricao} em ${proximaExecucao.toLocaleDateString('pt-BR')}`);
         }
 
         // Calcular próxima data para verificar se há mais pendências
@@ -239,6 +236,14 @@ export async function GET(request: Request) {
     const transacoesRecorrentesExecutadas = await executarTransacoesRecorrentesPendentes(usuario.id);
     if (transacoesRecorrentesExecutadas.length > 0) {
       console.log(`✅ ${transacoesRecorrentesExecutadas.length} transações recorrentes foram executadas automaticamente`);
+      console.log('📋 Detalhes das transações executadas:', transacoesRecorrentesExecutadas.map(t => ({
+        descricao: t.descricao,
+        valor: t.valor.toNumber(),
+        tipo: t.tipo,
+        data: t.data.toLocaleDateString('pt-BR')
+      })));
+    } else {
+      console.log('ℹ️ Nenhuma transação recorrente pendente foi encontrada');
     }
 
     // Datas para o período atual
@@ -249,16 +254,15 @@ export async function GET(request: Request) {
     const inicioMesAnterior = inicioMesBrasil(ano, mes - 1);
     const fimMesAnterior = fimMesBrasil(ano, mes - 1);
 
-    // Buscar transações do mês atual (excluindo transações futuras)
+    // Buscar transações do mês (incluindo todas as do período solicitado)
     const dataAtualBrasil = getDataAtualBrasil();
-    const dataLimite = dataAtualBrasil < fimMes ? dataAtualBrasil : fimMes; // Use a data menor entre hoje e fim do mês
     
     const transacoes = await prisma.transacao.findMany({
       where: {
         userId: usuario.id,
         data: {
           gte: inicioMes,
-          lte: dataLimite // NOVA REGRA: Não pegar nada do futuro
+          lte: fimMes // Buscar todas as transações do mês solicitado
         }
       },
       include: {
@@ -272,10 +276,14 @@ export async function GET(request: Request) {
     console.log('📊 Transações encontradas:', {
       total: transacoes.length,
       periodo: `${mes}/${ano}`,
-      dataLimite: dataLimite.toLocaleDateString('pt-BR'),
+      dataInicio: inicioMes.toLocaleDateString('pt-BR'),
+      dataFim: fimMes.toLocaleDateString('pt-BR'),
       receitas: transacoes.filter(t => t.tipo === 'receita').length,
       despesas: transacoes.filter(t => t.tipo === 'despesa').length,
-      valorTotal: transacoes.reduce((sum, t) => sum + t.valor.toNumber(), 0)
+      valorTotalReceitas: transacoes.filter(t => t.tipo === 'receita').reduce((sum, t) => sum + t.valor.toNumber(), 0),
+      valorTotalDespesas: transacoes.filter(t => t.tipo === 'despesa').reduce((sum, t) => sum + t.valor.toNumber(), 0),
+      primeiraTransacao: transacoes.length > 0 ? transacoes[transacoes.length - 1].data.toLocaleDateString('pt-BR') : 'N/A',
+      ultimaTransacao: transacoes.length > 0 ? transacoes[0].data.toLocaleDateString('pt-BR') : 'N/A'
     });
 
     // DESABILITADO: Não vamos buscar recorrentes para projeções

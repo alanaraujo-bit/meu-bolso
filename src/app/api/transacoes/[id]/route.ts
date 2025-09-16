@@ -138,8 +138,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    console.log('🗑️ DELETE /api/transacoes/[id] - Início da exclusão, id:', params.id);
+    
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
+      console.log('DELETE /api/transacoes/[id] - Não autorizado');
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
@@ -149,6 +152,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     });
 
     if (!usuario) {
+      console.log('DELETE /api/transacoes/[id] - Usuário não encontrado');
       return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
@@ -161,38 +165,43 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     });
 
     if (!transacao) {
+      console.log('DELETE /api/transacoes/[id] - Transação não encontrada para id:', params.id);
       return NextResponse.json({ error: "Transação não encontrada" }, { status: 404 });
     }
+
+    console.log('DELETE /api/transacoes/[id] - Transação encontrada:', {
+      id: transacao.id,
+      descricao: transacao.descricao,
+      valor: transacao.valor.toNumber(),
+      tipo: transacao.tipo,
+      isRecorrente: transacao.isRecorrente
+    });
 
     // 🔄 SINCRONIZAÇÃO: Se for recorrente de dívida, reverter parcela para PENDENTE
     await reverterParcelaDivida(usuario.id, transacao);
 
     // Excluir tags associadas
+    console.log('DELETE /api/transacoes/[id] - Excluindo tags associadas...');
     await prisma.tag.deleteMany({
       where: { transacaoId: transacao.id }
     });
 
     // Excluir anexos associados
+    console.log('DELETE /api/transacoes/[id] - Excluindo anexos associados...');
     await prisma.anexo.deleteMany({
       where: { transacaoId: transacao.id }
     });
 
-    // Se a transação estiver associada a uma meta, remover a associação
-    if (transacao.metaId) {
-      await prisma.transacao.update({
-        where: { id: transacao.id },
-        data: { metaId: null }
-      });
-    }
-
-    // Excluir a transação
+    // Excluir a transação diretamente (não precisa atualizar antes de excluir)
+    console.log('DELETE /api/transacoes/[id] - Excluindo transação...');
     await prisma.transacao.delete({
       where: { id: params.id }
     });
 
+    console.log('✅ DELETE /api/transacoes/[id] - Transação excluída com sucesso:', params.id);
     return NextResponse.json({ message: "Transação excluída com sucesso" });
   } catch (error) {
-    console.error('Erro ao excluir transação:', error);
+    console.error('❌ DELETE /api/transacoes/[id] - Erro ao excluir transação:', error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
