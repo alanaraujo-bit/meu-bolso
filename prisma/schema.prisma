@@ -8,33 +8,31 @@ datasource db {
 }
 
 model Usuario {
-  id               String                @id @default(uuid())
-  senha            String
-  email            String                @unique
-  nome             String?
-  avatarUrl        String?               @db.Text // Mudado para TEXT para suportar base64
-  criadoEm         DateTime              @default(now())
-  atualizadoEm     DateTime              @updatedAt
-  ultimaAtividade  DateTime              @default(now())
-  statusOnline     StatusOnline          @default(OFFLINE)
-  ultimoAcesso     DateTime?
-  tempoSessao      Int                   @default(0) // em segundos
-  dispositivoAtual String?
-  ipAtual          String?
-  
-  // Configurações do usuário
-  tema             String                @default("automatico") // claro, escuro, automatico
-  formatoMoeda     String                @default("BRL") // BRL, USD, EUR
-  confirmarExclusoes Boolean             @default(true)
-  timeoutSessao    Int                   @default(60) // em minutos
-  paginaInicial    String                @default("dashboard") // dashboard, transacoes, relatorios, metas
-  mostrarTooltips  Boolean               @default(true)
-  
-  categorias       Categoria[]
-  metas            Meta[]
-  transacoes       Transacao[]
-  recorrentes      TransacaoRecorrente[]
-  dividas          Divida[] // Relação inversa para Divida
+  id                 String                @id @default(uuid())
+  senha              String
+  email              String                @unique
+  nome               String?
+  avatarUrl          String?               @db.Text
+  criadoEm           DateTime              @default(now())
+  atualizadoEm       DateTime              @updatedAt
+  dispositivoAtual   String?
+  ipAtual            String?
+  statusOnline       StatusOnline          @default(OFFLINE)
+  tempoSessao        Int                   @default(0)
+  ultimaAtividade    DateTime              @default(now())
+  ultimoAcesso       DateTime?
+  confirmarExclusoes Boolean               @default(true)
+  formatoMoeda       String                @default("BRL")
+  mostrarTooltips    Boolean               @default(true)
+  paginaInicial      String                @default("dashboard")
+  tema               String                @default("automatico")
+  timeoutSessao      Int                   @default(60)
+  isAdmin            Boolean               @default(false)
+  categorias         Categoria[]
+  dividas            Divida[]
+  metas              Meta[]
+  transacoes         Transacao[]
+  recorrentes        TransacaoRecorrente[]
 }
 
 model Categoria {
@@ -46,9 +44,9 @@ model Categoria {
   tipo        CategoriaTipo
   criadoEm    DateTime              @default(now())
   user        Usuario               @relation(fields: [userId], references: [id])
+  dividas     Divida[]
   transacoes  Transacao[]
   recorrentes TransacaoRecorrente[]
-  dividas     Divida[] // Relação inversa para Divida
 
   @@index([userId], map: "Categoria_userId_fkey")
 }
@@ -132,6 +130,57 @@ model Anexo {
   @@index([transacaoId], map: "Anexo_transacaoId_fkey")
 }
 
+model Divida {
+  id                  String          @id @default(uuid())
+  userId              String
+  nome                String
+  valorTotal          Decimal         @db.Decimal(10, 2)
+  numeroParcelas      Int
+  valorParcela        Decimal         @db.Decimal(10, 2)
+  dataPrimeiraParcela DateTime
+  categoriaId         String?
+  status              DividaStatus    @default(ATIVA)
+  criadoEm            DateTime        @default(now())
+  atualizadoEm        DateTime        @updatedAt
+  categoria           Categoria?      @relation(fields: [categoriaId], references: [id])
+  user                Usuario         @relation(fields: [userId], references: [id])
+  parcelas            ParcelaDivida[]
+
+  @@index([userId], map: "Divida_userId_fkey")
+  @@index([categoriaId], map: "Divida_categoriaId_fkey")
+}
+
+model ParcelaDivida {
+  id             String        @id @default(uuid())
+  dividaId       String
+  numero         Int
+  valor          Decimal       @db.Decimal(10, 2)
+  dataVencimento DateTime
+  status         ParcelaStatus @default(PENDENTE)
+  criadoEm       DateTime      @default(now())
+  atualizadoEm   DateTime      @updatedAt
+  divida         Divida        @relation(fields: [dividaId], references: [id])
+
+  @@index([dividaId], map: "ParcelaDivida_dividaId_fkey")
+}
+
+model PerfilFinanceiro {
+  id                     String   @id @default(uuid())
+  userEmail              String   @unique
+  fonteRenda             String?
+  rendaMensal            String?
+  temDividas             String?
+  controlGastos          String?
+  guardaDinheiro         String?
+  objetivoPrincipal      String?
+  prazoObjetivo          String?
+  experienciaFinanceira  String?
+  categoriasPrioritarias Json?
+  onboardingCompleto     Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
 enum CategoriaTipo {
   receita
   despesa
@@ -144,45 +193,13 @@ enum TransacaoTipo {
 }
 
 enum Frequencia {
-  diario
+  diaria
   semanal
+  quinzenal
   mensal
+  trimestral
+  semestral
   anual
-}
-
-model Divida {
-  id                  String       @id @default(uuid())
-  userId              String
-  nome                String
-  valorTotal          Decimal      @db.Decimal(10, 2)
-  numeroParcelas      Int
-  valorParcela        Decimal      @db.Decimal(10, 2)
-  dataPrimeiraParcela DateTime
-  categoriaId         String?
-  status              DividaStatus @default(ATIVA)
-  criadoEm            DateTime     @default(now())
-  atualizadoEm        DateTime     @updatedAt
-
-  user      Usuario         @relation(fields: [userId], references: [id])
-  categoria Categoria?      @relation(fields: [categoriaId], references: [id])
-  parcelas  ParcelaDivida[]
-
-  @@index([userId], map: "Divida_userId_fkey")
-}
-
-model ParcelaDivida {
-  id             String        @id @default(uuid())
-  dividaId       String
-  numero         Int
-  valor          Decimal       @db.Decimal(10, 2)
-  dataVencimento DateTime
-  status         ParcelaStatus @default(PENDENTE)
-  criadoEm       DateTime      @default(now())
-  atualizadoEm   DateTime      @updatedAt
-
-  divida Divida @relation(fields: [dividaId], references: [id])
-
-  @@index([dividaId], map: "ParcelaDivida_dividaId_fkey")
 }
 
 enum DividaStatus {
@@ -200,21 +217,4 @@ enum StatusOnline {
   ONLINE
   AUSENTE
   OFFLINE
-}
-
-model PerfilFinanceiro {
-  id                    String   @id @default(uuid())
-  userEmail             String   @unique
-  fonteRenda           String?
-  rendaMensal          String?
-  temDividas           String?
-  controlGastos        String?
-  guardaDinheiro       String?
-  objetivoPrincipal    String?
-  prazoObjetivo        String?
-  experienciaFinanceira String?
-  categoriasPrioritarias Json?   @default("[]")
-  onboardingCompleto   Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
 }
