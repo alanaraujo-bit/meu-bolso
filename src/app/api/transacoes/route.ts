@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
+
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
 import { authOptions } from "@/lib/auth";
 import { parseDataBrasil, prepararDataParaBanco } from "@/lib/dateUtils";
 

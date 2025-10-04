@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 
+// Forçar renderização dinâmica
 export const dynamic = 'force-dynamic';
+import { prisma } from '@/lib/prisma';
 
 
 // Função para calcular próxima data baseada na frequência
