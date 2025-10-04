@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     console.log('📥 === EXPORTANDO DADOS DO USUÁRIO ===');

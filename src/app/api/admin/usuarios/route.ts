@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
+
 // Lista de emails de administradores
 const ADMIN_EMAILS = [
   'alanvitoraraujo1a@outlook.com',

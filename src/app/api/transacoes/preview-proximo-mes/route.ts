@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 
 // Force no cache para sempre ter dados atualizados
-export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {

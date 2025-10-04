@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 
 export async function DELETE(request: NextRequest) {
