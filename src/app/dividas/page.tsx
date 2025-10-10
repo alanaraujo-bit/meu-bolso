@@ -539,6 +539,7 @@ export default function DividasPage() {
 
   // Função para iniciar edição de valor de parcela
   const iniciarEdicaoParcela = (dividaId: string, parcelaId: string, valorAtual: number) => {
+    console.log('🔧 Debug Frontend - Iniciando edição:', { dividaId, parcelaId, valorAtual });
     setEditandoParcela({ dividaId, parcelaId });
     setNovoValorParcela(valorAtual.toString());
   };

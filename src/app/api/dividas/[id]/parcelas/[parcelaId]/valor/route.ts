@@ -8,19 +8,26 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string, parcelaId: string } }
 ) {
+  console.log('🔧 API Debug - Recebendo requisição PUT para editar valor');
+  console.log('🔧 Params:', params);
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
+      console.log('❌ Erro: Não autorizado');
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const { novoValor } = await request.json();
+    console.log('🔧 Novo valor recebido:', novoValor, typeof novoValor);
 
     if (!novoValor || novoValor <= 0) {
+      console.log('❌ Erro: Valor inválido');
       return NextResponse.json({ error: "Valor inválido" }, { status: 400 });
     }
 
     // Verificar se a dívida pertence ao usuário
+    console.log('🔧 Buscando dívida:', params.id);
     const divida = await prisma.divida.findFirst({
       where: {
         id: params.id,
@@ -32,27 +39,38 @@ export async function PUT(
     });
 
     if (!divida) {
+      console.log('❌ Erro: Dívida não encontrada');
       return NextResponse.json({ error: "Dívida não encontrada" }, { status: 404 });
     }
 
+    console.log('✅ Dívida encontrada:', divida.nome);
+
     // Verificar se a parcela existe e pertence à dívida
+    console.log('🔧 Buscando parcela:', params.parcelaId);
     const parcela = divida.parcelas.find((p: any) => p.id === params.parcelaId);
     if (!parcela) {
+      console.log('❌ Erro: Parcela não encontrada');
       return NextResponse.json({ error: "Parcela não encontrada" }, { status: 404 });
     }
 
+    console.log('✅ Parcela encontrada - Número:', parcela.numero, 'Status:', parcela.status);
+
     // Não permitir editar parcelas já pagas
     if (parcela.status === 'PAGA') {
+      console.log('❌ Erro: Tentando editar parcela já paga');
       return NextResponse.json({ 
         error: "Não é possível editar o valor de uma parcela já paga" 
       }, { status: 400 });
     }
 
     // Atualizar o valor da parcela
+    console.log('🔧 Atualizando valor da parcela de', parcela.valor.toNumber(), 'para', novoValor);
     const parcelaAtualizada = await prisma.parcelaDivida.update({
       where: { id: params.parcelaId },
       data: { valor: novoValor },
     });
+
+    console.log('✅ Parcela atualizada:', parcelaAtualizada.valor.toNumber());
 
     // Recalcular o valor total da dívida baseado na soma de todas as parcelas
     const todasParcelas = await prisma.parcelaDivida.findMany({
