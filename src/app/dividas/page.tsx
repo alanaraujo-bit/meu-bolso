@@ -559,21 +559,32 @@ export default function DividasPage() {
       return;
     }
 
+    console.log('🔧 Debug - Salvando valor:', {
+      dividaId: editandoParcela.dividaId,
+      parcelaId: editandoParcela.parcelaId,
+      novoValor: valor,
+      url: `/api/dividas/${editandoParcela.dividaId}/parcelas/${editandoParcela.parcelaId}/valor`
+    });
+
     try {
       setLoading(true);
-      const response = await fetch(`/api/dividas/${editandoParcela.dividaId}/parcelas/${editandoParcela.parcelaId}/edit-valor`, {
+      const response = await fetch(`/api/dividas/${editandoParcela.dividaId}/parcelas/${editandoParcela.parcelaId}/valor`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ novoValor: valor }),
       });
 
+      console.log('🔧 Debug - Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('🔧 Debug - Response data:', data);
         mostrarFeedback("✅ Valor da parcela atualizado com sucesso!", 'success');
         cancelarEdicaoParcela();
         carregarDados(); // Recarregar os dados para atualizar a interface
       } else {
         const error = await response.json();
+        console.log('🔧 Debug - Response error:', error);
         mostrarFeedback(`❌ ${error.error}`, 'error');
       }
     } catch (error) {
