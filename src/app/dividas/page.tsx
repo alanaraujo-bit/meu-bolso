@@ -675,8 +675,12 @@ export default function DividasPage() {
     return <CleanLoading />;
   }
 
+  const bgClass = darkMode 
+    ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+    : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50';
+
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${darkMode ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'} relative overflow-hidden`}>
+    <div className={`min-h-screen transition-colors duration-500 ${bgClass} relative overflow-hidden`}>
       
       {/* Notificação de Feedback */}
       {mensagemFeedback && (
