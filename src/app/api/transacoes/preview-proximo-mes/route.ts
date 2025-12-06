@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { inicioMesBrasil, fimMesBrasil } from '@/lib/dateUtils';
 
 // Forçar renderização dinâmica
 export const dynamic = 'force-dynamic';
@@ -29,8 +30,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Calcular o período do mês especificado
-    const inicioMes = new Date(ano, mes - 1, 1);
-    const fimMes = new Date(ano, mes, 0);
+    // Usar helpers com timezone BR para não perder parcelas no limite do mês
+    const inicioMes = inicioMesBrasil(ano, mes);
+    const fimMes = fimMesBrasil(ano, mes);
 
     // Buscar transações recorrentes ativas que deveriam gerar transações no mês
     const transacoesRecorrentes = await prisma.transacaoRecorrente.findMany({
@@ -59,10 +61,13 @@ export async function GET(request: NextRequest) {
           gte: inicioMes,
           lte: fimMes
         },
-        status: 'PENDENTE' // Apenas parcelas ainda não pagas
+        // Também traz vencidas para evitar perder parcelas marcadas incorretamente
+        status: { in: ['PENDENTE', 'VENCIDA'] }
       },
       include: {
-        divida: true
+        divida: {
+          include: { categoria: true }
+        }
       }
     });
 
