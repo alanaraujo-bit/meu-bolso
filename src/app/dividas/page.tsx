@@ -671,11 +671,14 @@ export default function DividasPage() {
     return formatarValor(valor);
   };
 
+  // === BLOCO DE RENDERIZAÇÃO PRINCIPAL ===
+
+  // Se ainda está carregando e não há dados, mostra loading
   if (loading && !dividas.length) {
     return <CleanLoading />;
   }
 
-  // Tema de fundo do container principal
+  // Tema de fundo do container principal (somente ASCII)
   const bgClass = darkMode
     ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900'
     : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50';
