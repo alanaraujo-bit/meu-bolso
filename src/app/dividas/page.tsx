@@ -675,8 +675,9 @@ export default function DividasPage() {
     return <CleanLoading />;
   }
 
-  const bgClass = darkMode 
-    ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+  // Tema de fundo do container principal
+  const bgClass = darkMode
+    ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900'
     : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50';
 
   return (
