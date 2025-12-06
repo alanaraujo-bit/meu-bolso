@@ -128,10 +128,6 @@ export default function DividasPage() {
   const [mensagemFeedback, setMensagemFeedback] = useState<{texto: string, tipo: 'success' | 'error'} | null>(null);
   const [dividasElegiveis, setDividasElegiveis] = useState<any[]>([]);
   const [mostrarAutoConversao, setMostrarAutoConversao] = useState(false);
-  
-  // Estados para edição de valor de parcelas
-  const [editandoParcela, setEditandoParcela] = useState<{dividaId: string, parcelaId: string} | null>(null);
-  const [novoValorParcela, setNovoValorParcela] = useState<string>("");
 
   const [formulario, setFormulario] = useState<FormularioDivida>({
     nome: "",
@@ -537,88 +533,6 @@ export default function DividasPage() {
     setTimeout(() => setMensagemFeedback(null), 5000); // Remove após 5 segundos
   };
 
-  // Função para iniciar edição de valor de parcela
-  const iniciarEdicaoParcela = (dividaId: string, parcelaId: string, valorAtual: number) => {
-    console.log('🔧 Debug Frontend - Iniciando edição:', { dividaId, parcelaId, valorAtual });
-    setEditandoParcela({ dividaId, parcelaId });
-    setNovoValorParcela(valorAtual.toString());
-  };
-
-  // Função para cancelar edição de valor de parcela
-  const cancelarEdicaoParcela = () => {
-    setEditandoParcela(null);
-    setNovoValorParcela("");
-  };
-
-  // Função para salvar novo valor da parcela
-  const salvarNovoValorParcela = async () => {
-    if (!editandoParcela || !novoValorParcela) {
-      mostrarFeedback("❌ Dados incompletos", 'error');
-      return;
-    }
-
-    const valor = parseFloat(novoValorParcela.replace(',', '.'));
-    if (valor <= 0 || isNaN(valor)) {
-      mostrarFeedback("❌ Valor deve ser um número positivo", 'error');
-      return;
-    }
-
-    console.log('� === INICIANDO SALVAMENTO FRONTEND ===');
-    console.log('📋 Dados:', {
-      dividaId: editandoParcela.dividaId,
-      parcelaId: editandoParcela.parcelaId,
-      valorOriginal: novoValorParcela,
-      valorProcessado: valor,
-      url: `/api/dividas/${editandoParcela.dividaId}/parcelas/${editandoParcela.parcelaId}/valor`
-    });
-
-    try {
-      setLoading(true);
-      
-      const response = await fetch(`/api/dividas/${editandoParcela.dividaId}/parcelas/${editandoParcela.parcelaId}/valor`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache"
-        },
-        body: JSON.stringify({ novoValor: valor }),
-      });
-
-      console.log('� Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Sucesso! Dados recebidos:', data);
-        
-        if (data.success) {
-          mostrarFeedback(`✅ ${data.message}`, 'success');
-        } else {
-          mostrarFeedback("✅ Valor atualizado com sucesso!", 'success');
-        }
-        
-        cancelarEdicaoParcela();
-        await carregarDados(); // Recarregar os dados
-        
-        console.log('🎉 === SALVAMENTO CONCLUÍDO ===');
-      } else {
-        const error = await response.json();
-        console.log('❌ Erro na resposta:', error);
-        mostrarFeedback(`❌ ${error.error || 'Erro ao salvar'}`, 'error');
-      }
-    } catch (error) {
-      console.error("💥 Erro crítico:", error);
-      mostrarFeedback("❌ Erro de conexão. Tente novamente.", 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Função para verificar se uma parcela tem valor personalizado
-  const parcelaTemValorPersonalizado = (divida: Divida, parcela: ParcelaDivida) => {
-    return Math.abs(parcela.valor - divida.valorParcela) > 0.01; // Tolerância de 1 centavo para flutuação
-  };
-
   // Função para ordenar parcelas: próximas pendentes primeiro, depois pagas por último
   const ordenarParcelas = (parcelas: ParcelaDivida[]) => {
     return [...parcelas].sort((a, b) => {
@@ -671,20 +585,16 @@ export default function DividasPage() {
     return formatarValor(valor);
   };
 
-  // === BLOCO DE RENDERIZAÇÃO PRINCIPAL ===
-
-  // Se ainda está carregando e não há dados, mostra loading
   if (loading && !dividas.length) {
     return <CleanLoading />;
   }
 
-  // Tema de fundo do container principal (somente ASCII)
-  const bgClass = darkMode
-    ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900'
-    : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50';
-
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${bgClass} relative overflow-hidden`}>
+    <div className={`min-h-screen transition-colors duration-500 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-zinc-900' 
+        : 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50'
+    } relative overflow-hidden`}>
       
       {/* Notificação de Feedback */}
       {mensagemFeedback && (
@@ -746,10 +656,6 @@ export default function DividasPage() {
             {
               title: "📊 Como usar",
               content: "• Cadastre dívidas parceladas\n• Marque parcelas como pagas\n• Acompanhe estatísticas\n• Veja insights inteligentes"
-            },
-            {
-              title: "✏️ Personalizar Valores",
-              content: "• Clique no ícone de edição ao lado do valor\n• Altere o valor de parcelas individuais\n• Apenas parcelas pendentes podem ser editadas\n• O valor total da dívida é recalculado automaticamente"
             }
           ]}
         />
@@ -1401,150 +1307,44 @@ export default function DividasPage() {
                                       </span>
                                     </div>
                                     
-                                    <div className="space-y-3">
-                                      {/* Cabeçalho da parcela */}
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                          <span className={`text-lg font-bold ${
-                                            darkMode ? 'text-white' : 'text-gray-800'
-                                          }`}>
-                                            #{parcela.numero}
-                                          </span>
-                                          
-                                          {isProxima && (
-                                            <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold rounded-full">
-                                              🎯 PRÓXIMA
-                                            </span>
-                                          )}
-                                          
-                                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                            parcela.status === 'PAGA'
-                                              ? 'bg-emerald-500 text-white'
-                                              : parcela.status === 'VENCIDA'
-                                                ? 'bg-red-500 text-white'
-                                                : 'bg-blue-500 text-white'
-                                          }`}>
-                                            {parcela.status === 'PAGA' ? '✅ PAGA' : 
-                                             parcela.status === 'VENCIDA' ? '⚠️ VENCIDA' : '⏳ PENDENTE'}
-                                          </span>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className={`text-sm ${
+                                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                                      }`}>
+                                        <span className="font-medium">Valor:</span>
+                                        <div className={`font-bold text-lg ${
+                                          parcela.status === 'PAGA' 
+                                            ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
+                                            : (darkMode ? 'text-white' : 'text-gray-800')
+                                        }`}>
+                                          {formatarValor(parcela.valor)}
                                         </div>
                                       </div>
-
-                                      {/* Valor e Vencimento */}
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {/* Seção do Valor */}
-                                        <div className={`p-3 rounded-lg ${
-                                          darkMode ? 'bg-gray-700/50' : 'bg-gray-50'
+                                      
+                                      <div className={`text-sm ${
+                                        darkMode ? 'text-gray-300' : 'text-gray-600'
+                                      }`}>
+                                        <span className="font-medium">Vencimento:</span>
+                                        <div className={`font-semibold ${
+                                          darkMode ? 'text-gray-200' : 'text-gray-700'
                                         }`}>
-                                          <div className="flex items-center justify-between mb-2">
-                                            <span className={`text-sm font-medium ${
-                                              darkMode ? 'text-gray-300' : 'text-gray-600'
-                                            }`}>
-                                              💰 Valor
-                                            </span>
-                                            
-                                            {/* Indicador de valor personalizado */}
-                                            {parcelaTemValorPersonalizado(divida, parcela) && (
-                                              <span 
-                                                className="px-2 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold rounded-full"
-                                                title="Valor personalizado"
-                                              >
-                                                ✨ CUSTOM
-                                              </span>
-                                            )}
-                                          </div>
-
-                                          {/* Edição de valor melhorada */}
-                                          {editandoParcela?.dividaId === divida.id && editandoParcela?.parcelaId === parcela.id ? (
-                                            <div className="space-y-2">
-                                              <div className="relative">
-                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                                                <input
-                                                  type="number"
-                                                  step="0.01"
-                                                  value={novoValorParcela}
-                                                  onChange={(e: any) => setNovoValorParcela(e.target.value)}
-                                                  className={`w-full pl-8 pr-4 py-2 rounded-lg border-2 font-bold text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                                                    darkMode 
-                                                      ? 'bg-gray-800 border-gray-600 text-white' 
-                                                      : 'bg-white border-gray-300 text-gray-800'
-                                                  }`}
-                                                  placeholder="0,00"
-                                                  autoFocus
-                                                />
-                                              </div>
-                                              <div className="flex gap-2">
-                                                <button
-                                                  onClick={salvarNovoValorParcela}
-                                                  disabled={loading}
-                                                  className="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 disabled:opacity-50 text-white font-bold rounded-lg transition-all"
-                                                >
-                                                  {loading ? '⏳' : '✓'} Salvar
-                                                </button>
-                                                <button
-                                                  onClick={cancelarEdicaoParcela}
-                                                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors"
-                                                >
-                                                  ✕
-                                                </button>
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <div className="flex items-center justify-between">
-                                              <div className={`text-xl font-bold ${
-                                                parcela.status === 'PAGA' 
-                                                  ? 'text-emerald-500'
-                                                  : (darkMode ? 'text-white' : 'text-gray-800')
-                                              }`}>
-                                                {formatarValor(parcela.valor)}
-                                              </div>
-                                              
-                                              {/* Botão de editar - apenas para parcelas pendentes */}
-                                              {parcela.status === 'PENDENTE' && (
-                                                <button
-                                                  onClick={() => iniciarEdicaoParcela(divida.id, parcela.id, parcela.valor)}
-                                                  className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium text-sm"
-                                                  title="Editar valor"
-                                                >
-                                                  ✏️ Editar
-                                                </button>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {/* Seção do Vencimento */}
-                                        <div className={`p-3 rounded-lg ${
-                                          darkMode ? 'bg-gray-700/50' : 'bg-gray-50'
-                                        }`}>
-                                          <span className={`text-sm font-medium block mb-2 ${
-                                            darkMode ? 'text-gray-300' : 'text-gray-600'
-                                          }`}>
-                                            📅 Vencimento
-                                          </span>
-                                          <div className={`text-lg font-bold ${
-                                            darkMode ? 'text-gray-200' : 'text-gray-700'
-                                          }`}>
-                                            {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR', {
-                                              day: '2-digit',
-                                              month: '2-digit', 
-                                              year: 'numeric'
-                                            })}
-                                          </div>
+                                          {new Date(parcela.dataVencimento).toLocaleDateString('pt-BR')}
                                         </div>
                                       </div>
-
-                                      {/* Botão de Pagar - apenas para parcelas pendentes */}
-                                      {parcela.status === 'PENDENTE' && (
-                                        <button
-                                          onClick={() => marcarParcelaPaga(divida.id, parcela.id)}
-                                          className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 shadow-lg"
-                                        >
-                                          <Check size={20} />
-                                          Marcar como Paga
-                                        </button>
-                                      )}
                                     </div>
+                                  </div>
+                                  
+                                  {/* Botão de Pagar */}
+                                  {parcela.status === 'PENDENTE' && (
+                                    <button
+                                      onClick={() => marcarParcelaPaga(divida.id, parcela.id)}
+                                      className="ml-4 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 flex items-center gap-2 shadow-lg"
+                                      title="Marcar como paga"
+                                    >
+                                      <Check size={16} />
+                                      Pagar
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             );
