@@ -149,12 +149,29 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
       // Calcular nova data da primeira parcela com timezone correto
       const dataProximaBase = dataProximaParcela || new Date().toISOString().split('T')[0];
+      console.log('📅 EDITAR - Data recebida:', {
+        dataProximaParcela,
+        dataProximaBase,
+        parcelasJaPagas,
+        parcelasJaPagasAntes
+      });
+      
       const dataProxima = prepararDataParaBanco(dataProximaBase);
       const parcelasJaFeitas = parcelasJaPagas !== undefined ? parcelasJaPagas : parcelasJaPagasAntes;
       
-      // Calcular a data da primeira parcela
-      const dataPrimeira = new Date(dataProxima);
-      dataPrimeira.setMonth(dataPrimeira.getMonth() - parcelasJaFeitas);
+      console.log('📅 EDITAR - Data preparada:', {
+        dataProxima,
+        formatada: dataProxima.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+        parcelasJaFeitas
+      });
+      
+      // Calcular a data da primeira parcela usando adicionarMeses para manter timezone
+      const dataPrimeira = adicionarMeses(dataProxima, -parcelasJaFeitas);
+      
+      console.log('📅 EDITAR - Data primeira parcela:', {
+        dataPrimeira,
+        formatada: dataPrimeira.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      });
 
       // Criar novas parcelas
       const parcelas = [];

@@ -443,15 +443,23 @@ export default function DividasPage() {
   const prepararEdicaoDivida = (divida: Divida) => {
     const proximaParcelaVencimento = divida.parcelas.find(p => p.status === 'PENDENTE');
     
+    // Formatar data corretamente sem problemas de timezone
+    let dataFormatada = new Date().toISOString().split('T')[0];
+    if (proximaParcelaVencimento) {
+      const data = new Date(proximaParcelaVencimento.dataVencimento);
+      // Adicionar o offset do timezone para evitar mudança de dia
+      const offset = data.getTimezoneOffset();
+      const dataAjustada = new Date(data.getTime() - (offset * 60 * 1000));
+      dataFormatada = dataAjustada.toISOString().split('T')[0];
+    }
+    
     setFormulario({
       nome: divida.nome,
       valorParcela: divida.valorParcela.toString(),
       numeroParcelas: divida.numeroParcelas.toString(),
       valorTotal: divida.valorTotal.toString(),
       parcelasJaPagas: divida.estatisticas?.parcelasPagas.toString() || "0",
-      dataProximaParcela: proximaParcelaVencimento 
-        ? new Date(proximaParcelaVencimento.dataVencimento).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0],
+      dataProximaParcela: dataFormatada,
       categoriaId: divida.categoria?.id || "",
     });
     
