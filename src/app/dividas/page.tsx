@@ -442,7 +442,6 @@ export default function DividasPage() {
 
   const prepararEdicaoDivida = (divida: Divida) => {
     console.log('🔧 PREPARAR EDIÇÃO - Dívida recebida:', divida);
-    console.log('🔧 PREPARAR EDIÇÃO - Parcelas:', divida.parcelas);
     
     // Pegar a próxima parcela pendente (não paga)
     const proximaParcela = divida.parcelas
@@ -451,21 +450,23 @@ export default function DividasPage() {
     
     console.log('🔧 PREPARAR EDIÇÃO - Próxima parcela:', proximaParcela);
     
-    // Formatar data corretamente sem problemas de timezone
+    // Extrair APENAS a data sem fazer NENHUMA conversão de timezone
     let dataFormatada = new Date().toISOString().split('T')[0];
     if (proximaParcela) {
-      // Pegar apenas a parte da data (YYYY-MM-DD) da string ISO do banco
-      const dataString = proximaParcela.dataVencimento.toString();
-      if (dataString.includes('T')) {
-        dataFormatada = dataString.split('T')[0];
-      } else {
-        // Se já vier como string de data simples
-        dataFormatada = dataString.substring(0, 10);
+      const dataISO = proximaParcela.dataVencimento;
+      
+      // Se for string ISO (ex: "2025-12-31T02:52:51Z"), pegar só a parte da data
+      if (typeof dataISO === 'string') {
+        // Extrair ano, mês, dia diretamente da string sem conversões
+        const match = dataISO.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+          dataFormatada = `${match[1]}-${match[2]}-${match[3]}`;
+        }
       }
       
-      console.log('📅 PREPARAR EDIÇÃO - Data formatada:', {
-        dataVencimentoOriginal: proximaParcela.dataVencimento,
-        dataFormatada
+      console.log('📅 PREPARAR EDIÇÃO - Data extraída:', {
+        original: proximaParcela.dataVencimento,
+        extraida: dataFormatada
       });
     }
     
@@ -1722,10 +1723,18 @@ export default function DividasPage() {
                         <span className="w-3 h-3 bg-orange-600 rounded-full shadow-sm"></span>
                         📅 Próxima Parcela
                       </label>
+                      {console.log('📅 RENDER INPUT - Valor do formulário:', formulario.dataProximaParcela)}
                       <input
                         type="date"
                         value={formulario.dataProximaParcela}
-                        onChange={(e) => setFormulario({ ...formulario, dataProximaParcela: e.target.value })}
+                        onChange={(e) => {
+                          console.log('📅 INPUT onChange:', {
+                            valorAntigo: formulario.dataProximaParcela,
+                            valorNovo: e.target.value
+                          });
+                          setFormulario({ ...formulario, dataProximaParcela: e.target.value });
+                        }}
+                        onFocus={() => console.log('📅 INPUT onFocus - valor atual:', formulario.dataProximaParcela)}
                         className={`w-full px-4 py-4 border-2 rounded-xl transition-all font-medium ${
                           darkMode 
                             ? 'bg-gray-700 border-gray-600 text-white focus:border-emerald-500' 
