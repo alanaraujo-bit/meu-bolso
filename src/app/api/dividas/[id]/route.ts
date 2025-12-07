@@ -130,13 +130,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     }
 
-    // Se mudou o número de parcelas, valores ou parcelas já pagas, recrear parcelas
+    // Se mudou o número de parcelas, valores, parcelas já pagas ou data, recrear parcelas
     const parcelasJaPagasAntes = dividaExistente.parcelas.filter(p => p.status === 'PAGA').length;
     const recalcularParcelas = 
       (numeroParcelas && numeroParcelas !== dividaExistente.numeroParcelas) ||
       (valorParcela && valorParcela !== dividaExistente.valorParcela.toNumber()) ||
       (valorTotal && valorTotal !== dividaExistente.valorTotal.toNumber()) ||
-      (parcelasJaPagas !== undefined && parcelasJaPagas !== parcelasJaPagasAntes);
+      (parcelasJaPagas !== undefined && parcelasJaPagas !== parcelasJaPagasAntes) ||
+      (dataProximaParcela !== undefined); // Sempre recalcular se mudou a data
 
     if (recalcularParcelas) {
       // Deletar TODAS as parcelas existentes para recriar
