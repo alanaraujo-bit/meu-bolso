@@ -39,7 +39,9 @@ import {
   Info,
   X,
   User,
-  RotateCcw
+  RotateCcw,
+  Pencil,
+  Save
 } from 'lucide-react';
 
 interface ParcelaDivida {
@@ -128,6 +130,10 @@ export default function DividasPage() {
   const [mensagemFeedback, setMensagemFeedback] = useState<{texto: string, tipo: 'success' | 'error'} | null>(null);
   const [dividasElegiveis, setDividasElegiveis] = useState<any[]>([]);
   const [mostrarAutoConversao, setMostrarAutoConversao] = useState(false);
+  
+  // Estados para edição de valor de parcelas
+  const [editandoParcela, setEditandoParcela] = useState<{dividaId: string, parcelaId: string} | null>(null);
+  const [novoValorParcela, setNovoValorParcela] = useState<string>("");
 
   const [formulario, setFormulario] = useState<FormularioDivida>({
     nome: "",
@@ -531,6 +537,87 @@ export default function DividasPage() {
   const mostrarFeedback = (texto: string, tipo: 'success' | 'error' = 'success') => {
     setMensagemFeedback({ texto, tipo });
     setTimeout(() => setMensagemFeedback(null), 5000); // Remove após 5 segundos
+  };
+
+  // Função para iniciar edição de valor de parcela
+  const iniciarEdicaoParcela = (dividaId: string, parcelaId: string, valorAtual: number) => {
+    setEditandoParcela({ dividaId, parcelaId });
+    setNovoValorParcela(String(valorAtual));
+  };
+
+  // Função para cancelar edição de valor de parcela
+  const cancelarEdicaoParcela = () => {
+    setEditandoParcela(null);
+    setNovoValorParcela("");
+  };
+
+  // Função para salvar novo valor da parcela
+  const salvarNovoValorParcela = async () => {
+    if (!editandoParcela || !novoValorParcela) {
+      mostrarFeedback("Dados incompletos", 'error');
+      return;
+    }
+
+    const valor = parseFloat(novoValorParcela.replace(',', '.'));
+    
+    if (valor <= 0 || isNaN(valor)) {
+      mostrarFeedback("Valor deve ser um número positivo", 'error');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Salvar IDs antes de limpar o estado
+      const dividaId = editandoParcela.dividaId;
+      const parcelaId = editandoParcela.parcelaId;
+      
+      const response = await fetch(`/api/dividas/${dividaId}/parcelas/${parcelaId}/valor`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ novoValor: valor })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Limpar estado de edição imediatamente
+        setEditandoParcela(null);
+        setNovoValorParcela("");
+        
+        // Atualizar localmente para feedback instantâneo
+        setDividas(prev => prev.map(d => {
+          if (d.id === dividaId) {
+            // Atualizar parcela e recalcular totais localmente
+            const parcelasAtualizadas = d.parcelas.map(p => 
+              p.id === parcelaId ? { ...p, valor } : p
+            );
+            const novoValorTotal = data.novoValorTotal || parcelasAtualizadas.reduce((sum, p) => sum + p.valor, 0);
+            return {
+              ...d,
+              parcelas: parcelasAtualizadas,
+              valorTotal: novoValorTotal,
+              valorParcela: novoValorTotal / d.numeroParcelas
+            };
+          }
+          return d;
+        }));
+        
+        mostrarFeedback("✓ Atualizado", 'success');
+      } else {
+        const error = await response.json();
+        mostrarFeedback(error.error || 'Erro ao salvar', 'error');
+      }
+    } catch (error) {
+      mostrarFeedback("Erro de conexão", 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para verificar se uma parcela tem valor personalizado
+  const parcelaTemValorPersonalizado = (divida: Divida, parcela: ParcelaDivida) => {
+    return Math.abs(parcela.valor - divida.valorParcela) > 0.01; // Tolerância de 1 centavo
   };
 
   // Função para ordenar parcelas: próximas pendentes primeiro, depois pagas por último
@@ -1312,13 +1399,74 @@ export default function DividasPage() {
                                         darkMode ? 'text-gray-300' : 'text-gray-600'
                                       }`}>
                                         <span className="font-medium">Valor:</span>
-                                        <div className={`font-bold text-lg ${
-                                          parcela.status === 'PAGA' 
-                                            ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
-                                            : (darkMode ? 'text-white' : 'text-gray-800')
-                                        }`}>
-                                          {formatarValor(parcela.valor)}
-                                        </div>
+                                        
+                                        {/* Modo de edição */}
+                                        {editandoParcela !== null && 
+                                         editandoParcela.dividaId === divida.id && 
+                                         editandoParcela.parcelaId === parcela.id ? (
+                                          <div className="flex items-center gap-1 sm:gap-2 mt-1 flex-wrap">
+                                            <input
+                                              type="number"
+                                              step="0.01"
+                                              min="0"
+                                              value={novoValorParcela}
+                                              onChange={(e) => setNovoValorParcela(e.target.value)}
+                                              className={`w-20 sm:w-24 px-2 py-1 text-sm sm:text-base rounded-lg border-2 font-bold ${
+                                                darkMode 
+                                                  ? 'bg-gray-700 border-blue-500 text-white' 
+                                                  : 'bg-white border-blue-500 text-gray-800'
+                                              }`}
+                                              placeholder="0.00"
+                                              autoFocus
+                                            />
+                                            <button
+                                              onClick={salvarNovoValorParcela}
+                                              disabled={loading}
+                                              className={`p-1.5 sm:p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors ${
+                                                loading ? 'opacity-50 cursor-not-allowed' : ''
+                                              }`}
+                                              title="Salvar"
+                                            >
+                                              <Check size={14} className="sm:w-4 sm:h-4" />
+                                            </button>
+                                            <button
+                                              onClick={cancelarEdicaoParcela}
+                                              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                                                darkMode 
+                                                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                                                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                              }`}
+                                              title="Cancelar"
+                                            >
+                                              <X size={14} className="sm:w-4 sm:h-4" />
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <div className={`font-bold text-lg ${
+                                              parcela.status === 'PAGA' 
+                                                ? (darkMode ? 'text-emerald-400' : 'text-emerald-600')
+                                                : (darkMode ? 'text-white' : 'text-gray-800')
+                                            }`}>
+                                              {formatarValor(parcela.valor)}
+                                            </div>
+                                            
+                                            {/* Botão de editar (somente para parcelas pendentes) */}
+                                            {parcela.status === 'PENDENTE' && (
+                                              <button
+                                                onClick={() => iniciarEdicaoParcela(divida.id, parcela.id, parcela.valor)}
+                                                className={`p-1 sm:p-1.5 rounded-lg transition-all hover:scale-110 ${
+                                                  darkMode 
+                                                    ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' 
+                                                    : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
+                                                }`}
+                                                title="Editar"
+                                              >
+                                                <Pencil size={12} className="sm:w-3.5 sm:h-3.5" />
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                       
                                       <div className={`text-sm ${
