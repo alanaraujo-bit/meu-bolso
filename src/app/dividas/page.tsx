@@ -135,6 +135,10 @@ export default function DividasPage() {
   // Estados para edição de valor de parcelas
   const [editandoParcela, setEditandoParcela] = useState<{dividaId: string, parcelaId: string} | null>(null);
   const [novoValorParcela, setNovoValorParcela] = useState<string>("");
+  
+  // Estados para personalização de parcelas na criação
+  const [mostrarPersonalizacao, setMostrarPersonalizacao] = useState(false);
+  const [parcelasPersonalizadas, setParcelasPersonalizadas] = useState<{numero: number, valor: number}[]>([]);
 
   const [formulario, setFormulario] = useState<FormularioDivida>({
     nome: "",
@@ -349,6 +353,11 @@ export default function DividasPage() {
       const parcelasJaPagas = parseInt(formulario.parcelasJaPagas);
       const dataPrimeira = new Date(dataProxima);
       dataPrimeira.setMonth(dataPrimeira.getMonth() - parcelasJaPagas);
+      
+      // Se tem parcelas personalizadas, usar elas
+      const parcelasParaEnviar = mostrarPersonalizacao && parcelasPersonalizadas.length > 0
+        ? parcelasPersonalizadas
+        : null;
 
       const response = await fetch("/api/dividas", {
         method: "POST",
@@ -360,6 +369,7 @@ export default function DividasPage() {
           parcelasJaPagas: parcelasJaPagas,
           dataPrimeiraParcela: dataPrimeira.toISOString().split('T')[0],
           categoriaId: formulario.categoriaId || null,
+          parcelasPersonalizadas: parcelasParaEnviar,
         }),
       });
 
@@ -480,9 +490,43 @@ export default function DividasPage() {
     }
   };
 
+  // Função para gerar parcelas personalizadas
+  const gerarParcelasPersonalizadas = () => {
+    const num = parseInt(formulario.numeroParcelas);
+    const valor = parseFloat(formulario.valorParcela);
+    
+    if (!num || !valor || num <= 0 || valor <= 0) return;
+    
+    const parcelas = [];
+    for (let i = 1; i <= num; i++) {
+      parcelas.push({ numero: i, valor });
+    }
+    
+    setParcelasPersonalizadas(parcelas);
+    setMostrarPersonalizacao(true);
+  };
+  
+  // Função para atualizar valor de uma parcela personalizada
+  const atualizarParcelaPersonalizada = (numero: number, novoValor: string) => {
+    const valor = parseFloat(novoValor);
+    if (isNaN(valor) || valor < 0) return;
+    
+    setParcelasPersonalizadas(prev => 
+      prev.map(p => p.numero === numero ? { ...p, valor } : p)
+    );
+  };
+  
+  // Função para cancelar personalização
+  const cancelarPersonalizacao = () => {
+    setMostrarPersonalizacao(false);
+    setParcelasPersonalizadas([]);
+  };
+
   const fecharModal = () => {
     setShowModal(false);
     setEditandoDivida(null);
+    setMostrarPersonalizacao(false);
+    setParcelasPersonalizadas([]);
     setFormulario({
       nome: "",
       valorParcela: "",
@@ -1685,6 +1729,83 @@ export default function DividasPage() {
                       ))}
                     </select>
                   </div>
+
+                  {/* Botão Personalizar Parcelas */}
+                  {formulario.numeroParcelas && formulario.valorParcela && !mostrarPersonalizacao && (
+                    <div className="pt-4">
+                      <button
+                        type="button"
+                        onClick={gerarParcelasPersonalizadas}
+                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                          darkMode 
+                            ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border-2 border-blue-500/30' 
+                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border-2 border-blue-200'
+                        }`}
+                      >
+                        <Pencil size={16} />
+                        Personalizar Valores das Parcelas
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Lista de Parcelas Personalizadas */}
+                  {mostrarPersonalizacao && parcelasPersonalizadas.length > 0 && (
+                    <div className={`p-4 rounded-xl border-2 space-y-3 ${
+                      darkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                          💰 Valores das Parcelas
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={cancelarPersonalizacao}
+                          className={`text-sm px-3 py-1 rounded-lg ${
+                            darkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                          }`}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                      
+                      <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                        {parcelasPersonalizadas.map((parcela) => (
+                          <div key={parcela.numero} className={`flex items-center gap-3 p-3 rounded-lg ${
+                            darkMode ? 'bg-gray-800' : 'bg-white'
+                          }`}>
+                            <span className={`font-bold min-w-[60px] ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              #{parcela.numero}
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={parcela.valor}
+                              onChange={(e) => atualizarParcelaPersonalizada(parcela.numero, e.target.value)}
+                              className={`flex-1 px-3 py-2 rounded-lg border font-semibold ${
+                                darkMode 
+                                  ? 'bg-gray-700 border-gray-600 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-800'
+                              }`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className={`pt-3 border-t ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                        <div className="flex justify-between items-center">
+                          <span className={`font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Total:
+                          </span>
+                          <span className={`text-xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                              parcelasPersonalizadas.reduce((sum, p) => sum + p.valor, 0)
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Botões */}
                   <div className="flex gap-4 pt-6">

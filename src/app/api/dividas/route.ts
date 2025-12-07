@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       dataPrimeiraParcela,
       categoriaId,
       status,
+      parcelasPersonalizadas,
     } = await req.json();
 
     if (!nome || !valorParcela || !numeroParcelas || !dataPrimeiraParcela) {
@@ -36,11 +37,14 @@ export async function POST(req: NextRequest) {
 
     console.log('📅 Debug - Data recebida para dívida:', {
       dataPrimeiraParcela,
-      tipo: typeof dataPrimeiraParcela
+      tipo: typeof dataPrimeiraParcela,
+      temPersonalizacao: !!parcelasPersonalizadas
     });
 
-    // Calcular valorTotal baseado no valorParcela e numeroParcelas
-    const valorTotal = valorParcela * numeroParcelas;
+    // Calcular valorTotal - se tem personalização, somar valores personalizados
+    const valorTotal = parcelasPersonalizadas && parcelasPersonalizadas.length > 0
+      ? parcelasPersonalizadas.reduce((sum: number, p: any) => sum + p.valor, 0)
+      : valorParcela * numeroParcelas;
 
     // Preparar data da primeira parcela corretamente
     const dataParcelaPreparada = prepararDataParaBanco(dataPrimeiraParcela);
@@ -73,11 +77,18 @@ export async function POST(req: NextRequest) {
       const isPaga = i < parcelasJaPagas;
       const dataVencimento = adicionarMeses(dataPrimeira, i);
       
+      // Se tem personalização, usar o valor personalizado, senão usar o padrão
+      const valorParcela = parcelasPersonalizadas && parcelasPersonalizadas.length > 0
+        ? parcelasPersonalizadas[i].valor
+        : valorParcela;
+      
       console.log(`📅 Debug - Parcela ${i + 1}:`, {
         numero: i + 1,
+        valor: valorParcela,
         dataVencimento: dataVencimento,
         formatada: dataVencimento.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-        status: isPaga ? "PAGA" : "PENDENTE"
+        status: isPaga ? "PAGA" : "PENDENTE",
+        personalizado: !!(parcelasPersonalizadas && parcelasPersonalizadas.length > 0)
       });
       
       parcelasData.push({
