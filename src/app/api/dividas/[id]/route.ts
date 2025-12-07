@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prepararDataParaBanco, adicionarMeses } from '@/lib/dateUtils';
 
 // GET - Obter detalhes de uma dívida específica
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -145,9 +146,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         },
       });
 
-      // Calcular nova data da primeira parcela
-      const dataProxima = new Date(dataProximaParcela || new Date());
+      // Calcular nova data da primeira parcela com timezone correto
+      const dataProximaBase = dataProximaParcela || new Date().toISOString().split('T')[0];
+      const dataProxima = prepararDataParaBanco(dataProximaBase);
       const parcelasJaFeitas = parcelasJaPagas !== undefined ? parcelasJaPagas : parcelasJaPagasAntes;
+      
+      // Calcular a data da primeira parcela
       const dataPrimeira = new Date(dataProxima);
       dataPrimeira.setMonth(dataPrimeira.getMonth() - parcelasJaFeitas);
 
@@ -157,8 +161,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       const numParcelas = numeroParcelas || dividaExistente.numeroParcelas;
 
       for (let i = 1; i <= numParcelas; i++) {
-        const dataVencimento = new Date(dataPrimeira);
-        dataVencimento.setMonth(dataVencimento.getMonth() + (i - 1));
+        const dataVencimento = adicionarMeses(dataPrimeira, i - 1);
         
         const isPaga = i <= parcelasJaFeitas;
 
