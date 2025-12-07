@@ -9,6 +9,7 @@ import StatusBadge from "@/components/StatusBadge";
 import HelpButton from "@/components/HelpButton";
 import { helpContents } from "@/lib/helpContents";
 import SeletorCategoria from "@/components/SeletorCategoria";
+import { getDataAtualBrasil } from "@/lib/dateUtils";
 import { 
   PieChart, 
   Pie, 
@@ -141,7 +142,7 @@ export default function DividasPage() {
     numeroParcelas: "",
     valorTotal: "",
     parcelasJaPagas: "0",
-    dataProximaParcela: new Date().toISOString().split('T')[0],
+    dataProximaParcela: getDataAtualBrasil().toISOString().split('T')[0],
     categoriaId: "",
   });
 
@@ -344,7 +345,7 @@ export default function DividasPage() {
   const criarDivida = async () => {
     try {
       // Calcular a data da primeira parcela baseado na próxima parcela e parcelas já pagas
-      const dataProxima = new Date(formulario.dataProximaParcela);
+      const dataProxima = new Date(formulario.dataProximaParcela + 'T12:00:00');
       const parcelasJaPagas = parseInt(formulario.parcelasJaPagas);
       const dataPrimeira = new Date(dataProxima);
       dataPrimeira.setMonth(dataPrimeira.getMonth() - parcelasJaPagas);
