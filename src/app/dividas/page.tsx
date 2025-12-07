@@ -441,16 +441,27 @@ export default function DividasPage() {
   };
 
   const prepararEdicaoDivida = (divida: Divida) => {
-    const proximaParcelaVencimento = divida.parcelas.find(p => p.status === 'PENDENTE');
+    // Pegar a próxima parcela pendente (não paga)
+    const proximaParcela = divida.parcelas
+      .filter(p => p.status === 'PENDENTE')
+      .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())[0];
     
     // Formatar data corretamente sem problemas de timezone
     let dataFormatada = new Date().toISOString().split('T')[0];
-    if (proximaParcelaVencimento) {
-      const data = new Date(proximaParcelaVencimento.dataVencimento);
-      // Adicionar o offset do timezone para evitar mudança de dia
-      const offset = data.getTimezoneOffset();
-      const dataAjustada = new Date(data.getTime() - (offset * 60 * 1000));
-      dataFormatada = dataAjustada.toISOString().split('T')[0];
+    if (proximaParcela) {
+      // Pegar apenas a parte da data (YYYY-MM-DD) da string ISO do banco
+      const dataString = proximaParcela.dataVencimento.toString();
+      if (dataString.includes('T')) {
+        dataFormatada = dataString.split('T')[0];
+      } else {
+        // Se já vier como string de data simples
+        dataFormatada = dataString.substring(0, 10);
+      }
+      
+      console.log('📅 EDITAR - Carregando data:', {
+        dataVencimentoOriginal: proximaParcela.dataVencimento,
+        dataFormatada
+      });
     }
     
     setFormulario({
