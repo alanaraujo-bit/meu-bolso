@@ -441,10 +441,15 @@ export default function DividasPage() {
   };
 
   const prepararEdicaoDivida = (divida: Divida) => {
+    console.log('🔧 PREPARAR EDIÇÃO - Dívida recebida:', divida);
+    console.log('🔧 PREPARAR EDIÇÃO - Parcelas:', divida.parcelas);
+    
     // Pegar a próxima parcela pendente (não paga)
     const proximaParcela = divida.parcelas
       .filter(p => p.status === 'PENDENTE')
       .sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime())[0];
+    
+    console.log('🔧 PREPARAR EDIÇÃO - Próxima parcela:', proximaParcela);
     
     // Formatar data corretamente sem problemas de timezone
     let dataFormatada = new Date().toISOString().split('T')[0];
@@ -458,13 +463,13 @@ export default function DividasPage() {
         dataFormatada = dataString.substring(0, 10);
       }
       
-      console.log('📅 EDITAR - Carregando data:', {
+      console.log('📅 PREPARAR EDIÇÃO - Data formatada:', {
         dataVencimentoOriginal: proximaParcela.dataVencimento,
         dataFormatada
       });
     }
     
-    setFormulario({
+    const formularioPreparado = {
       nome: divida.nome,
       valorParcela: divida.valorParcela.toString(),
       numeroParcelas: divida.numeroParcelas.toString(),
@@ -472,8 +477,11 @@ export default function DividasPage() {
       parcelasJaPagas: divida.estatisticas?.parcelasPagas.toString() || "0",
       dataProximaParcela: dataFormatada,
       categoriaId: divida.categoria?.id || "",
-    });
+    };
     
+    console.log('🔧 PREPARAR EDIÇÃO - Formulário preparado:', formularioPreparado);
+    
+    setFormulario(formularioPreparado);
     setEditandoDivida(divida.id);
     setShowModal(true);
   };
