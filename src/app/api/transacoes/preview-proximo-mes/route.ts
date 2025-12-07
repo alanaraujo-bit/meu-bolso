@@ -76,8 +76,9 @@ export async function GET(request: NextRequest) {
     const recorrentesGeradas = await prisma.transacaoRecorrente.findMany({
       where: {
         userId: userId,
+        isActive: true,
         descricao: {
-          contains: '💳'
+          contains: '- Parcela' // Buscar por padrão de parcela ao invés de emoji
         }
       }
     });
@@ -85,23 +86,36 @@ export async function GET(request: NextRequest) {
     // Extrair nomes das dívidas convertidas
     recorrentesGeradas.forEach(rec => {
       if (rec.descricao) {
-        const match = rec.descricao.match(/💳 (.+) - Parcela/);
-        if (match) {
-          const nomeDivida = match[1];
-          const dividaConvertida = dividasDoMes.find(d => d.divida.nome === nomeDivida);
-          if (dividaConvertida) {
-            dividasConvertidas.add(dividaConvertida.divida.id);
+        // Tentar múltiplos padrões de match
+        const patterns = [
+          /💳 (.+) - Parcela/,
+          /(.+) - Parcela \d+/,
+          /Dívida: (.+) - Parcela/
+        ];
+        
+        for (const pattern of patterns) {
+          const match = rec.descricao.match(pattern);
+          if (match) {
+            const nomeDivida = match[1].trim();
+            const dividaConvertida = dividasDoMes.find(d => 
+              d.divida.nome.toLowerCase().trim() === nomeDivida.toLowerCase().trim()
+            );
+            if (dividaConvertida) {
+              dividasConvertidas.add(dividaConvertida.divida.id);
+              break;
+            }
           }
         }
       }
     });
 
     // DEBUG: Log das dívidas convertidas para evitar duplicação
-    console.log('🔍 PREVIEW - Dívidas convertidas para recorrentes:', {
+    console.log('🔍 PREVIEW - Análise de dívidas:', {
       totalRecorrentes: recorrentesGeradas.length,
-      totalDividas: dividasDoMes.length,
-      dividasConvertidas: Array.from(dividasConvertidas),
-      nomesDividasConvertidas: recorrentesGeradas.map(r => r.descricao).filter(d => d?.includes('💳'))
+      totalDividasEncontradas: dividasDoMes.length,
+      dividasConvertidasIds: Array.from(dividasConvertidas),
+      recorrentesComParcela: recorrentesGeradas.map(r => r.descricao),
+      nomesDividas: dividasDoMes.map(d => d.divida.nome)
     });
 
     // Buscar compromissos e metas com vencimento no mês
@@ -193,13 +207,17 @@ export async function GET(request: NextRequest) {
 
     // ✅ CORREÇÃO: Adicionar APENAS dívidas que NÃO foram convertidas para recorrentes
     const dividasFuturas = dividasDoMes
-      .filter(parcela => !dividasConvertidas.has(parcela.divida.id)) // Excluir convertidas     
+      .filter(parcela => {
+        const isConvertida = dividasConvertidas.has(parcela.divida.id);
+        console.log(`🔍 Parcela ${parcela.divida.nome} #${parcela.numero}: ${isConvertida ? 'CONVERTIDA (ignorando)' : 'INCLUINDO'}`);
+        return !isConvertida;
+      })
       .map((parcela: any) => ({
         id: `div_${parcela.id}`,
         titulo: `${parcela.divida.nome} (Parcela ${parcela.numero || 'N/A'})`,
         valor: Number(parcela.valor),
         tipo: 'despesa' as const,
-        categoria: 'Dívidas',
+        categoria: parcela.divida.categoria?.nome || 'Dívidas',
         dataVencimento: parcela.dataVencimento,
         isRecorrente: false,
         status: 'pendente',
