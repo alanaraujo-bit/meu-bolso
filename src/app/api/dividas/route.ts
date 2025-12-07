@@ -78,13 +78,13 @@ export async function POST(req: NextRequest) {
       const dataVencimento = adicionarMeses(dataPrimeira, i);
       
       // Se tem personalização, usar o valor personalizado, senão usar o padrão
-      const valorParcela = parcelasPersonalizadas && parcelasPersonalizadas.length > 0
+      const valorDaParcela = parcelasPersonalizadas && parcelasPersonalizadas.length > 0
         ? parcelasPersonalizadas[i].valor
         : valorParcela;
       
       console.log(`📅 Debug - Parcela ${i + 1}:`, {
         numero: i + 1,
-        valor: valorParcela,
+        valor: valorDaParcela,
         dataVencimento: dataVencimento,
         formatada: dataVencimento.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
         status: isPaga ? "PAGA" : "PENDENTE",
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       parcelasData.push({
         dividaId: divida.id,
         numero: i + 1,
-        valor: valorParcela,
+        valor: valorDaParcela,
         dataVencimento: dataVencimento,
         status: isPaga ? "PAGA" : "PENDENTE" as any,
       });
