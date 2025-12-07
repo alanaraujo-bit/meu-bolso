@@ -109,10 +109,15 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ PREVIEW - Dados recebidos:', data);
+        console.log('✅ PREVIEW - Resposta da API:', {
+          totalTransacoes: data.transacoes?.length || 0,
+          resumo: data.resumo,
+          transacoes: data.transacoes
+        });
+        
         setTransacoesFuturas(data.transacoes || []);
         
-        // Preparar dados de debug
+        // Preparar dados de debug SEMPRE, mesmo quando vazio
         const totalReceitas = (data.transacoes || [])
           .filter((t: TransacaoFutura) => t.tipo === 'receita')
           .reduce((acc: number, t: TransacaoFutura) => acc + t.valor, 0);
@@ -125,13 +130,14 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
           endpoint: `/api/transacoes/preview-proximo-mes?mes=${proximoMes}&ano=${proximoAno}`,
           dataConsulta: new Date().toLocaleString('pt-BR'),
           totalRecorrentes: (data.transacoes || []).filter((t: TransacaoFutura) => t.isRecorrente).length,
-          totalDividas: (data.transacoes || []).filter((t: TransacaoFutura) => !t.isRecorrente && t.categoria === 'Dívidas').length,
+          totalDividas: (data.transacoes || []).filter((t: TransacaoFutura) => !t.isRecorrente).length,
+          dividasConvertidas: data.resumo?.dividasConvertidas || [],
           transacoesDetalhadas: data.transacoes || [],
           fontesDados: [
             'Transações Recorrentes Ativas',
             'Parcelas de Dívidas Pendentes', 
             'Filtro: Apenas não lançadas no mês',
-            'Exclusão: Dívidas convertidas para recorrentes'
+            `Resultado: ${(data.transacoes || []).length} transações encontradas`
           ],
           calculos: {
             totalReceitas,
@@ -274,28 +280,61 @@ export default function PreviewProximoMes({ darkMode = false, mesAtual, anoAtual
           ? 'bg-gray-800/40 border-gray-700/50' 
           : 'bg-white/60 border-white/60'
       }`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            darkMode ? 'bg-emerald-600/20' : 'bg-emerald-100'
-          }`}>
-            <CalendarDays className={`w-5 h-5 ${
-              darkMode ? 'text-emerald-400' : 'text-emerald-600'
-            }`} />
-          </div>
-          <div>
-            <h3 className={`text-lg font-semibold flex items-center gap-2 ${
-              darkMode ? 'text-white' : 'text-gray-900'
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              darkMode ? 'bg-emerald-600/20' : 'bg-emerald-100'
             }`}>
-              <Sparkles className="w-4 h-4 text-emerald-500" />
-              Preview {nomeProximoMes}
-            </h3>
-            <p className={`text-sm ${
-              darkMode ? 'text-gray-300' : 'text-gray-600'
-            }`}>
-              Nenhuma transação recorrente configurada para o próximo mês
-            </p>
+              <CalendarDays className={`w-5 h-5 ${
+                darkMode ? 'text-emerald-400' : 'text-emerald-600'
+              }`} />
+            </div>
+            <div>
+              <h3 className={`text-lg font-semibold flex items-center gap-2 ${
+                darkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                <Sparkles className="w-4 h-4 text-emerald-500" />
+                Preview {nomeProximoMes}
+              </h3>
+              <p className={`text-sm ${
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Nenhuma transação encontrada para o próximo mês
+              </p>
+            </div>
           </div>
+          
+          {/* Botão de Debug */}
+          <button
+            onClick={() => setMostrarDebug(!mostrarDebug)}
+            className={`p-2 rounded-lg transition-colors ${
+              darkMode 
+                ? 'hover:bg-gray-700/50 text-gray-300 hover:text-white' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+            }`}
+            title="Ver dados de debug"
+          >
+            <Info className="w-5 h-5" />
+          </button>
         </div>
+        
+        {/* Debug Info quando vazio */}
+        {mostrarDebug && dadosDebug && (
+          <div className={`mt-4 p-4 rounded-lg font-mono text-xs ${
+            darkMode ? 'bg-gray-900/50 text-gray-300' : 'bg-gray-50 text-gray-700'
+          }`}>
+            <div className="space-y-2">
+              <div><strong>Endpoint:</strong> {dadosDebug.endpoint}</div>
+              <div><strong>Consulta:</strong> {dadosDebug.dataConsulta}</div>
+              <div><strong>Total Recorrentes:</strong> {dadosDebug.totalRecorrentes || 0}</div>
+              <div><strong>Total Dívidas:</strong> {dadosDebug.totalDividas || 0}</div>
+              <div><strong>Fontes:</strong> {dadosDebug.fontesDados.join(', ')}</div>
+              {dadosDebug.dividasConvertidas && dadosDebug.dividasConvertidas.length > 0 && (
+                <div><strong>Dívidas Convertidas:</strong> {dadosDebug.dividasConvertidas.join(', ')}</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

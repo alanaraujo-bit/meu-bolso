@@ -34,6 +34,15 @@ export async function GET(request: NextRequest) {
     const inicioMes = inicioMesBrasil(ano, mes);
     const fimMes = fimMesBrasil(ano, mes);
 
+    console.log('🔍 PREVIEW - Parâmetros de busca:', {
+      mes,
+      ano,
+      inicioMes: inicioMes.toISOString(),
+      fimMes: fimMes.toISOString(),
+      inicioMesBR: inicioMes.toLocaleString('pt-BR'),
+      fimMesBR: fimMes.toLocaleString('pt-BR')
+    });
+
     // Buscar transações recorrentes ativas que deveriam gerar transações no mês
     const transacoesRecorrentes = await prisma.transacaoRecorrente.findMany({
       where: {
@@ -69,6 +78,17 @@ export async function GET(request: NextRequest) {
           include: { categoria: true }
         }
       }
+    });
+
+    console.log('🔍 PREVIEW - Dívidas encontradas:', {
+      total: dividasDoMes.length,
+      parcelas: dividasDoMes.map(p => ({
+        divida: p.divida.nome,
+        parcela: p.numero,
+        valor: p.valor,
+        vencimento: p.dataVencimento.toLocaleDateString('pt-BR'),
+        status: p.status
+      }))
     });
 
     // ✅ NOVA LÓGICA: Buscar dívidas que foram convertidas para recorrentes (evitar contagem dupla)
@@ -253,9 +273,11 @@ export async function GET(request: NextRequest) {
     console.log(`📊 PREVIEW [${mesPreview}]:`, {
       recorrentesEncontradas: transacoesRecorrentes.length,
       recorrentesPendentes: transacoesFuturas.length,
+      dividasEncontradas: dividasDoMes.length,
       dividasPendentes: dividasFuturas.length,
       transacoesReaisJaLancadas: transacoesReaisExistentes.length,
-      totalItens: todasTransacoes.length
+      totalItens: todasTransacoes.length,
+      dividasConvertidas: Array.from(dividasConvertidas)
     });
 
     return NextResponse.json({
@@ -269,7 +291,14 @@ export async function GET(request: NextRequest) {
         totalDespesas: todasTransacoes
           .filter(t => t.tipo === 'despesa')
           .reduce((sum, t) => sum + t.valor, 0),
-        totalItens: todasTransacoes.length
+        totalItens: todasTransacoes.length,
+        dividasConvertidas: Array.from(dividasConvertidas),
+        debug: {
+          recorrentesEncontradas: transacoesRecorrentes.length,
+          recorrentesPendentes: transacoesFuturas.length,
+          dividasEncontradas: dividasDoMes.length,
+          dividasPendentes: dividasFuturas.length
+        }
       }
     });
 
